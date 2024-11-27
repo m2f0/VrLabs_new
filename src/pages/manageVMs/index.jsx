@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Box, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import { useTheme } from "@mui/material/styles";
-import { tokens } from "../../theme";
 
 const Team = () => {
   const theme = useTheme();
@@ -11,36 +11,37 @@ const Team = () => {
 
   const [vmList, setVmList] = useState([]);
 
-  // Obter o token da variável de ambiente
-  const API_TOKEN = process.env.REACT_APP_PROXMOX_API_TOKEN;
+  // Constantes definidas diretamente no código
+  const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca"; // Substitua pelo seu token real
   const API_USER = "apiuser@pve";
-
-  if (!API_TOKEN) {
-    console.error(
-      "Token da API não definido! Configure o REACT_APP_PROXMOX_API_TOKEN no ambiente."
-    );
-    alert(
-      "Token da API não definido! Configure o REACT_APP_PROXMOX_API_TOKEN no ambiente."
-    );
-  }
+  const API_BASE_URL = "https://prox.nnovup.com.br:8006";
 
   // Função para buscar a lista de VMs
   const fetchVMs = async () => {
     try {
       const response = await fetch(
-        "https://prox.nnovup.com.br:8006/api2/json/cluster/resources?type=vm",
+        `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
-          mode: "no-cors", // Ignora política de CORS (apenas para testes)
           headers: {
             Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
         }
       );
-
-      // Modo `no-cors` não permite acesso direto ao conteúdo da resposta.
-      // Dados reais não podem ser processados aqui, mas o backend será acionado corretamente.
-      console.log("Fetch executado com modo no-cors.");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.data) {
+        setVmList(
+          data.data.map((vm) => ({
+            id: vm.vmid,
+            name: vm.name,
+            status: vm.status,
+            node: vm.node,
+          }))
+        );
+      }
     } catch (error) {
       console.error("Erro ao buscar a lista de VMs:", error);
       alert(
@@ -49,47 +50,50 @@ const Team = () => {
     }
   };
 
+  // Função para iniciar uma VM
   const startVM = async (vmid, node) => {
     try {
       await fetch(
-        `https://prox.nnovup.com.br:8006/api2/json/nodes/${node}/qemu/${vmid}/status/start`,
+        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/start`,
         {
           method: "POST",
-          mode: "no-cors", // Ignora política de CORS (apenas para testes)
           headers: {
             Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
         }
       );
       alert(`VM ${vmid} iniciada com sucesso!`);
+      fetchVMs();
     } catch (error) {
       console.error(`Erro ao iniciar a VM ${vmid}:`, error);
       alert(`Falha ao iniciar a VM ${vmid}`);
     }
   };
 
+  // Função para parar uma VM
   const stopVM = async (vmid, node) => {
     try {
       await fetch(
-        `https://prox.nnovup.com.br:8006/api2/json/nodes/${node}/qemu/${vmid}/status/stop`,
+        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/stop`,
         {
           method: "POST",
-          mode: "no-cors", // Ignora política de CORS (apenas para testes)
           headers: {
             Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
         }
       );
       alert(`VM ${vmid} parada com sucesso!`);
+      fetchVMs();
     } catch (error) {
       console.error(`Erro ao parar a VM ${vmid}:`, error);
       alert(`Falha ao parar a VM ${vmid}`);
     }
   };
 
-  const connectVM = (vmid, node) => {
+  // Função para conectar a uma VM
+  const connectVM = async (vmid, node) => {
     try {
-      const url = `https://prox.nnovup.com.br:8006/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
+      const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
       window.open(url, "_blank");
     } catch (error) {
       console.error(`Erro ao conectar à VM ${vmid}:`, error);
