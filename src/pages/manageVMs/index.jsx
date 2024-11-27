@@ -14,7 +14,7 @@ const Team = () => {
   // Constantes definidas diretamente no código
   const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca"; // Token de autenticação
   const API_USER = "apiuser@pve"; // Usuário da API
-  const API_BASE_URL = "https://prox.nnovup.com.br:8006"; // URL base da API
+  const API_BASE_URL = "https://prox.nnovup.com.br"; // URL base da API
 
   // Função para buscar a lista de VMs
   const fetchVMs = async () => {
