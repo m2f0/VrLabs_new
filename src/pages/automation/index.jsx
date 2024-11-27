@@ -161,6 +161,18 @@ const Team = () => {
     setGeneratedHTML(html);
   };
 
+  // Função para abrir o HTML em uma nova aba
+  const openGeneratedHTML = () => {
+    if (!generatedHTML) {
+      alert("Nenhum HTML gerado. Clique em 'Auto' primeiro.");
+      return;
+    }
+
+    const newWindow = window.open();
+    newWindow.document.write(generatedHTML);
+    newWindow.document.close();
+  };
+
   useEffect(() => {
     fetchVMs();
   }, []);
@@ -219,10 +231,21 @@ const Team = () => {
           style={{
             backgroundColor: colors.blueAccent[700],
             color: "white",
+            marginRight: "10px",
           }}
           onClick={generateHTML}
         >
           Auto
+        </Button>
+        <Button
+          variant="contained"
+          style={{
+            backgroundColor: colors.blueAccent[700],
+            color: "white",
+          }}
+          onClick={openGeneratedHTML}
+        >
+          Abrir HTML
         </Button>
       </Box>
       {generatedHTML && (
