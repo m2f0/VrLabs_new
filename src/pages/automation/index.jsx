@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
@@ -10,6 +10,8 @@ const Team = () => {
   const colors = tokens(theme.palette.mode);
 
   const [vmList, setVmList] = useState([]);
+  const [selectedVMs, setSelectedVMs] = useState([]);
+  const [generatedHTML, setGeneratedHTML] = useState("");
 
   // Constantes definidas diretamente no código
   const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca"; // Token de autenticação
@@ -50,64 +52,113 @@ const Team = () => {
     }
   };
 
-  // Função para iniciar uma VM
-  const startVM = async (vmid, node) => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/start`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Erro ao iniciar VM: ${response.status} ${response.statusText}`
-        );
-      }
-
-      alert(`VM ${vmid} iniciada com sucesso!`);
-      fetchVMs();
-    } catch (error) {
-      console.error(`Erro ao iniciar a VM ${vmid}:`, error);
-      alert(`Falha ao iniciar a VM ${vmid}.`);
+  // Função para gerar o código HTML
+  const generateHTML = () => {
+    if (selectedVMs.length === 0) {
+      alert("Selecione pelo menos uma VM para gerar o código HTML.");
+      return;
     }
-  };
 
-  // Função para parar uma VM
-  const stopVM = async (vmid, node) => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/stop`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
-          },
-        }
-      );
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Gerenciador de VMs</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+          }
+          .vm-container {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+          }
+          .vm-buttons button {
+            margin-right: 10px;
+            padding: 10px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+          }
+          .vm-buttons button:hover {
+            background-color: #1565c0;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Gerenciador de VMs</h1>
+        ${selectedVMs
+          .map((vmId) => {
+            const vm = vmList.find((vm) => vm.id === vmId);
+            return `
+            <div class="vm-container">
+              <p>VM: ${vm.name} (ID: ${vm.id})</p>
+              <div class="vm-buttons">
+                <button onclick="startVM('${vm.id}', '${vm.node}')">Start</button>
+                <button onclick="stopVM('${vm.id}', '${vm.node}')">Stop</button>
+                <button onclick="connectVM('${vm.id}', '${vm.node}')">Connect</button>
+              </div>
+            </div>
+          `;
+          })
+          .join("")}
+        <script>
+          const API_BASE_URL = "${API_BASE_URL}";
+          const API_USER = "${API_USER}";
+          const API_TOKEN = "${API_TOKEN}";
 
-      if (!response.ok) {
-        throw new Error(
-          `Erro ao parar VM: ${response.status} ${response.statusText}`
-        );
-      }
+          async function startVM(vmid, node) {
+            try {
+              const response = await fetch(
+                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
+                  },
+                }
+              );
+              if (!response.ok) throw new Error("Failed to start VM");
+              alert("VM " + vmid + " started successfully!");
+            } catch (error) {
+              alert("Error starting VM: " + error.message);
+            }
+          }
 
-      alert(`VM ${vmid} parada com sucesso!`);
-      fetchVMs();
-    } catch (error) {
-      console.error(`Erro ao parar a VM ${vmid}:`, error);
-      alert(`Falha ao parar a VM ${vmid}.`);
-    }
-  };
+          async function stopVM(vmid, node) {
+            try {
+              const response = await fetch(
+                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/stop\`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
+                  },
+                }
+              );
+              if (!response.ok) throw new Error("Failed to stop VM");
+              alert("VM " + vmid + " stopped successfully!");
+            } catch (error) {
+              alert("Error stopping VM: " + error.message);
+            }
+          }
 
-  // Função para conectar a uma VM
-  const connectVM = (vmid, node) => {
-    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
-    window.open(url, "_blank");
+          function connectVM(vmid, node) {
+            const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
+            window.open(url, "_blank");
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    setGeneratedHTML(html);
   };
 
   useEffect(() => {
@@ -119,38 +170,6 @@ const Team = () => {
     { field: "name", headerName: "Nome", width: 200 },
     { field: "status", headerName: "Status", width: 150 },
     { field: "node", headerName: "Node", width: 150 },
-    {
-      field: "actions",
-      headerName: "Ações",
-      width: 400,
-      renderCell: ({ row }) => (
-        <Box display="flex" gap="10px">
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => startVM(row.id, row.node)}
-            disabled={row.status === "running"}
-          >
-            Iniciar
-          </Button>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => stopVM(row.id, row.node)}
-            disabled={row.status === "stopped"}
-          >
-            Parar
-          </Button>
-          <Button
-            variant="contained"
-            color="info"
-            onClick={() => connectVM(row.id, row.node)}
-          >
-            Conectar
-          </Button>
-        </Box>
-      ),
-    },
   ];
 
   return (
@@ -163,7 +182,7 @@ const Team = () => {
       </Box>
       <Box
         m="8px 0 0 0"
-        height="80vh"
+        height="70vh"
         sx={{
           "& .MuiDataGrid-root": {
             border: "none",
@@ -187,8 +206,35 @@ const Team = () => {
           },
         }}
       >
-        <DataGrid rows={vmList} columns={columns} />
+        <DataGrid
+          rows={vmList}
+          columns={columns}
+          checkboxSelection
+          onSelectionModelChange={(ids) => setSelectedVMs(ids)}
+        />
       </Box>
+      <Box mt="20px" display="flex" justifyContent="center">
+        <Button
+          variant="contained"
+          style={{
+            backgroundColor: colors.blueAccent[700],
+            color: "white",
+          }}
+          onClick={generateHTML}
+        >
+          Auto
+        </Button>
+      </Box>
+      {generatedHTML && (
+        <Box mt="20px">
+          <Typography variant="h6">Código HTML Gerado:</Typography>
+          <textarea
+            style={{ width: "100%", height: "300px" }}
+            value={generatedHTML}
+            readOnly
+          />
+        </Box>
+      )}
     </Box>
   );
 };
