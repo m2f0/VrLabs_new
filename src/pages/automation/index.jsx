@@ -161,6 +161,13 @@ const Team = () => {
     setGeneratedHTML(html);
   };
 
+  // Função para abrir uma nova aba com o HTML gerado
+  const openHTML = () => {
+    const newWindow = window.open();
+    newWindow.document.write(generatedHTML);
+    newWindow.document.close();
+  };
+
   useEffect(() => {
     fetchVMs();
   }, []);
@@ -213,7 +220,7 @@ const Team = () => {
           onSelectionModelChange={(ids) => setSelectedVMs(ids)}
         />
       </Box>
-      <Box mt="20px" display="flex" justifyContent="center">
+      <Box mt="20px" display="flex" justifyContent="center" gap="10px">
         <Button
           variant="contained"
           style={{
@@ -224,6 +231,18 @@ const Team = () => {
         >
           Auto
         </Button>
+        {generatedHTML && (
+          <Button
+            variant="contained"
+            style={{
+              backgroundColor: colors.blueAccent[700],
+              color: "white",
+            }}
+            onClick={openHTML}
+          >
+            Abrir HTML
+          </Button>
+        )}
       </Box>
       {generatedHTML && (
         <Box mt="20px">
