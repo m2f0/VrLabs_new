@@ -80,6 +80,18 @@ const Team = () => {
     }
   };
 
+  // Função para conectar à VM
+  const connectVM = async (vmid) => {
+    try {
+      // Aqui pode ser configurado para abrir o console VNC ou SPICE, ou redirecionar para uma URL específica
+      const url = `https://proxmox.cecyber.com:8006/?console=kvm&novnc=1&vmid=${vmid}&node=your-node`;
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error(`Error connecting to VM ${vmid}:`, error);
+      alert(`Failed to connect to VM ${vmid}`);
+    }
+  };
+
   useEffect(() => {
     fetchVMs();
   }, []);
@@ -91,7 +103,7 @@ const Team = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 300,
+      width: 400,
       renderCell: ({ row }) => (
         <Box display="flex" gap="10px">
           <Button
@@ -109,6 +121,13 @@ const Team = () => {
             disabled={row.status === "stopped"} // Desabilita o botão se a VM já estiver parada
           >
             Stop
+          </Button>
+          <Button
+            variant="contained"
+            color="info"
+            onClick={() => connectVM(row.id)}
+          >
+            Connect
           </Button>
         </Box>
       ),
