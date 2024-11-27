@@ -23,24 +23,27 @@ const Team = () => {
         `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
-          mode: "no-cors", // Habilitar modo no-cors
           headers: {
             Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
         }
       );
-      console.log("Fetch executado com modo no-cors.");
-      const data = await response.json();
-      if (data.data) {
-        setVmList(
-          data.data.map((vm) => ({
-            id: vm.vmid,
-            name: vm.name,
-            status: vm.status,
-            node: vm.node,
-          }))
+
+      if (!response.ok) {
+        throw new Error(
+          `Erro na API do Proxmox: ${response.status} ${response.statusText}`
         );
       }
+
+      const data = await response.json();
+      setVmList(
+        data.data.map((vm) => ({
+          id: vm.vmid,
+          name: vm.name,
+          status: vm.status,
+          node: vm.node,
+        }))
+      );
     } catch (error) {
       console.error("Erro ao buscar lista de VMs:", error);
       alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
@@ -50,16 +53,22 @@ const Team = () => {
   // Função para iniciar uma VM
   const startVM = async (vmid, node) => {
     try {
-      await fetch(
+      const response = await fetch(
         `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/start`,
         {
           method: "POST",
-          mode: "no-cors",
           headers: {
             Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
         }
       );
+
+      if (!response.ok) {
+        throw new Error(
+          `Erro ao iniciar VM: ${response.status} ${response.statusText}`
+        );
+      }
+
       alert(`VM ${vmid} iniciada com sucesso!`);
       fetchVMs();
     } catch (error) {
@@ -71,16 +80,22 @@ const Team = () => {
   // Função para parar uma VM
   const stopVM = async (vmid, node) => {
     try {
-      await fetch(
+      const response = await fetch(
         `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/stop`,
         {
           method: "POST",
-          mode: "no-cors",
           headers: {
             Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
         }
       );
+
+      if (!response.ok) {
+        throw new Error(
+          `Erro ao parar VM: ${response.status} ${response.statusText}`
+        );
+      }
+
       alert(`VM ${vmid} parada com sucesso!`);
       fetchVMs();
     } catch (error) {
@@ -90,14 +105,9 @@ const Team = () => {
   };
 
   // Função para conectar a uma VM
-  const connectVM = async (vmid, node) => {
-    try {
-      const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
-      window.open(url, "_blank");
-    } catch (error) {
-      console.error(`Erro ao conectar à VM ${vmid}:`, error);
-      alert(`Falha ao conectar à VM ${vmid}.`);
-    }
+  const connectVM = (vmid, node) => {
+    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
+    window.open(url, "_blank");
   };
 
   useEffect(() => {
