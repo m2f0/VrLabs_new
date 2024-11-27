@@ -203,7 +203,7 @@ const MyProSidebar = () => {
             />
             <Item
               title="Create Automation"
-              to="/"
+              to="/Automation"
               icon={<AutoMode />}
               selected={selected}
               setSelected={setSelected}
