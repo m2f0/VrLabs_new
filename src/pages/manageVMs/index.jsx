@@ -12,9 +12,9 @@ const Team = () => {
   const [vmList, setVmList] = useState([]);
 
   // Constantes definidas diretamente no código
-  const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca"; // Substitua pelo seu token real
-  const API_USER = "apiuser@pve";
-  const API_BASE_URL = "https://prox.nnovup.com.br:8006";
+  const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca"; // Token de autenticação
+  const API_USER = "apiuser@pve"; // Usuário da API
+  const API_BASE_URL = "https://prox.nnovup.com.br:8006"; // URL base da API
 
   // Função para buscar a lista de VMs
   const fetchVMs = async () => {
@@ -23,14 +23,13 @@ const Team = () => {
         `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
+          mode: "no-cors", // Habilitar modo no-cors
           headers: {
             Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
         }
       );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.log("Fetch executado com modo no-cors.");
       const data = await response.json();
       if (data.data) {
         setVmList(
@@ -43,10 +42,8 @@ const Team = () => {
         );
       }
     } catch (error) {
-      console.error("Erro ao buscar a lista de VMs:", error);
-      alert(
-        "Erro ao buscar a lista de VMs. Verifique o console para mais detalhes."
-      );
+      console.error("Erro ao buscar lista de VMs:", error);
+      alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
     }
   };
 
@@ -57,6 +54,7 @@ const Team = () => {
         `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/start`,
         {
           method: "POST",
+          mode: "no-cors",
           headers: {
             Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
@@ -66,7 +64,7 @@ const Team = () => {
       fetchVMs();
     } catch (error) {
       console.error(`Erro ao iniciar a VM ${vmid}:`, error);
-      alert(`Falha ao iniciar a VM ${vmid}`);
+      alert(`Falha ao iniciar a VM ${vmid}.`);
     }
   };
 
@@ -77,6 +75,7 @@ const Team = () => {
         `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/stop`,
         {
           method: "POST",
+          mode: "no-cors",
           headers: {
             Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
@@ -86,7 +85,7 @@ const Team = () => {
       fetchVMs();
     } catch (error) {
       console.error(`Erro ao parar a VM ${vmid}:`, error);
-      alert(`Falha ao parar a VM ${vmid}`);
+      alert(`Falha ao parar a VM ${vmid}.`);
     }
   };
 
@@ -97,7 +96,7 @@ const Team = () => {
       window.open(url, "_blank");
     } catch (error) {
       console.error(`Erro ao conectar à VM ${vmid}:`, error);
-      alert(`Falha ao conectar à VM ${vmid}`);
+      alert(`Falha ao conectar à VM ${vmid}.`);
     }
   };
 
