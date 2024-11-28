@@ -4,6 +4,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import { useTheme } from "@mui/material/styles";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
 const Team = () => {
   const theme = useTheme();
@@ -12,6 +13,10 @@ const Team = () => {
   const [vmList, setVmList] = useState([]);
   const [selectedVMs, setSelectedVMs] = useState([]);
   const [generatedHTML, setGeneratedHTML] = useState("");
+  const [fileName, setFileName] = useState(""); // Novo estado para o nome do arquivo
+  const [fileList, setFileList] = useState([]); // Lista de arquivos existentes
+  const [selectedFile, setSelectedFile] = useState(""); // Arquivo selecionado
+  const [embedCode, setEmbedCode] = useState(""); // Código do botão embutido
 
   // Constantes definidas diretamente no código
   const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca"; // Token de autenticação
@@ -52,6 +57,33 @@ const Team = () => {
     }
   };
 
+  const fetchFiles = async () => {
+    try {
+      const response = await fetch("https://jm7xgg-3000.csb.app/list-htmls");
+      if (!response.ok) {
+        throw new Error("Erro ao buscar a lista de arquivos.");
+      }
+      const data = await response.json();
+
+      // Filtrar o arquivo script.js
+      const filteredFiles = data.files.filter((file) => file !== "script.js");
+
+      setFileList(filteredFiles); // Atualiza o estado com a lista filtrada
+    } catch (error) {
+      console.error("Erro ao buscar arquivos:", error);
+      alert("Falha ao buscar os arquivos existentes.");
+    }
+  };
+
+  const openFile = () => {
+    if (!selectedFile) {
+      alert("Selecione um arquivo para abrir.");
+      return;
+    }
+    const fileUrl = `https://jm7xgg-3000.csb.app/HTMLs/${selectedFile}`; // URL do arquivo
+    window.open(fileUrl, "_blank"); // Abre o arquivo em uma nova aba
+  };
+
   // Função para gerar o código HTML
   const generateHTML = () => {
     if (selectedVMs.length === 0) {
@@ -90,12 +122,10 @@ const Team = () => {
             background-color: #1565c0;
           }
         </style>
+        <script src="https://jm7xgg-3000.csb.app/HTMLs/script.js"></script>
       </head>
       <body>
         <h1>Gerenciador de VMs</h1>
-        <label for="studentCode"><strong>Código do Aluno:</strong></label>
-        <input type="text" id="studentCode" name="studentCode" placeholder="Digite o código do aluno">
-        <br><br>
         ${selectedVMs
           .map((vmId) => {
             const vm = vmList.find((vm) => vm.id === vmId);
@@ -114,100 +144,69 @@ const Team = () => {
           `;
           })
           .join("")}
-        <script>
-          const API_BASE_URL = "${API_BASE_URL}";
-          const API_USER = "${API_USER}";
-          const API_TOKEN = "${API_TOKEN}";
-  
-          async function makeRequest(url, method, body = null) {
-            const options = {
-              method,
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
-              },
-            };
-  
-            if (body) {
-              options.body = new URLSearchParams(body);
-            }
-  
-            try {
-              console.log("Enviando requisição:", { url, options });
-              const response = await fetch(url, options);
-              console.log("Resposta recebida:", response);
-  
-              if (!response.ok) {
-                throw new Error(\`Erro na solicitação: \${response.status}\`);
-              }
-  
-              return null; // Resposta ignorada no modo no-cors
-            } catch (error) {
-              console.error("Erro na requisição:", error);
-              alert(\`Erro na solicitação: \${error.message}\`);
-              throw error;
-            }
-          }
-  
-          async function createLab(vmid, node, name) {
-            const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
-            if (!newVmId) {
-              alert("ID da nova VM é obrigatório.");
-              return;
-            }
-  
-            try {
-              await makeRequest(
-                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`,
-                "POST",
-                {
-                  newid: newVmId,
-                  name: \`\${name}-lab-\${newVmId}\`,
-                  snapname: "SNAP_1",
-                  full: 0,
-                }
-              );
-  
-              alert("Solicitação enviada! Verifique no Proxmox o status da operação.");
-            } catch (error) {
-              console.error("Erro ao criar laboratório:", error);
-            }
-          }
-  
-          async function startVM(vmid, node) {
-            try {
-              await makeRequest(
-                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`,
-                "POST"
-              );
-              alert("Solicitação enviada para iniciar a VM.");
-            } catch (error) {
-              console.error("Erro ao iniciar a VM:", error);
-            }
-          }
-  
-          async function stopVM(vmid, node) {
-            try {
-              await makeRequest(
-                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/stop\`,
-                "POST"
-              );
-              alert("Solicitação enviada para parar a VM.");
-            } catch (error) {
-              console.error("Erro ao parar a VM:", error);
-            }
-          }
-  
-          function connectVM(vmid, node) {
-            const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
-            window.open(url, "_blank");
-          }
-        </script>
       </body>
       </html>
     `;
 
-    setGeneratedHTML(html);
+    setGeneratedHTML(html); // Atualiza o HTML gerado
+  };
+
+  const saveHTML = async () => {
+    if (!fileName) {
+      alert("Por favor, insira um nome para o arquivo.");
+      return;
+    }
+
+    if (!generatedHTML) {
+      alert("Nenhum HTML foi gerado para salvar.");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://jm7xgg-3000.csb.app/save-html", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filename: `${fileName}.html`, // Nome do arquivo com extensão .html
+          content: generatedHTML, // Conteúdo do HTML gerado
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao salvar o HTML no servidor.");
+      }
+
+      alert("HTML salvo com sucesso no servidor!");
+    } catch (error) {
+      console.error("Erro ao salvar o HTML:", error);
+      alert("Erro ao salvar o HTML.");
+    }
+  };
+
+  const deleteFile = async (fileName) => {
+    const confirmDelete = window.confirm(
+      `Tem certeza de que deseja excluir o arquivo "${fileName}"?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(
+        `https://jm7xgg-3000.csb.app/delete-html/${fileName}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao excluir o arquivo.");
+      }
+
+      alert(`Arquivo "${fileName}" excluído com sucesso.`);
+      fetchFiles(); // Atualizar a lista de arquivos após exclusão
+    } catch (error) {
+      console.error("Erro ao excluir o arquivo:", error);
+      alert("Erro ao excluir o arquivo.");
+    }
   };
 
   // Função para abrir uma nova aba com o HTML gerado
@@ -219,6 +218,7 @@ const Team = () => {
 
   useEffect(() => {
     fetchVMs();
+    fetchFiles(); // Buscar arquivos existentes
   }, []);
 
   const columns = [
@@ -230,15 +230,85 @@ const Team = () => {
 
   return (
     <Box m="20px">
+      <Box mt="40px">
+        <Header
+          title="Arquivos HTML"
+          subtitle="Gerencie seus arquivos gerados"
+        />
+        <Box
+          m="8px 0 0 0"
+          height="40vh"
+          sx={{
+            "& .MuiDataGrid-root": {
+              border: "none",
+            },
+            "& .MuiDataGrid-cell": {
+              borderBottom: "none",
+            },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: colors.blueAccent[700],
+              borderBottom: "none",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: colors.primary[400],
+            },
+            "& .MuiDataGrid-footerContainer": {
+              borderTop: "none",
+              backgroundColor: colors.blueAccent[700],
+            },
+            "& .MuiCheckbox-root": {
+              color: `${colors.greenAccent[200]} !important`,
+            },
+          }}
+        >
+          <DataGrid
+            rows={fileList.map((file, index) => ({ id: index, name: file }))}
+            columns={[
+              {
+                field: "name",
+                headerName: "Nome do Arquivo",
+                width: 300,
+                renderCell: (params) => (
+                  <Box display="flex" alignItems="center" gap="10px">
+                    <Typography>{params.value}</Typography>
+                    <DeleteForeverIcon
+                      style={{ cursor: "pointer", color: "red" }}
+                      onClick={() => deleteFile(params.value)}
+                    />
+                  </Box>
+                ),
+              },
+            ]}
+            checkboxSelection
+            onSelectionModelChange={(ids) => {
+              const selected = fileList[ids[0]];
+              setSelectedFile(selected); // Atualiza o arquivo selecionado
+            }}
+          />
+        </Box>
+        <Box mt="20px" display="flex" justifyContent="center" gap="10px">
+          <Button
+            variant="contained"
+            style={{
+              backgroundColor: colors.blueAccent[700],
+              color: "white",
+            }}
+            onClick={openFile}
+          >
+            Abrir Arquivo
+          </Button>
+        </Box>
+      </Box>
+
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header
-          title="Máquinas Virtuais"
+          title="Automação de Máquinas Virtuais"
           subtitle="Gerencie e Controle Suas VMs"
         />
       </Box>
       <Box
         m="8px 0 0 0"
-        height="70vh"
+        height="40vh"
         sx={{
           "& .MuiDataGrid-root": {
             border: "none",
@@ -269,7 +339,14 @@ const Team = () => {
           onSelectionModelChange={(ids) => setSelectedVMs(ids)}
         />
       </Box>
-      <Box mt="20px" display="flex" justifyContent="center" gap="10px">
+
+      <Box
+        mt="20px"
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        gap="10px"
+      >
         <Button
           variant="contained"
           style={{
@@ -280,29 +357,55 @@ const Team = () => {
         >
           Auto
         </Button>
+        {embedCode && (
+          <Box mt="20px">
+            <Typography variant="h6">Código do Botão Embutido:</Typography>
+            <textarea
+              style={{ width: "100%", height: "100px" }}
+              value={embedCode}
+              readOnly
+            />
+          </Box>
+        )}
+
         {generatedHTML && (
-          <Button
-            variant="contained"
-            style={{
-              backgroundColor: colors.blueAccent[700],
-              color: "white",
-            }}
-            onClick={openHTML}
-          >
-            Abrir HTML
-          </Button>
+          <>
+            <Button
+              variant="contained"
+              style={{
+                backgroundColor: colors.blueAccent[700],
+                color: "white",
+              }}
+              onClick={openHTML}
+            >
+              Abrir HTML
+            </Button>
+            <input
+              type="text"
+              placeholder="Digite o nome do arquivo"
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
+              style={{
+                padding: "10px",
+                fontSize: "16px",
+                border: "1px solid #ccc",
+                borderRadius: "5px",
+                flex: "1",
+              }}
+            />
+            <Button
+              variant="contained"
+              style={{
+                backgroundColor: colors.blueAccent[700],
+                color: "white",
+              }}
+              onClick={saveHTML}
+            >
+              Gravar
+            </Button>
+          </>
         )}
       </Box>
-      {generatedHTML && (
-        <Box mt="20px">
-          <Typography variant="h6">Código HTML Gerado:</Typography>
-          <textarea
-            style={{ width: "100%", height: "300px" }}
-            value={generatedHTML}
-            readOnly
-          />
-        </Box>
-      )}
     </Box>
   );
 };
