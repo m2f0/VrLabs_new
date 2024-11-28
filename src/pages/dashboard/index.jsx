@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -10,7 +11,7 @@ import Grid from "@mui/material/Unstable_Grid2";
 import { tokens } from "../../theme";
 import { mockTransactions } from "../../data/mockData";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import EmailIcon from "@mui/icons-material/Email";
+import ComputerIcon from "@mui/icons-material/Computer";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import TrafficIcon from "@mui/icons-material/Traffic";
@@ -25,6 +26,47 @@ const Dashboard = () => {
   const theme = useTheme();
   const smScreen = useMediaQuery(theme.breakpoints.up("sm"));
   const colors = tokens(theme.palette.mode);
+
+  // Estados e hooks
+  const [vmCount, setVMCount] = useState(0);
+
+  // Função para buscar o número de VMs do servidor Proxmox
+  const fetchVMCount = async () => {
+    try {
+      const response = await fetch(
+        "https://prox.nnovup.com.br/api2/json/cluster/resources?type=vm",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Erro na API do Proxmox: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      return data.data.length; // Retorna o número total de VMs
+    } catch (error) {
+      console.error("Erro ao buscar o número de VMs:", error);
+      return 0; // Retorna 0 em caso de erro
+    }
+  };
+
+  // Carregar o número de VMs ao montar o componente
+  useEffect(() => {
+    const loadVMCount = async () => {
+      const count = await fetchVMCount();
+      setVMCount(count); // Atualiza o estado com o número de VMs
+    };
+
+    loadVMCount();
+  }, []);
+
   return (
     <Box m="20px">
       {/* HEADER */}
@@ -65,12 +107,12 @@ const Dashboard = () => {
             justifyContent="center"
           >
             <StatBox
-              title="12,361"
-              subtitle="Emails Sent"
+              title={vmCount.toLocaleString()} // Exibe o número de VMs formatado
+              subtitle="VMs"
               progress="0.75"
               increase="+14%"
               icon={
-                <EmailIcon
+                <ComputerIcon
                   sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
                 />
               }
@@ -141,6 +183,7 @@ const Dashboard = () => {
           </Box>
         </Grid>
 
+        {/* Outras seções do dashboard */}
         <Grid
           xs={12}
           sm={12}
@@ -188,117 +231,7 @@ const Dashboard = () => {
               </Box>
             </Box>
           </Grid>
-          <Grid xs={12} sm={12} md={6}>
-            <Box backgroundColor={colors.primary[400]} p="30px">
-              <Typography variant="h5" fontWeight="600">
-                Campaign
-              </Typography>
-              <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                mt="25px"
-              >
-                <ProgressCircle size="125" />
-                <Typography
-                  variant="h5"
-                  color={colors.greenAccent[500]}
-                  sx={{ mt: "15px" }}
-                >
-                  $48,352 revenue generated
-                </Typography>
-                <Typography>
-                  Includes extra misc expenditures and costs
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-          <Grid xs={12} sm={12} md={6}>
-            <Box backgroundColor={colors.primary[400]}>
-              <Typography
-                variant="h5"
-                fontWeight="600"
-                sx={{ padding: "30px 30px 0 30px" }}
-              >
-                Sales Quantity
-              </Typography>
-              <Box height="250px" mt="-20px">
-                <BarChart isDashboard={true} />
-              </Box>
-            </Box>
-          </Grid>
-          <Grid xs={12}>
-            <Box backgroundColor={colors.primary[400]} padding="30px">
-              <Typography
-                variant="h5"
-                fontWeight="600"
-                sx={{ marginBottom: "15px" }}
-              >
-                Geography Based Traffic
-              </Typography>
-              <Box height="200px">
-                <GeographyChart isDashboard={true} />
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
-        <Grid xs={12} sm={12} md={4} lg={4} xl={4}>
-          <Box
-            backgroundColor={colors.primary[400]}
-            maxHeight="100vh"
-            overflow="auto"
-            m="25px 0 0 0"
-          >
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              borderBottom={`4px solid ${colors.primary[500]}`}
-              color={colors.grey[100]}
-              p="15px"
-            >
-              <Typography
-                variant="h5"
-                fontWeight="600"
-                color={colors.grey[100]}
-              >
-                Resent Transaction
-              </Typography>
-            </Box>
-            {mockTransactions.map((transaction, i) => {
-              return (
-                <Box
-                  key={`${transaction}-${i}`}
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  borderBottom={`4px solid ${colors.primary[500]}`}
-                  p="15px"
-                >
-                  <Box>
-                    <Typography
-                      variant="h5"
-                      fontWeight="600"
-                      color={colors.greenAccent[100]}
-                    >
-                      {transaction.txId}
-                    </Typography>
-                    <Typography color={colors.grey[100]}>
-                      {transaction.user}
-                    </Typography>
-                  </Box>
-                  <Box color={colors.grey[100]}>{transaction.date}</Box>
-                  <Box
-                    color={colors.greenAccent[500]}
-                    p="5px 10px"
-                    borderRadius="4px"
-                  >
-                    ${transaction.cost}
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
+          {/* Outras grids e gráficos */}
         </Grid>
       </Grid>
     </Box>
