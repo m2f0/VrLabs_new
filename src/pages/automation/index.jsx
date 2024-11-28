@@ -93,13 +93,19 @@ const Team = () => {
       </head>
       <body>
         <h1>Gerenciador de VMs</h1>
+        <label for="studentCode"><strong>Código do Aluno:</strong></label>
+        <input type="text" id="studentCode" name="studentCode" placeholder="Digite o código do aluno">
+        <br><br>
         ${selectedVMs
           .map((vmId) => {
             const vm = vmList.find((vm) => vm.id === vmId);
+            if (!vm) return ""; // Evita problemas com VMs inexistentes
+
             return `
             <div class="vm-container">
               <p>VM: ${vm.name} (ID: ${vm.id})</p>
               <div class="vm-buttons">
+                <button onclick="createLab('${vm.id}', '${vm.node}', '${vm.name}')">Criar Laboratório</button>
                 <button onclick="startVM('${vm.id}', '${vm.node}')">Start</button>
                 <button onclick="stopVM('${vm.id}', '${vm.node}')">Stop</button>
                 <button onclick="connectVM('${vm.id}', '${vm.node}')">Connect</button>
@@ -112,43 +118,86 @@ const Team = () => {
           const API_BASE_URL = "${API_BASE_URL}";
           const API_USER = "${API_USER}";
           const API_TOKEN = "${API_TOKEN}";
-
+  
+          async function makeRequest(url, method, body = null) {
+            const options = {
+              method,
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
+              },
+            };
+  
+            if (body) {
+              options.body = new URLSearchParams(body);
+            }
+  
+            try {
+              console.log("Enviando requisição:", { url, options });
+              const response = await fetch(url, options);
+              console.log("Resposta recebida:", response);
+  
+              if (!response.ok) {
+                throw new Error(\`Erro na solicitação: \${response.status}\`);
+              }
+  
+              return null; // Resposta ignorada no modo no-cors
+            } catch (error) {
+              console.error("Erro na requisição:", error);
+              alert(\`Erro na solicitação: \${error.message}\`);
+              throw error;
+            }
+          }
+  
+          async function createLab(vmid, node, name) {
+            const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
+            if (!newVmId) {
+              alert("ID da nova VM é obrigatório.");
+              return;
+            }
+  
+            try {
+              await makeRequest(
+                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`,
+                "POST",
+                {
+                  newid: newVmId,
+                  name: \`\${name}-lab-\${newVmId}\`,
+                  snapname: "SNAP_1",
+                  full: 0,
+                }
+              );
+  
+              alert("Solicitação enviada! Verifique no Proxmox o status da operação.");
+            } catch (error) {
+              console.error("Erro ao criar laboratório:", error);
+            }
+          }
+  
           async function startVM(vmid, node) {
             try {
-              const response = await fetch(
+              await makeRequest(
                 \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
-                  },
-                }
+                "POST"
               );
-              if (!response.ok) throw new Error("Failed to start VM");
-              alert("VM " + vmid + " started successfully!");
+              alert("Solicitação enviada para iniciar a VM.");
             } catch (error) {
-              alert("Error starting VM: " + error.message);
+              console.error("Erro ao iniciar a VM:", error);
             }
           }
-
+  
           async function stopVM(vmid, node) {
             try {
-              const response = await fetch(
+              await makeRequest(
                 \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/stop\`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
-                  },
-                }
+                "POST"
               );
-              if (!response.ok) throw new Error("Failed to stop VM");
-              alert("VM " + vmid + " stopped successfully!");
+              alert("Solicitação enviada para parar a VM.");
             } catch (error) {
-              alert("Error stopping VM: " + error.message);
+              console.error("Erro ao parar a VM:", error);
             }
           }
-
+  
           function connectVM(vmid, node) {
             const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
             window.open(url, "_blank");
