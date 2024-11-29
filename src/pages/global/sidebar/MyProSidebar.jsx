@@ -17,6 +17,7 @@ import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import PieChartOutlineOutlinedIcon from "@mui/icons-material/PieChartOutlineOutlined";
+import HtmlIcon from "@mui/icons-material/Html";
 
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
@@ -205,6 +206,13 @@ const MyProSidebar = () => {
               title="Automation"
               to="/Automation"
               icon={<AutoMode />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Item
+              title="Files"
+              to="/Files"
+              icon={<HtmlIcon />}
               selected={selected}
               setSelected={setSelected}
             />

@@ -1,27 +1,37 @@
 import React, { useEffect, useState } from "react";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import { useTheme } from "@mui/material/styles";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
-const Team = () => {
+const VmAutomation = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
   const [vmList, setVmList] = useState([]);
   const [selectedVMs, setSelectedVMs] = useState([]);
   const [generatedHTML, setGeneratedHTML] = useState("");
-  const [fileName, setFileName] = useState(""); // Novo estado para o nome do arquivo
-  const [fileList, setFileList] = useState([]); // Lista de arquivos existentes
-  const [selectedFile, setSelectedFile] = useState(""); // Arquivo selecionado
-  const [embedCode, setEmbedCode] = useState(""); // Código do botão embutido
+  const [fileName, setFileName] = useState("");
+  const [isGenerated, setIsGenerated] = useState(false); // Controla exibição do botão e campo de salvar
 
-  // Constantes definidas diretamente no código
-  const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca"; // Token de autenticação
-  const API_USER = "apiuser@pve"; // Usuário da API
-  const API_BASE_URL = "https://prox.nnovup.com.br"; // URL base da API
+  const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca";
+  const API_USER = "apiuser@pve";
+  const API_BASE_URL = "https://prox.nnovup.com.br";
+
+  // Estado para armazenar o código do botão embed
+  const [embedCode, setEmbedCode] = useState("");
+
+  // Função para gerar o código embed do botão
+  const generateEmbedCode = () => {
+    if (!fileName) {
+      alert("Defina um nome de arquivo para o HTML.");
+      return;
+    }
+
+    const embed = `<button onclick="window.open('https://nd54q7-3000.csb.app/HTMLs/${fileName}.html', '_blank')">Abrir HTML</button>`;
+    setEmbedCode(embed);
+  };
 
   // Função para buscar a lista de VMs
   const fetchVMs = async () => {
@@ -57,34 +67,42 @@ const Team = () => {
     }
   };
 
-  const fetchFiles = async () => {
-    try {
-      const response = await fetch("https://jm7xgg-3000.csb.app/list-htmls");
-      if (!response.ok) {
-        throw new Error("Erro ao buscar a lista de arquivos.");
-      }
-      const data = await response.json();
-
-      // Filtrar o arquivo script.js
-      const filteredFiles = data.files.filter((file) => file !== "script.js");
-
-      setFileList(filteredFiles); // Atualiza o estado com a lista filtrada
-    } catch (error) {
-      console.error("Erro ao buscar arquivos:", error);
-      alert("Falha ao buscar os arquivos existentes.");
-    }
-  };
-
-  const openFile = () => {
-    if (!selectedFile) {
-      alert("Selecione um arquivo para abrir.");
+  // Função para salvar o HTML gerado
+  const saveHTML = async () => {
+    if (!fileName) {
+      alert("Por favor, insira um nome para o arquivo.");
       return;
     }
-    const fileUrl = `https://jm7xgg-3000.csb.app/HTMLs/${selectedFile}`; // URL do arquivo
-    window.open(fileUrl, "_blank"); // Abre o arquivo em uma nova aba
+
+    if (!generatedHTML) {
+      alert("Nenhum HTML foi gerado para salvar.");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://nd54q7-3000.csb.app/save-html", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filename: `${fileName}.html`,
+          content: generatedHTML,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao salvar o HTML no servidor.");
+      }
+
+      alert("HTML salvo com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar o HTML:", error);
+      alert("Erro ao salvar o HTML.");
+    }
   };
 
-  // Função para gerar o código HTML
+  // Função para gerar o HTML
   const generateHTML = () => {
     if (selectedVMs.length === 0) {
       alert("Selecione pelo menos uma VM para gerar o código HTML.");
@@ -99,287 +117,229 @@ const Team = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Laboratórios</title>
         <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .vm-container { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+          .vm-buttons { margin-top: 10px; }
+          .vm-buttons button { margin-right: 10px; padding: 10px; background-color: #1976d2; color: white; border: none; border-radius: 5px; cursor: pointer; }
+          .vm-buttons button:hover { background-color: #1565c0; }
+          .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 10px auto;
           }
-          .vm-container {
-            margin-bottom: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
           }
-          .vm-buttons button {
-            margin-right: 10px;
+          #connect-button {
+            display: none;
+            margin-top: 10px;
             padding: 10px;
-            background-color: #1976d2;
+            background-color: #4caf50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
           }
-          .vm-buttons button:hover {
-            background-color: #1565c0;
+          #connect-button:hover {
+            background-color: #45a049;
           }
         </style>
-        <script src="https://jm7xgg-3000.csb.app/HTMLs/script.js"></script>
+        <script>
+          async function startLab(vmid, node, name) {
+            const newVmId = prompt("Digite o ID do novo Linked Clone:");
+            if (!newVmId) {
+              alert("ID do novo Linked Clone é obrigatório.");
+              return;
+            }
+  
+            const API_BASE_URL = "https://prox.nnovup.com.br";
+            const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca";
+            const API_USER = "apiuser@pve";
+  
+            async function createClone() {
+              try {
+                const response = await fetch(
+                  \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/x-www-form-urlencoded",
+                      Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
+                    },
+                    body: new URLSearchParams({
+                      newid: newVmId,
+                      name: \`\${name}-lab-\${newVmId}\`,
+                      snapname: "SNAP_1",
+                      full: 0,
+                    }),
+                  }
+                );
+  
+                if (!response.ok) {
+                  throw new Error(\`Erro ao criar o Linked Clone: \${response.status} \${response.statusText}\`);
+                }
+  
+                alert("Linked Clone criado com sucesso!");
+                return true;
+              } catch (error) {
+                console.error("Erro ao criar Linked Clone:", error);
+                alert("Erro ao criar Linked Clone.");
+                return false;
+              }
+            }
+  
+            async function startClone() {
+              try {
+                const response = await fetch(
+                  \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${newVmId}/status/start\`,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
+                    },
+                  }
+                );
+  
+                if (!response.ok) {
+                  throw new Error(\`Erro ao iniciar o Linked Clone: \${response.status} \${response.statusText}\`);
+                }
+  
+                alert("Linked Clone iniciado com sucesso!");
+                return true;
+              } catch (error) {
+                console.error("Erro ao iniciar Linked Clone:", error);
+                alert("Erro ao iniciar Linked Clone.");
+                return false;
+              }
+            }
+  
+            function showSpinnerAndConnect() {
+              const spinner = document.getElementById("spinner");
+              const connectButton = document.getElementById("connect-button");
+              spinner.style.display = "block";
+  
+              setTimeout(() => {
+                spinner.style.display = "none";
+                connectButton.style.display = "block";
+              }, 20000); // 20 segundos
+            }
+  
+            async function connectClone() {
+              const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${newVmId}&node=\${node}\`;
+              window.open(url, "_blank");
+            }
+  
+            const cloneCreated = await createClone();
+            if (cloneCreated) {
+              const cloneStarted = await startClone();
+              if (cloneStarted) {
+                showSpinnerAndConnect();
+                const connectBtn = document.getElementById("connect-button");
+                connectBtn.onclick = connectClone;
+              }
+            }
+          }
+        </script>
       </head>
       <body>
         <h1>Gerenciador de VMs</h1>
         ${selectedVMs
           .map((vmId) => {
             const vm = vmList.find((vm) => vm.id === vmId);
-            if (!vm) return ""; // Evita problemas com VMs inexistentes
+            if (!vm) return "";
 
             return `
-            <div class="vm-container">
-              <p>VM: ${vm.name} (ID: ${vm.id})</p>
-              <div class="vm-buttons">
-                <button onclick="createLab('${vm.id}', '${vm.node}', '${vm.name}')">Criar Laboratório</button>
-                <button onclick="startVM('${vm.id}', '${vm.node}')">Start</button>
-                <button onclick="stopVM('${vm.id}', '${vm.node}')">Stop</button>
-                <button onclick="connectVM('${vm.id}', '${vm.node}')">Connect</button>
+              <div class="vm-container">
+                <p>VM: ${vm.name} (ID: ${vm.id})</p>
+                <div class="vm-buttons">
+                  <button onclick="startLab('${vm.id}', '${vm.node}', '${vm.name}')">Iniciar Laboratório</button>
+                  <div id="spinner" class="spinner"></div>
+                  <button id="connect-button">Conectar</button>
+                </div>
               </div>
-            </div>
-          `;
+            `;
           })
           .join("")}
       </body>
       </html>
     `;
 
-    setGeneratedHTML(html); // Atualiza o HTML gerado
-  };
-
-  const saveHTML = async () => {
-    if (!fileName) {
-      alert("Por favor, insira um nome para o arquivo.");
-      return;
-    }
-
-    if (!generatedHTML) {
-      alert("Nenhum HTML foi gerado para salvar.");
-      return;
-    }
-
-    try {
-      const response = await fetch("https://jm7xgg-3000.csb.app/save-html", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filename: `${fileName}.html`, // Nome do arquivo com extensão .html
-          content: generatedHTML, // Conteúdo do HTML gerado
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao salvar o HTML no servidor.");
-      }
-
-      alert("HTML salvo com sucesso no servidor!");
-    } catch (error) {
-      console.error("Erro ao salvar o HTML:", error);
-      alert("Erro ao salvar o HTML.");
-    }
-  };
-
-  const deleteFile = async (fileName) => {
-    const confirmDelete = window.confirm(
-      `Tem certeza de que deseja excluir o arquivo "${fileName}"?`
-    );
-    if (!confirmDelete) return;
-
-    try {
-      const response = await fetch(
-        `https://jm7xgg-3000.csb.app/delete-html/${fileName}`,
-        { method: "DELETE" }
-      );
-
-      if (!response.ok) {
-        throw new Error("Erro ao excluir o arquivo.");
-      }
-
-      alert(`Arquivo "${fileName}" excluído com sucesso.`);
-      fetchFiles(); // Atualizar a lista de arquivos após exclusão
-    } catch (error) {
-      console.error("Erro ao excluir o arquivo:", error);
-      alert("Erro ao excluir o arquivo.");
-    }
-  };
-
-  // Função para abrir uma nova aba com o HTML gerado
-  const openHTML = () => {
-    const newWindow = window.open();
-    newWindow.document.write(generatedHTML);
-    newWindow.document.close();
+    setGeneratedHTML(html);
+    setIsGenerated(true);
   };
 
   useEffect(() => {
     fetchVMs();
-    fetchFiles(); // Buscar arquivos existentes
   }, []);
-
-  const columns = [
-    { field: "id", headerName: "VM ID", width: 100 },
-    { field: "name", headerName: "Nome", width: 200 },
-    { field: "status", headerName: "Status", width: 150 },
-    { field: "node", headerName: "Node", width: 150 },
-  ];
 
   return (
     <Box m="20px">
-      <Box mt="40px">
-        <Header
-          title="Arquivos HTML"
-          subtitle="Gerencie seus arquivos gerados"
-        />
-        <Box
-          m="8px 0 0 0"
-          height="40vh"
-          sx={{
-            "& .MuiDataGrid-root": {
-              border: "none",
-            },
-            "& .MuiDataGrid-cell": {
-              borderBottom: "none",
-            },
-            "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: colors.blueAccent[700],
-              borderBottom: "none",
-            },
-            "& .MuiDataGrid-virtualScroller": {
-              backgroundColor: colors.primary[400],
-            },
-            "& .MuiDataGrid-footerContainer": {
-              borderTop: "none",
-              backgroundColor: colors.blueAccent[700],
-            },
-            "& .MuiCheckbox-root": {
-              color: `${colors.greenAccent[200]} !important`,
-            },
-          }}
-        >
-          <DataGrid
-            rows={fileList.map((file, index) => ({ id: index, name: file }))}
-            columns={[
-              {
-                field: "name",
-                headerName: "Nome do Arquivo",
-                width: 300,
-                renderCell: (params) => (
-                  <Box display="flex" alignItems="center" gap="10px">
-                    <Typography>{params.value}</Typography>
-                    <DeleteForeverIcon
-                      style={{ cursor: "pointer", color: "red" }}
-                      onClick={() => deleteFile(params.value)}
-                    />
-                  </Box>
-                ),
-              },
-            ]}
-            checkboxSelection
-            onSelectionModelChange={(ids) => {
-              const selected = fileList[ids[0]];
-              setSelectedFile(selected); // Atualiza o arquivo selecionado
-            }}
-          />
-        </Box>
-        <Box mt="20px" display="flex" justifyContent="center" gap="10px">
-          <Button
-            variant="contained"
-            style={{
-              backgroundColor: colors.blueAccent[700],
-              color: "white",
-            }}
-            onClick={openFile}
-          >
-            Abrir Arquivo
-          </Button>
-        </Box>
-      </Box>
+      <Header
+        title="Automação de Máquinas Virtuais"
+        subtitle="Gerencie e Controle Suas VMs"
+      />
 
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Header
-          title="Automação de Máquinas Virtuais"
-          subtitle="Gerencie e Controle Suas VMs"
-        />
-      </Box>
+      {/* DataGrid para listar VMs */}
       <Box
-        m="8px 0 0 0"
-        height="40vh"
+        m="20px 0"
+        height="60vh"
         sx={{
           "& .MuiDataGrid-root": {
-            border: "none",
-          },
-          "& .MuiDataGrid-cell": {
-            borderBottom: "none",
+            borderRadius: "8px",
+            backgroundColor: colors.primary[400],
           },
           "& .MuiDataGrid-columnHeaders": {
             backgroundColor: colors.blueAccent[700],
-            borderBottom: "none",
+            color: "white",
+            fontSize: "16px",
+            fontWeight: "bold",
           },
-          "& .MuiDataGrid-virtualScroller": {
-            backgroundColor: colors.primary[400],
+          "& .MuiDataGrid-cell": {
+            color: colors.primary[100],
           },
           "& .MuiDataGrid-footerContainer": {
-            borderTop: "none",
             backgroundColor: colors.blueAccent[700],
-          },
-          "& .MuiCheckbox-root": {
-            color: `${colors.greenAccent[200]} !important`,
+            color: "white",
           },
         }}
       >
         <DataGrid
           rows={vmList}
-          columns={columns}
+          columns={[
+            { field: "id", headerName: "VM ID", width: 100 },
+            { field: "name", headerName: "Nome", width: 200 },
+            { field: "status", headerName: "Status", width: 120 },
+          ]}
           checkboxSelection
           onSelectionModelChange={(ids) => setSelectedVMs(ids)}
         />
       </Box>
 
-      <Box
-        mt="20px"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        gap="10px"
-      >
+      {/* Botões para geração do HTML */}
+      <Box mt="20px" display="flex" justifyContent="center" gap="20px">
         <Button
           variant="contained"
-          style={{
-            backgroundColor: colors.blueAccent[700],
+          sx={{
+            backgroundColor: colors.blueAccent[600],
             color: "white",
+            fontWeight: "bold",
+            fontSize: "16px",
+            padding: "10px 20px",
+            "&:hover": { backgroundColor: colors.blueAccent[500] },
           }}
           onClick={generateHTML}
         >
-          Auto
+          AUTO
         </Button>
-        {embedCode && (
-          <Box mt="20px">
-            <Typography variant="h6">Código do Botão Embutido:</Typography>
-            <textarea
-              style={{ width: "100%", height: "100px" }}
-              value={embedCode}
-              readOnly
-            />
-          </Box>
-        )}
 
-        {generatedHTML && (
-          <>
-            <Button
-              variant="contained"
-              style={{
-                backgroundColor: colors.blueAccent[700],
-                color: "white",
-              }}
-              onClick={openHTML}
-            >
-              Abrir HTML
-            </Button>
+        {isGenerated && (
+          <Box display="flex" gap="10px" alignItems="center">
             <input
               type="text"
               placeholder="Digite o nome do arquivo"
@@ -387,27 +347,79 @@ const Team = () => {
               onChange={(e) => setFileName(e.target.value)}
               style={{
                 padding: "10px",
-                fontSize: "16px",
+                fontSize: "14px",
                 border: "1px solid #ccc",
                 borderRadius: "5px",
-                flex: "1",
+                width: "200px",
               }}
             />
             <Button
               variant="contained"
-              style={{
-                backgroundColor: colors.blueAccent[700],
+              sx={{
+                backgroundColor: colors.greenAccent[600],
                 color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "10px 20px",
+                "&:hover": { backgroundColor: colors.greenAccent[500] },
               }}
               onClick={saveHTML}
             >
-              Gravar
+              Salvar
             </Button>
-          </>
+          </Box>
         )}
+
+        {generatedHTML && (
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: colors.greenAccent[600],
+              color: "white",
+              fontWeight: "bold",
+              fontSize: "16px",
+              padding: "10px 20px",
+              "&:hover": { backgroundColor: colors.greenAccent[500] },
+            }}
+            onClick={() => {
+              const win = window.open();
+              win.document.write(generatedHTML);
+              win.document.close();
+            }}
+          >
+            Abrir HTML
+          </Button>
+        )}
+        <Button
+          variant="contained"
+          sx={{
+            backgroundColor: colors.greenAccent[600],
+            color: "white",
+            fontWeight: "bold",
+            fontSize: "16px",
+            padding: "10px 20px",
+            "&:hover": { backgroundColor: colors.greenAccent[500] },
+          }}
+          onClick={generateEmbedCode}
+        >
+          Gerar Botão
+        </Button>
       </Box>
+      <textarea
+        value={embedCode}
+        readOnly
+        style={{
+          marginTop: "10px",
+          width: "400px",
+          height: "100px",
+          padding: "10px",
+          borderRadius: "5px",
+          border: "1px solid #ccc",
+          fontSize: "14px",
+        }}
+      />
     </Box>
   );
 };
 
-export default Team;
+export default VmAutomation;

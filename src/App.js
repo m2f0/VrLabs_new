@@ -19,6 +19,7 @@ import Geography from "./pages/geography";
 import CreateVM from "./pages/createVM";
 import ManageVMs from "./pages/manageVMs";
 import Automation from "./pages/automation";
+import Files from "./pages/files";
 
 const App = () => {
   const [theme, colorMode] = useMode();
@@ -45,6 +46,7 @@ const App = () => {
                 <Route path="/createVM" element={<CreateVM />} />
                 <Route path="/manageVMs" element={<ManageVMs />} />
                 <Route path="/automation" element={<Automation />} />
+                <Route path="/Files" element={<Files />} />
               </Routes>
             </main>
           </div>
