@@ -119,7 +119,6 @@ const Dashboard = () => {
         </Box>
       </Box>
 
-      {/* GRID & CHARTS */}
       <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
         {/* StatBox para Total VMs */}
         <Grid xs={12} sm={12} md={6} lg={3} xl={3}>
@@ -133,8 +132,8 @@ const Dashboard = () => {
             <StatBox
               title={vmCount.toLocaleString()} // Exibe o número de VMs formatado
               subtitle="VMs"
-              progress="1.0" // Barra de progresso completa para total
-              increase="+14%"
+              progress={Math.min(vmCount / 100, 1)} // Proporção em relação a 100, máximo 1.0
+              increase={`${Math.round((vmCount / 100) * 100)}%`} // Porcentagem em relação a 100
               icon={
                 <ComputerIcon
                   sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
