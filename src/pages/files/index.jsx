@@ -15,7 +15,7 @@ const HtmlFiles = () => {
 
   const fetchFiles = async () => {
     try {
-      const response = await fetch("https://nd54q7-3000.csb.app/list-htmls");
+      const response = await fetch("https://jm7xgg-3000.csb.app/list-htmls");
       if (!response.ok) {
         throw new Error("Erro ao buscar a lista de arquivos.");
       }
@@ -37,7 +37,7 @@ const HtmlFiles = () => {
 
     try {
       const response = await fetch(
-        `https://nd54q7-3000.csb.app/delete-html/${fileName}`,
+        `https://jm7xgg-3000.csb.app/delete-html/${fileName}`,
         { method: "DELETE" }
       );
 
@@ -58,7 +58,7 @@ const HtmlFiles = () => {
       alert("Selecione um arquivo para abrir.");
       return;
     }
-    const fileUrl = `https://nd54q7-3000.csb.app/HTMLs/${selectedFile}`;
+    const fileUrl = `https://jm7xgg-3000.csb.app/HTMLs/${selectedFile}`;
     window.open(fileUrl, "_blank");
   };
 
