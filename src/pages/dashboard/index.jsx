@@ -32,7 +32,7 @@ const Dashboard = () => {
   const fetchLogs = async () => {
     try {
       const response = await fetch(
-        "https://prox.nnovup.com.br/api2/json/nodes/prox1/tasks", // Altere o endpoint conforme necessário
+        "https://prox.nnovup.com.br/api2/json/nodes/prox1/tasks",
         {
           method: "GET",
           headers: {
@@ -48,10 +48,25 @@ const Dashboard = () => {
       }
 
       const data = await response.json();
-      setLogs(data.data); // Supondo que os logs estejam no formato esperado
+
+      // Mapeamento dos campos recebidos para os exibidos
+      const mappedLogs = data.data.map((log) => ({
+        startTime: log.starttime
+          ? new Date(log.starttime * 1000).toLocaleString()
+          : "N/A",
+        endTime: log.endtime
+          ? new Date(log.endtime * 1000).toLocaleString()
+          : "N/A",
+        node: log.node || "N/A",
+        user: log.user || "N/A",
+        description: log.type || "N/A", // Mapeado para `type`
+        status: log.status || "N/A", // Mapeado para `status`
+      }));
+
+      setLogs(mappedLogs); // Atualiza o estado com os logs mapeados
     } catch (error) {
       console.error("Erro ao buscar logs do servidor:", error);
-      setLogs([]); // Caso haja erro, limpa os logs
+      setLogs([]); // Limpa os logs em caso de erro
     }
   };
 
@@ -290,13 +305,12 @@ const Dashboard = () => {
             >
               <thead>
                 <tr style={{ borderBottom: `2px solid ${colors.grey[700]}` }}>
-                  <th style={{ padding: "10px" }}>Time</th>
+                  <th style={{ padding: "10px" }}>Start Time</th>
+                  <th style={{ padding: "10px" }}>End Time</th>
                   <th style={{ padding: "10px" }}>Node</th>
-                  <th style={{ padding: "10px" }}>Service</th>
-                  <th style={{ padding: "10px" }}>PID</th>
-                  <th style={{ padding: "10px" }}>User Name</th>
-                  <th style={{ padding: "10px" }}>Severity</th>
-                  <th style={{ padding: "10px" }}>Message</th>
+                  <th style={{ padding: "10px" }}>User</th>
+                  <th style={{ padding: "10px" }}>Description</th>
+                  <th style={{ padding: "10px" }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -307,13 +321,12 @@ const Dashboard = () => {
                       borderBottom: `1px solid ${colors.grey[700]}`,
                     }}
                   >
-                    <td style={{ padding: "10px" }}>{log.time || "N/A"}</td>
-                    <td style={{ padding: "10px" }}>{log.node || "N/A"}</td>
-                    <td style={{ padding: "10px" }}>{log.service || "N/A"}</td>
-                    <td style={{ padding: "10px" }}>{log.pid || "N/A"}</td>
-                    <td style={{ padding: "10px" }}>{log.user || "N/A"}</td>
-                    <td style={{ padding: "10px" }}>{log.severity || "N/A"}</td>
-                    <td style={{ padding: "10px" }}>{log.message || "N/A"}</td>
+                    <td style={{ padding: "10px" }}>{log.startTime}</td>
+                    <td style={{ padding: "10px" }}>{log.endTime}</td>
+                    <td style={{ padding: "10px" }}>{log.node}</td>
+                    <td style={{ padding: "10px" }}>{log.user}</td>
+                    <td style={{ padding: "10px" }}>{log.description}</td>
+                    <td style={{ padding: "10px" }}>{log.status}</td>
                   </tr>
                 ))}
               </tbody>
