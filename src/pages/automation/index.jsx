@@ -30,7 +30,7 @@ const VmAutomation = () => {
       return;
     }
 
-    const embed = `<button onclick="window.open('https://gckyrp-3000.csb.app/HTMLs/${fileName}.html', '_blank')">Abrir HTML</button>`;
+    const embed = `<button onclick="window.open('https://jm7xgg-3000.csb.app/HTMLs/${fileName}.html', '_blank')">Abrir HTML</button>`;
     setEmbedCode(embed);
   };
 
@@ -81,7 +81,7 @@ const VmAutomation = () => {
     }
 
     try {
-      const response = await fetch("https://gckyrp-3000.csb.app/save-html", {
+      const response = await fetch("https://jm7xgg-3000.csb.app/save-html", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
