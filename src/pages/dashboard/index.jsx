@@ -20,12 +20,47 @@ const Dashboard = () => {
   const theme = useTheme();
   const smScreen = useMediaQuery(theme.breakpoints.up("sm"));
   const colors = tokens(theme.palette.mode);
+  const [logs, setLogs] = useState([]);
 
   // Estados e hooks
   const [vmCount, setVMCount] = useState(0);
   const [runningVMCount, setRunningVMCount] = useState(0); // VMs em execução
   const [stoppedVMCount, setStoppedVMCount] = useState(0); // VMs desligadas
   const [nodeCount, setNodeCount] = useState(0); // Nodes
+
+  // Função para buscar logs do servidor
+  const fetchLogs = async () => {
+    try {
+      const response = await fetch(
+        "https://prox.nnovup.com.br/api2/json/nodes/prox1/tasks", // Altere o endpoint conforme necessário
+        {
+          method: "GET",
+          headers: {
+            Authorization: `PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Erro ao buscar logs: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      setLogs(data.data); // Supondo que os logs estejam no formato esperado
+    } catch (error) {
+      console.error("Erro ao buscar logs do servidor:", error);
+      setLogs([]); // Caso haja erro, limpa os logs
+    }
+  };
+
+  // Atualiza os logs automaticamente a cada 5 segundos
+  useEffect(() => {
+    fetchLogs(); // Busca inicial
+    const interval = setInterval(fetchLogs, 5000); // Atualiza a cada 5 segundos
+    return () => clearInterval(interval); // Limpa o intervalo ao desmontar
+  }, []);
 
   // Função para buscar o número total de VMs e nodes
   const fetchVMData = async () => {
@@ -156,7 +191,9 @@ const Dashboard = () => {
               title={runningVMCount.toLocaleString()} // Exibe o número de VMs em execução formatado
               subtitle="VMs On"
               progress={runningVMCount / (vmCount || 1)} // Calcula a proporção de VMs em execução
-              increase="+10%"
+              increase={`${((runningVMCount / (vmCount || 1)) * 100).toFixed(
+                2
+              )}%`} // Calcula o percentual de VMs ligadas
               icon={
                 <PowerIcon
                   sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -179,7 +216,9 @@ const Dashboard = () => {
               title={stoppedVMCount.toLocaleString()} // Exibe o número de VMs desligadas formatado
               subtitle="VMs Off"
               progress={stoppedVMCount / (vmCount || 1)} // Calcula a proporção de VMs desligadas
-              increase="-5%" // Exemplo de variação negativa
+              increase={`${((stoppedVMCount / (vmCount || 1)) * 100).toFixed(
+                2
+              )}%`} // Calcula o percentual de VMs desligadas
               icon={
                 <PowerOffIcon
                   sx={{ color: colors.redAccent[600], fontSize: "26px" }}
@@ -215,6 +254,84 @@ const Dashboard = () => {
           </Box>
         </Grid>
       </Grid>
+      <Box
+        mt="30px"
+        p="20px"
+        backgroundColor={colors.primary[400]}
+        borderRadius="8px"
+      >
+        <Typography
+          variant="h5"
+          fontWeight="600"
+          color={colors.grey[100]}
+          mb="20px"
+        >
+          Logs do Servidor Proxmox
+        </Typography>
+        <Box
+          maxHeight="300px"
+          overflow="auto"
+          sx={{
+            "&::-webkit-scrollbar": { width: "8px" },
+            "&::-webkit-scrollbar-thumb": {
+              background: colors.blueAccent[700],
+              borderRadius: "4px",
+            },
+          }}
+        >
+          {logs.length > 0 ? (
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                color: colors.grey[100],
+              }}
+            >
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${colors.grey[700]}` }}>
+                  <th style={{ textAlign: "left", padding: "10px" }}>Time</th>
+                  <th style={{ textAlign: "left", padding: "10px" }}>Node</th>
+                  <th style={{ textAlign: "left", padding: "10px" }}>
+                    Service
+                  </th>
+                  <th style={{ textAlign: "left", padding: "10px" }}>PID</th>
+                  <th style={{ textAlign: "left", padding: "10px" }}>
+                    User Name
+                  </th>
+                  <th style={{ textAlign: "left", padding: "10px" }}>
+                    Severity
+                  </th>
+                  <th style={{ textAlign: "left", padding: "10px" }}>
+                    Message
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log, index) => (
+                  <tr
+                    key={index}
+                    style={{
+                      borderBottom: `1px solid ${colors.grey[700]}`,
+                    }}
+                  >
+                    <td style={{ padding: "10px" }}>{log.time}</td>
+                    <td style={{ padding: "10px" }}>{log.node}</td>
+                    <td style={{ padding: "10px" }}>{log.service}</td>
+                    <td style={{ padding: "10px" }}>{log.pid}</td>
+                    <td style={{ padding: "10px" }}>{log.user}</td>
+                    <td style={{ padding: "10px" }}>{log.severity}</td>
+                    <td style={{ padding: "10px" }}>{log.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <Typography variant="body2" color={colors.grey[100]}>
+              Nenhum log disponível no momento.
+            </Typography>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 };
