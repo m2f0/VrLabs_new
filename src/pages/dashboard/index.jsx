@@ -269,7 +269,7 @@ const Dashboard = () => {
           Logs do Servidor Proxmox
         </Typography>
         <Box
-          maxHeight="300px"
+          maxHeight="400px"
           overflow="auto"
           sx={{
             "&::-webkit-scrollbar": { width: "8px" },
@@ -285,25 +285,18 @@ const Dashboard = () => {
                 width: "100%",
                 borderCollapse: "collapse",
                 color: colors.grey[100],
+                textAlign: "left",
               }}
             >
               <thead>
                 <tr style={{ borderBottom: `2px solid ${colors.grey[700]}` }}>
-                  <th style={{ textAlign: "left", padding: "10px" }}>Time</th>
-                  <th style={{ textAlign: "left", padding: "10px" }}>Node</th>
-                  <th style={{ textAlign: "left", padding: "10px" }}>
-                    Service
-                  </th>
-                  <th style={{ textAlign: "left", padding: "10px" }}>PID</th>
-                  <th style={{ textAlign: "left", padding: "10px" }}>
-                    User Name
-                  </th>
-                  <th style={{ textAlign: "left", padding: "10px" }}>
-                    Severity
-                  </th>
-                  <th style={{ textAlign: "left", padding: "10px" }}>
-                    Message
-                  </th>
+                  <th style={{ padding: "10px" }}>Time</th>
+                  <th style={{ padding: "10px" }}>Node</th>
+                  <th style={{ padding: "10px" }}>Service</th>
+                  <th style={{ padding: "10px" }}>PID</th>
+                  <th style={{ padding: "10px" }}>User Name</th>
+                  <th style={{ padding: "10px" }}>Severity</th>
+                  <th style={{ padding: "10px" }}>Message</th>
                 </tr>
               </thead>
               <tbody>
@@ -314,13 +307,13 @@ const Dashboard = () => {
                       borderBottom: `1px solid ${colors.grey[700]}`,
                     }}
                   >
-                    <td style={{ padding: "10px" }}>{log.time}</td>
-                    <td style={{ padding: "10px" }}>{log.node}</td>
-                    <td style={{ padding: "10px" }}>{log.service}</td>
-                    <td style={{ padding: "10px" }}>{log.pid}</td>
-                    <td style={{ padding: "10px" }}>{log.user}</td>
-                    <td style={{ padding: "10px" }}>{log.severity}</td>
-                    <td style={{ padding: "10px" }}>{log.message}</td>
+                    <td style={{ padding: "10px" }}>{log.time || "N/A"}</td>
+                    <td style={{ padding: "10px" }}>{log.node || "N/A"}</td>
+                    <td style={{ padding: "10px" }}>{log.service || "N/A"}</td>
+                    <td style={{ padding: "10px" }}>{log.pid || "N/A"}</td>
+                    <td style={{ padding: "10px" }}>{log.user || "N/A"}</td>
+                    <td style={{ padding: "10px" }}>{log.severity || "N/A"}</td>
+                    <td style={{ padding: "10px" }}>{log.message || "N/A"}</td>
                   </tr>
                 ))}
               </tbody>
