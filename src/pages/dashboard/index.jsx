@@ -281,7 +281,7 @@ const Dashboard = () => {
           color={colors.grey[100]}
           mb="20px"
         >
-          Logs do Servidor Proxmox
+          Logs do Servidor
         </Typography>
         <Box
           maxHeight="400px"
