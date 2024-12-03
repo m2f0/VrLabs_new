@@ -18,6 +18,7 @@ import FAQ from "./pages/faq";
 import Geography from "./pages/geography";
 import CreateVM from "./pages/createVM";
 import ManageVMs from "./pages/manageVMs";
+import ManageVMsCecyber from "./pages/manageVMscecyber";
 import Automation from "./pages/automation";
 import Files from "./pages/files";
 
@@ -45,6 +46,10 @@ const App = () => {
                 <Route path="/geography" element={<Geography />} />
                 <Route path="/createVM" element={<CreateVM />} />
                 <Route path="/manageVMs" element={<ManageVMs />} />
+                <Route
+                  path="/ManageVMsCecyber"
+                  element={<ManageVMsCecyber />}
+                />
                 <Route path="/automation" element={<Automation />} />
                 <Route path="/Files" element={<Files />} />
               </Routes>

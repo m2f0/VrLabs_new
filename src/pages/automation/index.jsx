@@ -4,7 +4,6 @@ import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import { useTheme } from "@mui/material/styles";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
 const VmAutomation = () => {
   const theme = useTheme();
@@ -137,7 +136,7 @@ const VmAutomation = () => {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
-          #connect-button {
+          .connect-button {
             display: none;
             margin-top: 10px;
             padding: 10px;
@@ -147,24 +146,28 @@ const VmAutomation = () => {
             border-radius: 5px;
             cursor: pointer;
           }
-          #connect-button:hover {
+          .connect-button:hover {
             background-color: #45a049;
           }
         </style>
         <script>
+          const API_BASE_URL = "${API_BASE_URL}";
+          const API_TOKEN = "${API_TOKEN}";
+          const API_USER = "${API_USER}";
+
           async function startLab(vmid, node, name) {
             const newVmId = prompt("Digite o ID do novo Linked Clone:");
             if (!newVmId) {
               alert("ID do novo Linked Clone é obrigatório.");
               return;
             }
-  
-            const API_BASE_URL = "https://prox.nnovup.com.br";
-            const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca";
-            const API_USER = "apiuser@pve";
-  
+
+            const spinner = document.getElementById(\`spinner-\${vmid}\`);
+            const connectButton = document.getElementById(\`connect-button-\${vmid}\`);
+
             async function createClone() {
               try {
+                spinner.style.display = "block";
                 const response = await fetch(
                   \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`,
                   {
@@ -181,20 +184,23 @@ const VmAutomation = () => {
                     }),
                   }
                 );
-  
+
                 if (!response.ok) {
-                  throw new Error(\`Erro ao criar o Linked Clone: \${response.status} \${response.statusText}\`);
+                  throw new Error(
+                    \`Erro ao criar o Linked Clone: \${response.status} \${response.statusText}\`
+                  );
                 }
-  
+
                 alert("Linked Clone criado com sucesso!");
                 return true;
               } catch (error) {
                 console.error("Erro ao criar Linked Clone:", error);
                 alert("Erro ao criar Linked Clone.");
+                spinner.style.display = "none";
                 return false;
               }
             }
-  
+
             async function startClone() {
               try {
                 const response = await fetch(
@@ -206,43 +212,62 @@ const VmAutomation = () => {
                     },
                   }
                 );
-  
+
                 if (!response.ok) {
-                  throw new Error(\`Erro ao iniciar o Linked Clone: \${response.status} \${response.statusText}\`);
+                  throw new Error(
+                    \`Erro ao iniciar o Linked Clone: \${response.status} \${response.statusText}\`
+                  );
                 }
-  
+
                 alert("Linked Clone iniciado com sucesso!");
                 return true;
               } catch (error) {
                 console.error("Erro ao iniciar Linked Clone:", error);
                 alert("Erro ao iniciar Linked Clone.");
+                spinner.style.display = "none";
                 return false;
               }
             }
-  
-            function showSpinnerAndConnect() {
-              const spinner = document.getElementById("spinner");
-              const connectButton = document.getElementById("connect-button");
-              spinner.style.display = "block";
-  
-              setTimeout(() => {
-                spinner.style.display = "none";
+
+            async function fetchTicketAndConnect() {
+              try {
+                const response = await fetch(
+                  \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${newVmId}/vncproxy\`,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
+                    },
+                  }
+                );
+
+                if (!response.ok) {
+                  throw new Error(
+                    \`Erro ao obter o ticket: \${response.status} \${response.statusText}\`
+                  );
+                }
+
+                const data = await response.json();
+                const { ticket } = data.data;
+
                 connectButton.style.display = "block";
-              }, 20000); // 20 segundos
+                connectButton.onclick = () => {
+                  const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${newVmId}&node=\${node}&resize=off&vncticket=\${encodeURIComponent(ticket)}\`;
+                  window.open(url, "_blank");
+                };
+              } catch (error) {
+                console.error("Erro ao conectar:", error);
+                alert("Erro ao conectar à VM.");
+              } finally {
+                spinner.style.display = "none";
+              }
             }
-  
-            async function connectClone() {
-              const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${newVmId}&node=\${node}\`;
-              window.open(url, "_blank");
-            }
-  
+
             const cloneCreated = await createClone();
             if (cloneCreated) {
               const cloneStarted = await startClone();
               if (cloneStarted) {
-                showSpinnerAndConnect();
-                const connectBtn = document.getElementById("connect-button");
-                connectBtn.onclick = connectClone;
+                await fetchTicketAndConnect();
               }
             }
           }
@@ -260,8 +285,8 @@ const VmAutomation = () => {
                 <p>VM: ${vm.name} (ID: ${vm.id})</p>
                 <div class="vm-buttons">
                   <button onclick="startLab('${vm.id}', '${vm.node}', '${vm.name}')">Iniciar Laboratório</button>
-                  <div id="spinner" class="spinner"></div>
-                  <button id="connect-button">Conectar</button>
+                  <div id="spinner-${vm.id}" class="spinner"></div>
+                  <button id="connect-button-${vm.id}" class="connect-button">Conectar</button>
                 </div>
               </div>
             `;
@@ -286,7 +311,6 @@ const VmAutomation = () => {
         subtitle="Gerencie e Controle Suas VMs"
       />
 
-      {/* DataGrid para listar VMs */}
       <Box
         m="20px 0"
         height="60vh"
@@ -322,7 +346,6 @@ const VmAutomation = () => {
         />
       </Box>
 
-      {/* Botões para geração do HTML */}
       <Box mt="20px" display="flex" justifyContent="center" gap="20px">
         <Button
           variant="contained"

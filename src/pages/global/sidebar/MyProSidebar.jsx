@@ -196,6 +196,13 @@ const MyProSidebar = () => {
               setSelected={setSelected}
             />
             <Item
+              title="Manager VMs Cecyber"
+              to="/manageVMscecyber"
+              icon={<Slideshow />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Item
               title="Monitor VMs"
               to="/"
               icon={<MonitorHeart />}
