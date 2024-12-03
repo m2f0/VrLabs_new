@@ -150,128 +150,7 @@ const VmAutomation = () => {
             background-color: #45a049;
           }
         </style>
-        <script>
-          const API_BASE_URL = "${API_BASE_URL}";
-          const API_TOKEN = "${API_TOKEN}";
-          const API_USER = "${API_USER}";
-
-          async function startLab(vmid, node, name) {
-            const newVmId = prompt("Digite o ID do novo Linked Clone:");
-            if (!newVmId) {
-              alert("ID do novo Linked Clone é obrigatório.");
-              return;
-            }
-
-            const spinner = document.getElementById(\`spinner-\${vmid}\`);
-            const connectButton = document.getElementById(\`connect-button-\${vmid}\`);
-
-            async function createClone() {
-              try {
-                spinner.style.display = "block";
-                const response = await fetch(
-                  \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`,
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/x-www-form-urlencoded",
-                      Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
-                    },
-                    body: new URLSearchParams({
-                      newid: newVmId,
-                      name: \`\${name}-lab-\${newVmId}\`,
-                      snapname: "SNAP_1",
-                      full: 0,
-                    }),
-                  }
-                );
-
-                if (!response.ok) {
-                  throw new Error(
-                    \`Erro ao criar o Linked Clone: \${response.status} \${response.statusText}\`
-                  );
-                }
-
-                alert("Linked Clone criado com sucesso!");
-                return true;
-              } catch (error) {
-                console.error("Erro ao criar Linked Clone:", error);
-                alert("Erro ao criar Linked Clone.");
-                spinner.style.display = "none";
-                return false;
-              }
-            }
-
-            async function startClone() {
-              try {
-                const response = await fetch(
-                  \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${newVmId}/status/start\`,
-                  {
-                    method: "POST",
-                    headers: {
-                      Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
-                    },
-                  }
-                );
-
-                if (!response.ok) {
-                  throw new Error(
-                    \`Erro ao iniciar o Linked Clone: \${response.status} \${response.statusText}\`
-                  );
-                }
-
-                alert("Linked Clone iniciado com sucesso!");
-                return true;
-              } catch (error) {
-                console.error("Erro ao iniciar Linked Clone:", error);
-                alert("Erro ao iniciar Linked Clone.");
-                spinner.style.display = "none";
-                return false;
-              }
-            }
-
-            async function fetchTicketAndConnect() {
-              try {
-                const response = await fetch(
-                  \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${newVmId}/vncproxy\`,
-                  {
-                    method: "POST",
-                    headers: {
-                      Authorization: \`PVEAPIToken=\${API_USER}!apitoken=\${API_TOKEN}\`,
-                    },
-                  }
-                );
-
-                if (!response.ok) {
-                  throw new Error(
-                    \`Erro ao obter o ticket: \${response.status} \${response.statusText}\`
-                  );
-                }
-
-                const data = await response.json();
-                const { ticket } = data.data;
-
-                connectButton.style.display = "block";
-                connectButton.onclick = () => {
-                  const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${newVmId}&node=\${node}&resize=off&vncticket=\${encodeURIComponent(ticket)}\`;
-                  window.open(url, "_blank");
-                };
-              } catch (error) {
-                console.error("Erro ao conectar:", error);
-                alert("Erro ao conectar à VM.");
-              } finally {
-                spinner.style.display = "none";
-              }
-            }
-
-            const cloneCreated = await createClone();
-            if (cloneCreated) {
-              const cloneStarted = await startClone();
-              if (cloneStarted) {
-                await fetchTicketAndConnect();
-              }
-            }
-          }
-        </script>
+        <script src="./script.js"></script>
       </head>
       <body>
         <h1>Gerenciador de VMs</h1>
@@ -284,9 +163,10 @@ const VmAutomation = () => {
               <div class="vm-container">
                 <p>VM: ${vm.name} (ID: ${vm.id})</p>
                 <div class="vm-buttons">
-                  <button onclick="startLab('${vm.id}', '${vm.node}', '${vm.name}')">Iniciar Laboratório</button>
-                  <div id="spinner-${vm.id}" class="spinner"></div>
-                  <button id="connect-button-${vm.id}" class="connect-button">Conectar</button>
+                  <button onclick="createLab('${vm.id}', '${vm.node}', '${vm.name}')">Iniciar Laboratório</button>
+                  <button onclick="startVM('${vm.id}', '${vm.node}')">Iniciar VM</button>
+                  <button onclick="stopVM('${vm.id}', '${vm.node}')">Parar VM</button>
+                  <button onclick="connectVM('${vm.id}', '${vm.node}')">Conectar</button>
                 </div>
               </div>
             `;
