@@ -20,7 +20,7 @@ const VmAutomation = () => {
   const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca";
   const API_USER = "apiuser@pve";
   const API_BASE_URL = "https://prox.nnovup.com.br";
-  const BACKEND_URL = "https://jm7xgg-3000.csb.app/";
+  const BACKEND_URL = "https://fq5n66-3000.csb.app/";
 
   // Função para buscar a lista de VMs do Proxmox e filtrar as normais e os linked clones
   const fetchVMs = async () => {

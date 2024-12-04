@@ -15,7 +15,7 @@ const HtmlFiles = () => {
 
   const fetchFiles = async () => {
     try {
-      const response = await fetch("https://jm7xgg-3000.csb.app/list-htmls");
+      const response = await fetch("https://fq5n66-3000.csb.app/list-htmls");
       if (!response.ok) {
         throw new Error("Erro ao buscar a lista de arquivos.");
       }
