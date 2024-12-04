@@ -115,7 +115,7 @@ const VmAutomation = () => {
     setIsButtonGenerated(true);
   };
 
-  // Função para gerar o código HTML do botão que inicia os linked clones selecionados
+  // Função para gerar o código HTML do botão que inicia e conecta os linked clones selecionados
   const generateLinkedCloneButtonCode = () => {
     if (selectedClones.length === 0) {
       alert("Selecione pelo menos um Linked Clone para gerar o botão.");
@@ -128,41 +128,55 @@ const VmAutomation = () => {
         if (!clone) return "";
 
         return `
-          <button onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
-            Iniciar ${clone.name}
-          </button>
-          <script>
-            async function startLinkedClone(vmid, node, name) {
-              try {
-                const response = await fetch(\`https://prox.nnovup.com.br/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    Authorization: "PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca",
-                  },
-                });
-  
-                if (!response.ok) {
-                  throw new Error("Erro ao iniciar Linked Clone.");
-                }
-  
-                alert(\`Linked Clone \${name} iniciado com sucesso!\`);
-              } catch (error) {
-                alert("Erro ao iniciar Linked Clone. Verifique os logs.");
-                console.error(error);
+        <!-- Botão para iniciar o Linked Clone -->
+        <button onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
+          Iniciar ${clone.name}
+        </button>
+
+        <!-- Botão para conectar ao Linked Clone -->
+        <button onclick="connectVM('${clone.id}', '${clone.node}')">
+          Conectar ${clone.name}
+        </button>
+
+        <script>
+          // Função para iniciar o Linked Clone
+          async function startLinkedClone(vmid, node, name) {
+            try {
+              const response = await fetch(\`https://prox.nnovup.com.br/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                  Authorization: "PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca",
+                },
+              });
+
+              if (!response.ok) {
+                throw new Error("Erro ao iniciar Linked Clone.");
               }
+
+              alert(\`Linked Clone \${name} iniciado com sucesso!\`);
+            } catch (error) {
+              alert("Erro ao iniciar Linked Clone. Verifique os logs.");
+              console.error(error);
             }
-          </script>
-        `;
+          }
+
+          // Função para conectar ao Linked Clone
+          function connectVM(vmid, node) {
+            const url = \`https://prox.nnovup.com.br/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
+            window.open(url, "_blank");
+          }
+        </script>
+      `;
       })
       .join("\n");
 
     const code = `
-      <!-- Botões para iniciar Linked Clones -->
-      <div>
-        ${buttons}
-      </div>
-    `;
+    <!-- Botões para iniciar e conectar Linked Clones -->
+    <div>
+      ${buttons}
+    </div>
+  `;
 
     setLinkedCloneButtonCode(code);
   };
@@ -339,11 +353,11 @@ const VmAutomation = () => {
         />
       </Box>
 
-      <Box mt="20px" display="flex" justifyContent="center" gap="20px">
+      <Box mt="20px" display="flex" justifyContent="center">
         <Button
           variant="contained"
           sx={{
-            backgroundColor: colors.purpleAccent?.[600] || "#6a1b9a", // Cor personalizada
+            backgroundColor: colors.purpleAccent?.[600] || "#6a1b9a",
             color: "white",
             fontWeight: "bold",
             fontSize: "16px",
@@ -356,75 +370,7 @@ const VmAutomation = () => {
         >
           CRIAR CLONE
         </Button>
-
-        <Button
-          variant="contained"
-          sx={{
-            backgroundColor: colors.blueAccent[600],
-            color: "white",
-            fontWeight: "bold",
-            fontSize: "16px",
-            padding: "10px 20px",
-            "&:hover": { backgroundColor: colors.blueAccent[500] },
-          }}
-          onClick={generateButtonCode}
-        >
-          AUTO
-        </Button>
       </Box>
-
-      <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-        {isButtonGenerated && (
-          <>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: colors.greenAccent[600],
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-                padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.greenAccent[500] },
-              }}
-              onClick={copyToClipboard}
-            >
-              COPIAR
-            </Button>
-
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: colors.redAccent[600],
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-                padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.redAccent[500] },
-              }}
-              onClick={testGeneratedCode}
-            >
-              TESTAR
-            </Button>
-          </>
-        )}
-      </Box>
-
-      {isButtonGenerated && (
-        <Box mt="20px">
-          <textarea
-            value={buttonCode}
-            readOnly
-            style={{
-              width: "100%",
-              height: "200px",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-              fontSize: "14px",
-            }}
-          />
-        </Box>
-      )}
 
       <Box mt="20px">
         <h3 style={{ color: colors.primary[100] }}>Linked Clones</h3>
