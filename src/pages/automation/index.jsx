@@ -21,7 +21,7 @@ const VmAutomation = () => {
   const API_USER = "apiuser@pve";
   const API_BASE_URL = "https://prox.nnovup.com.br";
 
-  // Função para buscar a lista de VMs e separar linked clones
+  // Função para buscar a lista de VMs do Proxmox e filtrar as normais e os linked clones
   const fetchVMs = async () => {
     try {
       const response = await fetch(
@@ -68,7 +68,7 @@ const VmAutomation = () => {
     }
   };
 
-  // Função para gerar o código do botão
+  // Função para gerar o código HTML do botão AUTO, que cria linked clones para a VM selecionada
   const generateButtonCode = () => {
     if (!selectedVM) {
       alert("Selecione uma VM para gerar o botão.");
@@ -115,6 +115,7 @@ const VmAutomation = () => {
     setIsButtonGenerated(true);
   };
 
+  // Função para gerar o código HTML do botão que inicia os linked clones selecionados
   const generateLinkedCloneButtonCode = () => {
     if (selectedClones.length === 0) {
       alert("Selecione pelo menos um Linked Clone para gerar o botão.");
@@ -166,6 +167,7 @@ const VmAutomation = () => {
     setLinkedCloneButtonCode(code);
   };
 
+  // Função para copiar o código gerado para linked clones para a área de transferência
   const copyLinkedCloneButtonCode = () => {
     if (!linkedCloneButtonCode) {
       alert("Gere o código primeiro usando o botão Criar Botão.");
@@ -177,6 +179,7 @@ const VmAutomation = () => {
     });
   };
 
+  // Função para testar o código gerado para linked clones, abrindo-o em uma nova aba
   const testLinkedCloneButtonCode = () => {
     if (!linkedCloneButtonCode) {
       alert("Gere o código primeiro usando o botão Criar Botão.");
@@ -200,13 +203,14 @@ const VmAutomation = () => {
     newWindow.document.close();
   };
 
-  // Função para copiar o código para a área de transferência
+  // Função para copiar o código gerado pelo botão AUTO para a área de transferência
   const copyToClipboard = () => {
     navigator.clipboard.writeText(buttonCode).then(() => {
       alert("Código copiado para a área de transferência!");
     });
   };
 
+  // Função para criar um linked clone diretamente da VM selecionada
   const createLinkedClone = async () => {
     if (!selectedVM) {
       alert("Selecione uma VM para criar um Linked Clone.");
@@ -254,7 +258,7 @@ const VmAutomation = () => {
     }
   };
 
-  // Função para testar o código gerado
+  // Função para testar o código gerado pelo botão AUTO, abrindo-o em uma nova aba
   const testGeneratedCode = () => {
     if (!buttonCode) {
       alert("Gere o código primeiro usando o botão AUTO.");
@@ -278,10 +282,12 @@ const VmAutomation = () => {
     newWindow.document.close();
   };
 
+  // Hook para carregar a lista de VMs assim que o componente é montado
   useEffect(() => {
     fetchVMs();
   }, []);
 
+  // Renderização do componente principal, incluindo os DataGrids e os botões de ação
   return (
     <Box m="20px">
       <Header
