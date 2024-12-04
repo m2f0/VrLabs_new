@@ -20,6 +20,7 @@ const VmAutomation = () => {
   const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca";
   const API_USER = "apiuser@pve";
   const API_BASE_URL = "https://prox.nnovup.com.br";
+  const BACKEND_URL = "https://jm7xgg-3000.csb.app/";
 
   // Função para buscar a lista de VMs do Proxmox e filtrar as normais e os linked clones
   const fetchVMs = async () => {
@@ -193,7 +194,6 @@ const VmAutomation = () => {
     });
   };
 
-  // Função para testar o código gerado para linked clones, abrindo-o em uma nova aba
   const testLinkedCloneButtonCode = () => {
     if (!linkedCloneButtonCode) {
       alert("Gere o código primeiro usando o botão Criar Botão.");
@@ -208,9 +208,56 @@ const VmAutomation = () => {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Teste do Código do Linked Clone</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              margin: 0;
+              background-color: #f4f4f9;
+            }
+  
+            .button-container {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+              align-items: center;
+            }
+  
+            button {
+              font-size: 18px;
+              font-weight: bold;
+              padding: 12px 24px;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            }
+  
+            button.start {
+              background-color: #6c63ff;
+              color: white;
+            }
+            button.start:hover {
+              background-color: #574bfa;
+            }
+  
+            button.connect {
+              background-color: #00c9a7;
+              color: white;
+            }
+            button.connect:hover {
+              background-color: #00b38a;
+            }
+          </style>
         </head>
         <body>
-          ${linkedCloneButtonCode}
+          <div class="button-container">
+            ${linkedCloneButtonCode}
+          </div>
         </body>
       </html>
     `);
@@ -294,6 +341,44 @@ const VmAutomation = () => {
       </html>
     `);
     newWindow.document.close();
+  };
+
+  // Função para salvar o código gerado no backend
+  const saveGeneratedCode = async () => {
+    if (!linkedCloneButtonCode) {
+      alert("Gere o código primeiro usando o botão Criar Botão.");
+      return;
+    }
+
+    const fileName = prompt("Digite o nome do arquivo (sem extensão):");
+    if (!fileName) {
+      alert("O nome do arquivo é obrigatório.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BACKEND_URL}save-html`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filename: `${fileName}.html`, // Nome do arquivo com extensão
+          content: linkedCloneButtonCode, // Conteúdo gerado
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Erro ao salvar no backend:", errorText);
+        throw new Error("Erro ao salvar o arquivo no backend.");
+      }
+
+      alert("Arquivo salvo com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar o arquivo:", error);
+      alert("Erro ao salvar o arquivo. Verifique os logs.");
+    }
   };
 
   // Hook para carregar a lista de VMs assim que o componente é montado
@@ -456,6 +541,22 @@ const VmAutomation = () => {
             onClick={testLinkedCloneButtonCode}
           >
             TESTAR
+          </Button>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: colors.orangeAccent?.[600] || "#FF8C00",
+              color: "white",
+              fontWeight: "bold",
+              fontSize: "16px",
+              padding: "10px 20px",
+              "&:hover": {
+                backgroundColor: colors.orangeAccent?.[500] || "#FF7F00",
+              },
+            }}
+            onClick={saveGeneratedCode}
+          >
+            Salvar
           </Button>
         </Box>
       </Box>
