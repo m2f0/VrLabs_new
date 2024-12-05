@@ -96,8 +96,8 @@ const VmAutomation = () => {
       }
 
       const data = await response.json();
+      console.log("Snapshots retornados:", data); // Adicionado para debug
 
-      // Filtrar os snapshots para remover o "current"
       const snapshots = (data.data || [])
         .filter((snap) => snap.name !== "current") // Exclui o snapshot "current"
         .map((snap) => ({
@@ -107,6 +107,7 @@ const VmAutomation = () => {
           description: snap.description || "Sem Descrição",
         }));
 
+      console.log("Snapshots filtrados:", snapshots); // Adicionado para debug
       setSnapshotList(snapshots); // Atualiza a lista de snapshots
     } catch (error) {
       console.error("Erro ao buscar snapshots:", error);
@@ -493,6 +494,7 @@ const VmAutomation = () => {
       {/* Conteúdo da aba "Máquinas Virtuais" */}
       {activeTab === 0 && (
         <Box mt="20px">
+          {/* DataGrid para listar máquinas virtuais */}
           <Box
             height="40vh"
             sx={{
@@ -515,7 +517,6 @@ const VmAutomation = () => {
               },
             }}
           >
-            {/* Primeiro DataGrid */}
             <DataGrid
               rows={vmList}
               columns={[
@@ -535,11 +536,69 @@ const VmAutomation = () => {
                 setSelectedVM(vm);
                 if (vm) {
                   fetchSnapshots(vm.id, vm.node); // Buscar snapshots da VM
+                } else {
+                  setSnapshotList([]); // Limpa os snapshots caso nenhuma VM seja selecionada
                 }
               }}
             />
           </Box>
 
+          {/* DataGrid para listar snapshots da VM selecionada */}
+          {selectedVM && (
+            <Box mt="20px">
+              <h4 style={{ color: colors.primary[100] }}>
+                Snapshots da VM Selecionada: {selectedVM.name} (ID:{" "}
+                {selectedVM.id})
+              </h4>
+              <Box
+                height="40vh"
+                sx={{
+                  "& .MuiDataGrid-root": {
+                    borderRadius: "8px",
+                    backgroundColor: colors.primary[400],
+                  },
+                  "& .MuiDataGrid-columnHeaders": {
+                    backgroundColor: colors.blueAccent[700],
+                    color: "white",
+                    fontSize: "16px",
+                    fontWeight: "bold",
+                  },
+                  "& .MuiDataGrid-cell": {
+                    color: colors.primary[100],
+                  },
+                  "& .MuiDataGrid-footerContainer": {
+                    backgroundColor: colors.blueAccent[700],
+                    color: "white",
+                  },
+                }}
+              >
+                <DataGrid
+                  rows={snapshotList}
+                  columns={[
+                    { field: "id", headerName: "Snapshot ID", width: 150 },
+                    { field: "name", headerName: "Nome", width: 200 },
+                    {
+                      field: "description",
+                      headerName: "Descrição",
+                      width: 300,
+                    },
+                  ]}
+                  checkboxSelection
+                  disableSelectionOnClick
+                  selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []}
+                  onSelectionModelChange={(ids) => {
+                    const selectedId = ids[0];
+                    const snapshot = snapshotList.find(
+                      (snap) => snap.id === selectedId
+                    );
+                    setSelectedSnapshot(snapshot);
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
+
+          {/* Botões de ação para a VM selecionada */}
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
             <Button
               variant="contained"
@@ -622,33 +681,52 @@ const VmAutomation = () => {
           </Box>
 
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
+            {/* Botão Criar Botão */}
             <Button
               variant="contained"
               sx={{
-                backgroundColor: colors.blueAccent[600],
+                backgroundColor: colors.blueAccent?.[600] || "#1e88e5",
                 color: "white",
                 fontWeight: "bold",
                 fontSize: "16px",
                 padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.blueAccent[500] },
+                "&:hover": { backgroundColor: colors.blueAccent?.[500] },
               }}
               onClick={generateLinkedCloneButtonCode}
             >
               Criar Botão
             </Button>
+
+            {/* Botão Copiar */}
             <Button
               variant="contained"
               sx={{
-                backgroundColor: colors.greenAccent[600],
+                backgroundColor: colors.greenAccent?.[600] || "#4caf50",
                 color: "white",
                 fontWeight: "bold",
                 fontSize: "16px",
                 padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.greenAccent[500] },
+                "&:hover": { backgroundColor: colors.greenAccent?.[500] },
               }}
               onClick={copyLinkedCloneButtonCode}
             >
               Copiar Código
+            </Button>
+
+            {/* Botão Testar */}
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: colors.orangeAccent?.[600] || "#ff9800",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "10px 20px",
+                "&:hover": { backgroundColor: colors.orangeAccent?.[500] },
+              }}
+              onClick={testLinkedCloneButtonCode}
+            >
+              Testar
             </Button>
           </Box>
         </Box>
