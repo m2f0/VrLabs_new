@@ -4,6 +4,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import { useTheme } from "@mui/material/styles";
+import { Tabs, Tab } from "@mui/material";
 
 const VmAutomation = () => {
   const theme = useTheme();
@@ -16,11 +17,18 @@ const VmAutomation = () => {
   const [buttonCode, setButtonCode] = useState("");
   const [isButtonGenerated, setIsButtonGenerated] = useState(false);
   const [linkedCloneButtonCode, setLinkedCloneButtonCode] = useState(""); // Código gerado para linked clones
+  const [snapshotList, setSnapshotList] = useState([]); // Lista de snapshots das VMs
+  const [selectedSnapshot, setSelectedSnapshot] = useState(null); // Snapshot selecionado
+  const [activeTab, setActiveTab] = useState(0);
 
-  const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca";
+  const API_TOKEN = "35233cb2-3501-41c9-8eb2-876eb25b6481";
   const API_USER = "apiuser@pve";
-  const API_BASE_URL = "https://prox.nnovup.com.br";
+  const API_BASE_URL = "https://pxqa.cecyber.com";
   const BACKEND_URL = "https://fq5n66-3000.csb.app/";
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
 
   // Função para buscar a lista de VMs do Proxmox e filtrar as normais e os linked clones
   const fetchVMs = async () => {
@@ -66,6 +74,43 @@ const VmAutomation = () => {
     } catch (error) {
       console.error("Erro ao buscar lista de VMs:", error);
       alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
+    }
+  };
+
+  const fetchSnapshots = async (vmid, node) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Erro ao buscar snapshots: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+
+      // Filtrar os snapshots para remover o "current"
+      const snapshots = (data.data || [])
+        .filter((snap) => snap.name !== "current") // Exclui o snapshot "current"
+        .map((snap) => ({
+          id: `${vmid}-${snap.name}`, // ID único para o snapshot
+          vmid, // ID da VM associada
+          name: snap.name || "Sem Nome",
+          description: snap.description || "Sem Descrição",
+        }));
+
+      setSnapshotList(snapshots); // Atualiza a lista de snapshots
+    } catch (error) {
+      console.error("Erro ao buscar snapshots:", error);
+      alert("Falha ao buscar snapshots. Verifique o console.");
     }
   };
 
@@ -117,69 +162,90 @@ const VmAutomation = () => {
   };
 
   // Função para gerar o código HTML do botão que inicia e conecta os linked clones selecionados
-  const generateLinkedCloneButtonCode = () => {
+  const generateLinkedCloneButtonCode = async () => {
     if (selectedClones.length === 0) {
       alert("Selecione pelo menos um Linked Clone para gerar o botão.");
       return;
     }
 
-    const buttons = selectedClones
-      .map((cloneId) => {
-        const clone = linkedClones.find((lc) => lc.id === cloneId);
-        if (!clone) return "";
+    try {
+      // Obter o ticket antes de gerar o botão
+      const ticketResponse = await fetch(
+        `${API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: API_USER,
+            password: "1qazxsw2", // Use a senha correta
+          }),
+        }
+      );
 
-        return `
-        <!-- Botão para iniciar o Linked Clone -->
-        <button onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
-          Iniciar ${clone.name}
-        </button>
+      if (!ticketResponse.ok) {
+        throw new Error(`Erro ao obter o ticket: ${ticketResponse.statusText}`);
+      }
 
-        <!-- Botão para conectar ao Linked Clone -->
-        <button onclick="connectVM('${clone.id}', '${clone.node}')">
-          Conectar ${clone.name}
-        </button>
+      const ticketData = await ticketResponse.json();
+      const ticket = ticketData.data.ticket;
 
-        <script>
-          // Função para iniciar o Linked Clone
-          async function startLinkedClone(vmid, node, name) {
-            try {
-              const response = await fetch(\`https://prox.nnovup.com.br/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/x-www-form-urlencoded",
-                  Authorization: "PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca",
-                },
-              });
+      // Gerar botões com o ticket incluído como cookie
+      const buttons = selectedClones
+        .map((cloneId) => {
+          const clone = linkedClones.find((lc) => lc.id === cloneId);
+          if (!clone) return "";
 
-              if (!response.ok) {
-                throw new Error("Erro ao iniciar Linked Clone.");
+          return `
+          <button onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
+            Iniciar ${clone.name}
+          </button>
+          <button onclick="connectVM('${clone.id}', '${clone.node}', '${ticket}')">
+            Conectar ${clone.name}
+          </button>
+  
+          <script>
+            async function startLinkedClone(vmid, node, name) {
+              try {
+                const response = await fetch(\`${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
+                  method: "POST",
+                  headers: {
+                    Authorization: "PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}",
+                  },
+                });
+  
+                if (!response.ok) {
+                  throw new Error("Erro ao iniciar Linked Clone.");
+                }
+  
+                alert(\`Linked Clone \${name} iniciado com sucesso!\`);
+              } catch (error) {
+                alert("Erro ao iniciar Linked Clone. Verifique os logs.");
+                console.error(error);
               }
-
-              alert(\`Linked Clone \${name} iniciado com sucesso!\`);
-            } catch (error) {
-              alert("Erro ao iniciar Linked Clone. Verifique os logs.");
-              console.error(error);
             }
-          }
+  
+            function connectVM(vmid, node, ticket) {
+              const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}&PVEAuthCookie=\${ticket}\`;
+              window.open(url, "_blank");
+            }
+          </script>
+          `;
+        })
+        .join("\n");
 
-          // Função para conectar ao Linked Clone
-          function connectVM(vmid, node) {
-            const url = \`https://prox.nnovup.com.br/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
-            window.open(url, "_blank");
-          }
-        </script>
-      `;
-      })
-      .join("\n");
+      const code = `
+      <div>
+        ${buttons}
+      </div>
+    `;
 
-    const code = `
-    <!-- Botões para iniciar e conectar Linked Clones -->
-    <div>
-      ${buttons}
-    </div>
-  `;
-
-    setLinkedCloneButtonCode(code);
+      setLinkedCloneButtonCode(code);
+    } catch (error) {
+      console.error("Erro ao gerar o botão:", error);
+      alert("Erro ao gerar o botão. Verifique os logs.");
+    }
   };
 
   // Função para copiar o código gerado para linked clones para a área de transferência
@@ -271,14 +337,23 @@ const VmAutomation = () => {
     });
   };
 
-  // Função para criar um linked clone diretamente da VM selecionada
+  // Função para criar um linked clone diretamente da VM selecionada e do snapshot selecionado
   const createLinkedClone = async () => {
     if (!selectedVM) {
       alert("Selecione uma VM para criar um Linked Clone.");
       return;
     }
 
-    const { id, node, name } = selectedVM;
+    if (!selectedSnapshot || selectedSnapshot.name === "current") {
+      alert(
+        "A VM selecionada não possui snapshots válidos para criar um Linked Clone."
+      );
+      return;
+    }
+
+    const { id: vmId, node, name } = selectedVM;
+    const { name: snapName } = selectedSnapshot; // Nome correto do snapshot
+
     const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
     if (!newVmId) {
       alert("ID da nova VM é obrigatório.");
@@ -289,12 +364,12 @@ const VmAutomation = () => {
       const body = new URLSearchParams({
         newid: newVmId,
         name: `${name}-lab-${newVmId}`,
-        snapname: "SNAP_1",
+        snapname: snapName, // Nome correto do snapshot
         full: "0", // Certifique-se de enviar "0" como string
       });
 
       const response = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${id}/clone`,
+        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmId}/clone`,
         {
           method: "POST",
           headers: {
@@ -394,172 +469,190 @@ const VmAutomation = () => {
         subtitle="Gerencie e Controle Suas VMs"
       />
 
-      <Box
-        m="20px 0"
-        height="40vh"
+      {/* Abas */}
+      <Tabs
+        value={activeTab}
+        onChange={handleTabChange}
+        textColor="primary"
+        indicatorColor="primary"
         sx={{
-          "& .MuiDataGrid-root": {
-            borderRadius: "8px",
-            backgroundColor: colors.primary[400],
-          },
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: colors.blueAccent[700],
-            color: "white",
-            fontSize: "16px",
+          "& .MuiTab-root": {
             fontWeight: "bold",
+            fontSize: "16px",
+            textTransform: "none",
           },
-          "& .MuiDataGrid-cell": {
-            color: colors.primary[100],
-          },
-          "& .MuiDataGrid-footerContainer": {
-            backgroundColor: colors.blueAccent[700],
-            color: "white",
+          "& .MuiTab-root.Mui-selected": {
+            color: "orange", // Define a cor do texto selecionado como laranja
           },
         }}
       >
-        <DataGrid
-          rows={vmList}
-          columns={[
-            { field: "id", headerName: "VM ID", width: 100 },
-            { field: "name", headerName: "Nome", width: 200 },
-            { field: "status", headerName: "Status", width: 120 },
-          ]}
-          checkboxSelection
-          disableSelectionOnClick
-          onSelectionModelChange={(ids) => {
-            if (ids.length > 1) {
-              alert("Selecione apenas uma VM por vez.");
-              return;
-            }
-            const selectedId = ids[0];
-            const vm = vmList.find((vm) => vm.id === selectedId);
-            setSelectedVM(vm);
-          }}
-        />
-      </Box>
+        <Tab label="Máquinas Virtuais" />
+        <Tab label="Linked Clones" />
+      </Tabs>
 
-      <Box mt="20px" display="flex" justifyContent="center">
-        <Button
-          variant="contained"
-          sx={{
-            backgroundColor: colors.purpleAccent?.[600] || "#6a1b9a",
-            color: "white",
-            fontWeight: "bold",
-            fontSize: "16px",
-            padding: "10px 20px",
-            "&:hover": {
-              backgroundColor: colors.purpleAccent?.[500] || "#4a148c",
-            },
-          }}
-          onClick={createLinkedClone}
-        >
-          CRIAR CLONE
-        </Button>
-      </Box>
-
-      <Box mt="20px">
-        <h3 style={{ color: colors.primary[100] }}>Linked Clones</h3>
-        <Box
-          height="40vh"
-          sx={{
-            "& .MuiDataGrid-root": {
-              borderRadius: "8px",
-              backgroundColor: colors.primary[400],
-            },
-            "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: colors.blueAccent[700],
-              color: "white",
-              fontSize: "16px",
-              fontWeight: "bold",
-            },
-            "& .MuiDataGrid-cell": {
-              color: colors.primary[100],
-            },
-            "& .MuiDataGrid-footerContainer": {
-              backgroundColor: colors.blueAccent[700],
-              color: "white",
-            },
-          }}
-        >
-          <DataGrid
-            rows={linkedClones}
-            columns={[
-              { field: "id", headerName: "Clone ID", width: 100 },
-              { field: "name", headerName: "Nome", width: 200 },
-              { field: "status", headerName: "Status", width: 120 },
-            ]}
-            checkboxSelection
-            disableSelectionOnClick
-            onSelectionModelChange={(ids) => {
-              setSelectedClones(ids); // Atualiza os clones selecionados
-            }}
-          />
-        </Box>
-
-        {/* Botões abaixo do DataGrid */}
-        <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-          <Button
-            variant="contained"
+      {/* Conteúdo da aba "Máquinas Virtuais" */}
+      {activeTab === 0 && (
+        <Box mt="20px">
+          <Box
+            height="40vh"
             sx={{
-              backgroundColor: colors.blueAccent[600],
-              color: "white",
-              fontWeight: "bold",
-              fontSize: "16px",
-              padding: "10px 20px",
-              "&:hover": { backgroundColor: colors.blueAccent[500] },
-            }}
-            onClick={generateLinkedCloneButtonCode}
-          >
-            Criar Botão
-          </Button>
-
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: colors.greenAccent[600],
-              color: "white",
-              fontWeight: "bold",
-              fontSize: "16px",
-              padding: "10px 20px",
-              "&:hover": { backgroundColor: colors.greenAccent[500] },
-            }}
-            onClick={copyLinkedCloneButtonCode}
-          >
-            Copiar Código
-          </Button>
-
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: colors.redAccent[600],
-              color: "white",
-              fontWeight: "bold",
-              fontSize: "16px",
-              padding: "10px 20px",
-              "&:hover": { backgroundColor: colors.redAccent[500] },
-            }}
-            onClick={testLinkedCloneButtonCode}
-          >
-            TESTAR
-          </Button>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: colors.orangeAccent?.[600] || "#FF8C00",
-              color: "white",
-              fontWeight: "bold",
-              fontSize: "16px",
-              padding: "10px 20px",
-              "&:hover": {
-                backgroundColor: colors.orangeAccent?.[500] || "#FF7F00",
+              "& .MuiDataGrid-root": {
+                borderRadius: "8px",
+                backgroundColor: colors.primary[400],
+              },
+              "& .MuiDataGrid-columnHeaders": {
+                backgroundColor: colors.blueAccent[700],
+                color: "white",
+                fontSize: "16px",
+                fontWeight: "bold",
+              },
+              "& .MuiDataGrid-cell": {
+                color: colors.primary[100],
+              },
+              "& .MuiDataGrid-footerContainer": {
+                backgroundColor: colors.blueAccent[700],
+                color: "white",
               },
             }}
-            onClick={saveGeneratedCode}
           >
-            Salvar
-          </Button>
+            {/* Primeiro DataGrid */}
+            <DataGrid
+              rows={vmList}
+              columns={[
+                { field: "id", headerName: "VM ID", width: 100 },
+                { field: "name", headerName: "Nome", width: 200 },
+                { field: "status", headerName: "Status", width: 120 },
+              ]}
+              checkboxSelection
+              disableSelectionOnClick
+              onSelectionModelChange={(ids) => {
+                if (ids.length > 1) {
+                  alert("Selecione apenas uma VM por vez.");
+                  return;
+                }
+                const selectedId = ids[0];
+                const vm = vmList.find((vm) => vm.id === selectedId);
+                setSelectedVM(vm);
+                if (vm) {
+                  fetchSnapshots(vm.id, vm.node); // Buscar snapshots da VM
+                }
+              }}
+            />
+          </Box>
+
+          <Box mt="20px" display="flex" justifyContent="center" gap="20px">
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: colors.greenAccent?.[600] || "#4caf50",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "10px 20px",
+                "&:hover": { backgroundColor: colors.greenAccent?.[500] },
+              }}
+              onClick={() => {
+                if (!selectedVM) {
+                  alert("Selecione uma VM para criar um snapshot.");
+                  return;
+                }
+                // Lógica para criar snapshot
+              }}
+            >
+              CRIAR SNAPSHOT
+            </Button>
+
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: colors.purpleAccent?.[600] || "#6a1b9a",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "10px 20px",
+                "&:hover": { backgroundColor: colors.purpleAccent?.[500] },
+              }}
+              onClick={createLinkedClone}
+            >
+              CRIAR CLONE
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      )}
+
+      {/* Conteúdo da aba "Linked Clones" */}
+      {activeTab === 1 && (
+        <Box mt="20px">
+          <Box
+            height="40vh"
+            sx={{
+              "& .MuiDataGrid-root": {
+                borderRadius: "8px",
+                backgroundColor: colors.primary[400],
+              },
+              "& .MuiDataGrid-columnHeaders": {
+                backgroundColor: colors.blueAccent[700],
+                color: "white",
+                fontSize: "16px",
+                fontWeight: "bold",
+              },
+              "& .MuiDataGrid-cell": {
+                color: colors.primary[100],
+              },
+              "& .MuiDataGrid-footerContainer": {
+                backgroundColor: colors.blueAccent[700],
+                color: "white",
+              },
+            }}
+          >
+            {/* Segundo DataGrid */}
+            <DataGrid
+              rows={linkedClones}
+              columns={[
+                { field: "id", headerName: "Clone ID", width: 100 },
+                { field: "name", headerName: "Nome", width: 200 },
+                { field: "status", headerName: "Status", width: 120 },
+              ]}
+              checkboxSelection
+              disableSelectionOnClick
+              onSelectionModelChange={(ids) => {
+                setSelectedClones(ids);
+              }}
+            />
+          </Box>
+
+          <Box mt="20px" display="flex" justifyContent="center" gap="20px">
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: colors.blueAccent[600],
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "10px 20px",
+                "&:hover": { backgroundColor: colors.blueAccent[500] },
+              }}
+              onClick={generateLinkedCloneButtonCode}
+            >
+              Criar Botão
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: colors.greenAccent[600],
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "10px 20px",
+                "&:hover": { backgroundColor: colors.greenAccent[500] },
+              }}
+              onClick={copyLinkedCloneButtonCode}
+            >
+              Copiar Código
+            </Button>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };

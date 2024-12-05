@@ -30,6 +30,11 @@ const Team = () => {
         }
       );
 
+      // Inspecionando a resposta
+      console.log("Status:", response.status);
+      console.log("Status Text:", response.statusText);
+      console.log("Headers:", [...response.headers.entries()]); // Converte os headers para um array legível
+
       if (!response.ok) {
         throw new Error(
           `Erro na API do Proxmox: ${response.status} ${response.statusText}`
@@ -37,6 +42,8 @@ const Team = () => {
       }
 
       const data = await response.json();
+      console.log("Dados recebidos:", data); // Inspeciona os dados recebidos
+
       setVmList(
         data.data.map((vm) => ({
           id: vm.vmid, // ID da VM
@@ -62,7 +69,7 @@ const Team = () => {
         {
           method: "POST",
           headers: {
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`, // Formato correto do token
           },
         }
       );
@@ -109,12 +116,36 @@ const Team = () => {
   };
 
   // Função para conectar a uma VM
-  const connectVM = (vmid, node) => {
-    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
-    window.open(url, "_blank");
+  const connectVM = async (vmid, node) => {
+    try {
+      // Obter o ticket
+      const response = await fetch(`${API_BASE_URL}/api2/json/access/ticket`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          username: API_USER,
+          password: "1qazxsw2", // Certifique-se de usar a senha correta
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao obter o ticket: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const ticket = data.data.ticket; // Extraia o ticket
+
+      console.log("Ticket obtido:", ticket);
+
+      // Construa a URL de conexão com o ticket
+      const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&PVEAuthCookie=${ticket}`;
+      window.open(url, "_blank"); // Abra a nova aba
+    } catch (error) {
+      console.error("Erro ao conectar à VM:", error);
+      alert("Falha ao conectar à VM. Verifique as credenciais ou o servidor.");
+    }
   };
 
-  // Função para deletar uma VM
   const deleteVM = async (vmid, node) => {
     const confirmDelete = window.confirm(
       `Tem certeza de que deseja deletar a VM ${vmid}?`
@@ -139,7 +170,7 @@ const Team = () => {
       }
 
       alert(`VM ${vmid} deletada com sucesso!`);
-      fetchVMs();
+      fetchVMs(); // Atualiza a lista de VMs após a exclusão
     } catch (error) {
       console.error(`Erro ao deletar a VM ${vmid}:`, error);
       alert(`Falha ao deletar a VM ${vmid}.`);
@@ -184,6 +215,7 @@ const Team = () => {
           >
             Conectar
           </Button>
+
           <IconButton color="error" onClick={() => deleteVM(row.id, row.node)}>
             <DeleteForeverIcon />
           </IconButton>
