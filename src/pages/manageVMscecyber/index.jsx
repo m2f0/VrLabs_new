@@ -14,8 +14,8 @@ const Team = () => {
 
   // Constantes definidas diretamente no código
   const API_TOKEN = "35233cb2-3501-41c9-8eb2-876eb25b6481"; // Token de autenticação
-  const API_USER = "apiuser@pve!apitoken"; // Usuário da API
-  const API_BASE_URL = "http://pxqa.cecyber.com:8080"; // URL base da API
+  const API_USER = "apiuser@pve"; // Usuário da API
+  const API_BASE_URL = "https://pxqa.cecyber.com"; // URL base da API
 
   // Função para buscar a lista de VMs
   const fetchVMs = async () => {
@@ -24,9 +24,9 @@ const Team = () => {
         `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
-          //         headers: {
-          //           Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
-          //         },
+          headers: {
+            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`, // Formato correto do token
+          },
         }
       );
 
@@ -39,10 +39,13 @@ const Team = () => {
       const data = await response.json();
       setVmList(
         data.data.map((vm) => ({
-          id: vm.vmid,
-          name: vm.name,
-          status: vm.status,
-          node: vm.node,
+          id: vm.vmid, // ID da VM
+          name: vm.name, // Nome da VM
+          status: vm.status, // Status (running/stopped)
+          node: vm.node, // Nó onde a VM está localizada
+          maxcpu: vm.maxcpu, // CPU máxima
+          maxmem: vm.maxmem, // Memória máxima
+          maxdisk: vm.maxdisk, // Disco máximo
         }))
       );
     } catch (error) {
