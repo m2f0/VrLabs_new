@@ -96,8 +96,8 @@ const VmAutomation = () => {
       }
 
       const data = await response.json();
-      console.log("Snapshots retornados:", data); // Adicionado para debug
 
+      // Filtrar os snapshots para remover o "current"
       const snapshots = (data.data || [])
         .filter((snap) => snap.name !== "current") // Exclui o snapshot "current"
         .map((snap) => ({
@@ -107,7 +107,6 @@ const VmAutomation = () => {
           description: snap.description || "Sem Descrição",
         }));
 
-      console.log("Snapshots filtrados:", snapshots); // Adicionado para debug
       setSnapshotList(snapshots); // Atualiza a lista de snapshots
     } catch (error) {
       console.error("Erro ao buscar snapshots:", error);
@@ -247,6 +246,27 @@ const VmAutomation = () => {
       console.error("Erro ao gerar o botão:", error);
       alert("Erro ao gerar o botão. Verifique os logs.");
     }
+  };
+
+  const testGeneratedLinkedCloneCode = () => {
+    if (!linkedCloneButtonCode) {
+      alert("Gere o código primeiro usando o botão 'Criar Código'.");
+      return;
+    }
+
+    const newWindow = window.open("", "_blank");
+    newWindow.document.write(`<!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Teste do Código do Linked Clone</title>
+      </head>
+      <body>
+        ${linkedCloneButtonCode}
+      </body>
+      </html>`);
+    newWindow.document.close();
   };
 
   // Função para copiar o código gerado para linked clones para a área de transferência
@@ -494,7 +514,6 @@ const VmAutomation = () => {
       {/* Conteúdo da aba "Máquinas Virtuais" */}
       {activeTab === 0 && (
         <Box mt="20px">
-          {/* DataGrid para listar máquinas virtuais */}
           <Box
             height="40vh"
             sx={{
@@ -517,6 +536,7 @@ const VmAutomation = () => {
               },
             }}
           >
+            {/* Primeiro DataGrid */}
             <DataGrid
               rows={vmList}
               columns={[
@@ -536,14 +556,10 @@ const VmAutomation = () => {
                 setSelectedVM(vm);
                 if (vm) {
                   fetchSnapshots(vm.id, vm.node); // Buscar snapshots da VM
-                } else {
-                  setSnapshotList([]); // Limpa os snapshots caso nenhuma VM seja selecionada
                 }
               }}
             />
           </Box>
-
-          {/* DataGrid para listar snapshots da VM selecionada */}
           {selectedVM && (
             <Box mt="20px">
               <h4 style={{ color: colors.primary[100] }}>
@@ -583,22 +599,21 @@ const VmAutomation = () => {
                       width: 300,
                     },
                   ]}
-                  checkboxSelection
+                  checkboxSelection // Ativa os checkboxes
                   disableSelectionOnClick
-                  selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []}
+                  selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []} // Reflete o snapshot selecionado
                   onSelectionModelChange={(ids) => {
-                    const selectedId = ids[0];
+                    const selectedId = ids[0]; // Permite apenas uma seleção
                     const snapshot = snapshotList.find(
                       (snap) => snap.id === selectedId
                     );
-                    setSelectedSnapshot(snapshot);
+                    setSelectedSnapshot(snapshot); // Atualizar o estado com o snapshot selecionado
                   }}
                 />
               </Box>
             </Box>
           )}
 
-          {/* Botões de ação para a VM selecionada */}
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
             <Button
               variant="contained"
@@ -608,14 +623,64 @@ const VmAutomation = () => {
                 fontWeight: "bold",
                 fontSize: "16px",
                 padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.greenAccent?.[500] },
+                "&:hover": {
+                  backgroundColor: colors.greenAccent?.[500] || "#43a047",
+                },
               }}
-              onClick={() => {
+              onClick={async () => {
                 if (!selectedVM) {
                   alert("Selecione uma VM para criar um snapshot.");
                   return;
                 }
-                // Lógica para criar snapshot
+
+                let snapshotName = prompt(
+                  "Digite o nome do novo snapshot (somente caracteres alfanuméricos):"
+                );
+
+                if (!snapshotName) {
+                  alert("O nome do snapshot é obrigatório.");
+                  return;
+                }
+
+                // Validar o nome do snapshot
+                snapshotName = snapshotName.trim();
+                const isValidName = /^[a-zA-Z0-9-_]+$/.test(snapshotName); // Permite caracteres alfanuméricos, hífen e underscore
+                if (!isValidName) {
+                  alert(
+                    "O nome do snapshot contém caracteres inválidos. Use apenas letras, números, hífen ou underscore."
+                  );
+                  return;
+                }
+
+                try {
+                  const response = await fetch(
+                    `${API_BASE_URL}/api2/json/nodes/${selectedVM.node}/qemu/${selectedVM.id}/snapshot`,
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+                      },
+                      body: JSON.stringify({
+                        snapname: snapshotName,
+                        description: `Snapshot criado para a VM ${selectedVM.name}`,
+                      }),
+                    }
+                  );
+
+                  if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("Erro ao criar snapshot:", errorText);
+                    throw new Error("Erro ao criar snapshot.");
+                  }
+
+                  alert(`Snapshot "${snapshotName}" criado com sucesso!`);
+                  // Atualiza a lista de snapshots
+                  fetchSnapshots(selectedVM.id, selectedVM.node);
+                } catch (error) {
+                  console.error("Erro ao criar snapshot:", error);
+                  alert("Erro ao criar snapshot. Verifique os logs.");
+                }
               }}
             >
               CRIAR SNAPSHOT
@@ -681,39 +746,34 @@ const VmAutomation = () => {
           </Box>
 
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-            {/* Botão Criar Botão */}
             <Button
               variant="contained"
               sx={{
-                backgroundColor: colors.blueAccent?.[600] || "#1e88e5",
+                backgroundColor: colors.blueAccent[600],
                 color: "white",
                 fontWeight: "bold",
                 fontSize: "16px",
                 padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.blueAccent?.[500] },
+                "&:hover": { backgroundColor: colors.blueAccent[500] },
               }}
               onClick={generateLinkedCloneButtonCode}
             >
               Criar Botão
             </Button>
-
-            {/* Botão Copiar */}
             <Button
               variant="contained"
               sx={{
-                backgroundColor: colors.greenAccent?.[600] || "#4caf50",
+                backgroundColor: colors.greenAccent[600],
                 color: "white",
                 fontWeight: "bold",
                 fontSize: "16px",
                 padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.greenAccent?.[500] },
+                "&:hover": { backgroundColor: colors.greenAccent[500] },
               }}
               onClick={copyLinkedCloneButtonCode}
             >
               Copiar Código
             </Button>
-
-            {/* Botão Testar */}
             <Button
               variant="contained"
               sx={{
@@ -724,9 +784,23 @@ const VmAutomation = () => {
                 padding: "10px 20px",
                 "&:hover": { backgroundColor: colors.orangeAccent?.[500] },
               }}
-              onClick={testLinkedCloneButtonCode}
+              onClick={testGeneratedLinkedCloneCode}
             >
-              Testar
+              Testar Código
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: colors.redAccent?.[600] || "#d32f2f",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "10px 20px",
+                "&:hover": { backgroundColor: colors.redAccent?.[500] },
+              }}
+              onClick={saveGeneratedCode}
+            >
+              Salvar Código
             </Button>
           </Box>
         </Box>
