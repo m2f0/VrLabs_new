@@ -6,6 +6,7 @@ import { MyProSidebarProvider } from "./pages/global/sidebar/sidebarContext";
 import Topbar from "./pages/global/Topbar";
 
 import Dashboard from "./pages/dashboard";
+import DashboardNNovup from "./pages/dashboardnnovup";
 import Team from "./pages/team";
 import Invoices from "./pages/invoices";
 import Contacts from "./pages/contacts";
@@ -35,6 +36,7 @@ const App = () => {
               <Topbar />
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboardnnovup" element={<DashboardNNovup />} />
                 <Route path="/team" element={<Team />} />
                 <Route path="/contacts" element={<Contacts />} />
                 <Route path="/invoices" element={<Invoices />} />
