@@ -20,6 +20,7 @@ import CreateVM from "./pages/createVM";
 import ManageVMs from "./pages/manageVMs";
 import ManageVMsCecyber from "./pages/manageVMscecyber";
 import Automation from "./pages/automation";
+import AutomationNNovup from "./pages/automationVMnnovup";
 import Files from "./pages/files";
 
 const App = () => {
@@ -51,6 +52,10 @@ const App = () => {
                   element={<ManageVMsCecyber />}
                 />
                 <Route path="/automation" element={<Automation />} />
+                <Route
+                  path="/automationVMnnovup"
+                  element={<AutomationNNovup />}
+                />
                 <Route path="/Files" element={<Files />} />
               </Routes>
             </main>
