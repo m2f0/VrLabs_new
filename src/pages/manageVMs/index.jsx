@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Box, Button, IconButton } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import { useTheme } from "@mui/material/styles";
@@ -111,38 +110,6 @@ const Team = () => {
     window.open(url, "_blank");
   };
 
-  // Função para deletar uma VM
-  const deleteVM = async (vmid, node) => {
-    const confirmDelete = window.confirm(
-      `Tem certeza de que deseja deletar a VM ${vmid}?`
-    );
-    if (!confirmDelete) return;
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Erro ao deletar VM: ${response.status} ${response.statusText}`
-        );
-      }
-
-      alert(`VM ${vmid} deletada com sucesso!`);
-      fetchVMs();
-    } catch (error) {
-      console.error(`Erro ao deletar a VM ${vmid}:`, error);
-      alert(`Falha ao deletar a VM ${vmid}.`);
-    }
-  };
-
   useEffect(() => {
     fetchVMs();
   }, []);
@@ -155,7 +122,7 @@ const Team = () => {
     {
       field: "actions",
       headerName: "Ações",
-      width: 450,
+      width: 400,
       renderCell: ({ row }) => (
         <Box display="flex" gap="10px">
           <Button
@@ -181,9 +148,6 @@ const Team = () => {
           >
             Conectar
           </Button>
-          <IconButton color="error" onClick={() => deleteVM(row.id, row.node)}>
-            <DeleteForeverIcon />
-          </IconButton>
         </Box>
       ),
     },
