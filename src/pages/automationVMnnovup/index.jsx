@@ -115,53 +115,6 @@ const VmAutomation = () => {
   };
 
   // Função para gerar o código HTML do botão AUTO, que cria linked clones para a VM selecionada
-  const generateButtonCode = () => {
-    if (!selectedVM) {
-      alert("Selecione uma VM para gerar o botão.");
-      return;
-    }
-
-    const { id, node, name } = selectedVM;
-    const code = `<button onclick="createLab('${id}', '${node}', '${name}')">Criar Linked Clone</button>
-<script>
-  async function createLab(vmid, node, name) {
-    const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
-    if (!newVmId) {
-      alert("ID da nova VM é obrigatório.");
-      return;
-    }
-
-    try {
-      const response = await fetch(\`${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: "PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}",
-        },
-        body: new URLSearchParams({
-          newid: newVmId,
-          name: \`\${name}-lab-\${newVmId}\`,
-          snapname: "SNAP_1",
-          full: 0,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao criar Linked Clone.");
-      }
-
-      alert("Linked Clone criado com sucesso!");
-    } catch (error) {
-      alert("Erro ao criar Linked Clone. Verifique os logs.");
-      console.error(error);
-    }
-  }
-</script>`;
-    setButtonCode(code);
-    setIsButtonGenerated(true);
-  };
-
-  // Função para gerar o código HTML do botão que inicia e conecta os linked clones selecionados
   const generateLinkedCloneButtonCode = async () => {
     if (selectedClones.length === 0) {
       alert("Selecione pelo menos um Linked Clone para gerar o botão.");
@@ -169,8 +122,8 @@ const VmAutomation = () => {
     }
 
     try {
-      // Obter o ticket antes de gerar o botão
-      const ticketResponse = await fetch(
+      // Obter o ticket de autenticação
+      const authResponse = await fetch(
         `${API_BASE_URL}/api2/json/access/ticket`,
         {
           method: "POST",
@@ -179,72 +132,108 @@ const VmAutomation = () => {
           },
           body: new URLSearchParams({
             username: API_USER,
-            password: "1qazxsw2", // Use a senha correta
+            password: "1qazxsw2", // Substitua pela senha correta
           }),
         }
       );
 
-      if (!ticketResponse.ok) {
-        throw new Error(`Erro ao obter o ticket: ${ticketResponse.statusText}`);
+      if (!authResponse.ok) {
+        throw new Error(`Erro ao obter o ticket: ${authResponse.statusText}`);
       }
 
-      const ticketData = await ticketResponse.json();
-      const ticket = ticketData.data.ticket;
+      const authData = await authResponse.json();
+      const ticket = authData.data.ticket; // PVEAuthCookie
+      const csrfToken = authData.data.CSRFPreventionToken; // CSRF token para POST
 
-      // Gerar botões com o ticket incluído como cookie
+      console.log("Ticket e CSRF obtidos:", { ticket, csrfToken });
+
+      // Salvar o ticket e CSRF token em cookies
+      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
+      document.cookie = `CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None`;
+
+      // Gerar os botões com o ticket incluído
       const buttons = selectedClones
         .map((cloneId) => {
           const clone = linkedClones.find((lc) => lc.id === cloneId);
           if (!clone) return "";
 
           return `
-          <button onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
-            Iniciar ${clone.name}
-          </button>
-          <button onclick="connectVM('${clone.id}', '${clone.node}', '${ticket}')">
-            Conectar ${clone.name}
-          </button>
-  
-          <script>
-            async function startLinkedClone(vmid, node, name) {
-              try {
-                const response = await fetch(\`${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
-                  method: "POST",
-                  headers: {
-                    Authorization: "PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}",
-                  },
-                });
-  
-                if (!response.ok) {
-                  throw new Error("Erro ao iniciar Linked Clone.");
-                }
-  
-                alert(\`Linked Clone \${name} iniciado com sucesso!\`);
-              } catch (error) {
-                alert("Erro ao iniciar Linked Clone. Verifique os logs.");
-                console.error(error);
-              }
-            }
-  
-            function connectVM(vmid, node, ticket) {
-              const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}&PVEAuthCookie=\${ticket}\`;
-              window.open(url, "_blank");
-            }
-          </script>
-          `;
+      <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
+        Iniciar ${clone.name}
+      </button>
+      <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
+        Conectar ${clone.name}
+      </button>
+    `;
         })
         .join("\n");
 
       const code = `
-      <div>
-        ${buttons}
-      </div>
-    `;
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Teste do Código do Linked Clone</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+              background-color: #1e1e2f;
+            }
+            .button {
+              font-size: 18px;
+              font-weight: bold;
+              padding: 12px 24px;
+              margin: 10px;
+              border: none;
+              border-radius: 5px;
+              cursor: pointer;
+              color: white;
+            }
+            .start {
+              background-color: #6c63ff;
+            }
+            .connect {
+              background-color: #00c9a7;
+            }
+          </style>
+        </head>
+        <body>
+          ${buttons}
+          <script>
+            function connectVM(vmid, node) {
+              const ticket = getCookie("PVEAuthCookie");
+      
+              if (!ticket) {
+                alert("Erro: Ticket de autenticação não encontrado.");
+                return;
+              }
+      
+              const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&vmname=\${vmid}-lab-\${vmid}&node=\${node}&resize=off&cmd=\`;
+              document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None\`;
+              window.open(url, "_blank");
+            }
+      
+            function getCookie(name) {
+              const value = \`; \${document.cookie}\`;
+              const parts = value.split(\`; \${name}=\`);
+              if (parts.length === 2) return parts.pop().split(";").shift();
+            }
+          </script>
+        </body>
+        </html>
+      `;
 
       setLinkedCloneButtonCode(code);
     } catch (error) {
       console.error("Erro ao gerar o botão:", error);
-      alert("Erro ao gerar o botão. Verifique os logs.");
+      alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
 

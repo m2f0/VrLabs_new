@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acessar VM no Proxmox</title>
+  </head>
+  <body>
+    <h1>Acessar VM no Proxmox</h1>
+    <button id="access-vm-btn">Acessar Máquina Virtual</button>
+
+    <script>
+      const proxmoxURL = "https://prox.nnovup.com.br";
+      const nodeName = "prox1";
+      const vmID = "100";
+      const username = "apiuser@pve";
+      const password = "1qazxsw2";
+
+      async function getProxmoxAuth(username, password) {
+        const authResponse = await fetch(`${proxmoxURL}/api2/json/access/ticket`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (!authResponse.ok) {
+          throw new Error(`Falha na autenticação: ${authResponse.status}`);
+        }
+
+        const authData = await authResponse.json();
+        const ticket = authData.data.ticket;
+        const csrfToken = authData.data.CSRFPreventionToken;
+
+        // Definindo o cookie sem especificar o domínio
+        document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
+        console.log("PVEAuthCookie configurado:", ticket);
+        console.log("CSRFPreventionToken obtido:", csrfToken);
+
+        return { ticket, csrfToken };
+      }
+
+      async function getVNCTicket(ticket, csrfToken) {
+        const vncProxyResponse = await fetch(
+          `${proxmoxURL}/api2/json/nodes/${nodeName}/qemu/${vmID}/vncproxy`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "CSRFPreventionToken": csrfToken,
+            },
+            credentials: "include",
+          }
+        );
+
+        if (!vncProxyResponse.ok) {
+          throw new Error(`Erro ao obter VNC Proxy: ${vncProxyResponse.status}`);
+        }
+
+        const vncData = await vncProxyResponse.json();
+        return vncData.data;
+      }
+
+      function openNoVNC() {
+        // A URL do noVNC sem parâmetros adicionais, pois o Proxmox usará o cookie
+        const vncURL = `${proxmoxURL}/?console=kvm&novnc=1&vmid=${vmID}&node=${nodeName}&resize=off`;
+        console.log("Abrindo NoVNC com URL:", vncURL);
+        window.open(vncURL, "_blank");
+      }
+
+      document.getElementById("access-vm-btn").addEventListener("click", async () => {
+        try {
+          const { ticket, csrfToken } = await getProxmoxAuth(username, password);
+          await getVNCTicket(ticket, csrfToken);
+          openNoVNC();
+        } catch (error) {
+          console.error("Erro ao acessar a VM:", error);
+          alert(`Erro ao acessar a VM: ${error.message}`);
+        }
+      });
+    </script>
+  </body>
+</html>
