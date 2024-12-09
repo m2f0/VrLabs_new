@@ -1,30 +1,40 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://prox.nnovup.com.br/api2/json/access/ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ username, password }).toString(),
-      });
+      // Adiciona o realm @pve ao nome de usuário
+      const fullUsername = `${username}@pve`;
+
+      const response = await fetch(
+        "https://prox.nnovup.com.br/api2/json/access/ticket",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            username: fullUsername,
+            password,
+          }).toString(),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('proxmoxToken', data.data.ticket);
-        navigate('/'); // Redirect to the dashboard on success
+        // Armazena o ticket de autenticação no localStorage
+        localStorage.setItem("proxmoxToken", data.data.ticket);
+        navigate("/"); // Redireciona para o dashboard ao fazer login com sucesso
       } else {
-        setError('Invalid username or password. Please try again.');
+        setError("Invalid username or password. Please try again.");
       }
     } catch (err) {
-      setError('An error occurred. Please try again later.');
+      setError("An error occurred. Please try again later.");
     }
   };
 
