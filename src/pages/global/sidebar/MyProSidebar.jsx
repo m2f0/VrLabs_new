@@ -119,7 +119,7 @@ const MyProSidebar = () => {
                 ml="15px"
               >
                 <Typography variant="h3" color={colors.grey[100]}>
-                  ADMIN
+                  MENU
                 </Typography>
                 <IconButton
                   onClick={
@@ -151,16 +151,6 @@ const MyProSidebar = () => {
                   src="/assets/logo.png"
                   style={{ cursor: "pointer", borderRadius: "50%" }}
                 />
-              </Box>
-              <Box textAlign="center">
-                <Typography
-                  variant="h3"
-                  color={colors.grey[100]}
-                  fontWeight="bold"
-                  sx={{ m: "10px 0 0 0" }}
-                >
-                  Fabio
-                </Typography>
               </Box>
             </Box>
           )}
