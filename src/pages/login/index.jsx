@@ -10,26 +10,25 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // Adiciona o realm @pve ao nome de usuário
-      const fullUsername = `${username}@pve`;
-
       const response = await fetch(
         "https://prox.nnovup.com.br/api2/json/access/ticket",
         {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            username: fullUsername,
-            password,
-          }).toString(),
+          body: new URLSearchParams({ username, password }).toString(),
+          credentials: "include", // Certifique-se de incluir os cookies
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        // Armazena o ticket de autenticação no localStorage
-        localStorage.setItem("proxmoxToken", data.data.ticket);
-        navigate("/"); // Redireciona para o dashboard ao fazer login com sucesso
+
+        // Armazene o ticket e o cookie
+        localStorage.setItem("proxmoxToken", data.data.ticket); // Salva o ticket
+        localStorage.setItem("proxmoxCSRF", data.data.CSRFPreventionToken); // Salva o token CSRF
+        document.cookie = `PVEAuthCookie=${data.data.ticket}; Path=/; Secure; SameSite=Strict;`;
+
+        navigate("/"); // Redirecione para o dashboard
       } else {
         setError("Invalid username or password. Please try again.");
       }
