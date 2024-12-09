@@ -1,13 +1,10 @@
-// docs https://github.com/azouaoui-med/react-pro-sidebar
 import React, { useState } from "react";
 import { Menu, Sidebar, MenuItem } from "react-pro-sidebar";
 import { useProSidebar } from "react-pro-sidebar";
-
 import { useSidebarContext } from "./sidebarContext";
-
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { tokens } from "../../../theme";
-import { useTheme, Box, Typography, IconButton } from "@mui/material";
+import { useTheme, Box, Typography, IconButton, Button } from "@mui/material";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import ContactsOutlinedIcon from "@mui/icons-material/ContactsOutlined";
@@ -24,6 +21,7 @@ import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import SwitchRightOutlinedIcon from "@mui/icons-material/SwitchRightOutlined";
 import SwitchLeftOutlinedIcon from "@mui/icons-material/SwitchLeftOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -48,6 +46,12 @@ const MyProSidebar = () => {
   const [selected, setSelected] = useState("Dashboard");
   const { sidebarRTL, setSidebarRTL, sidebarImage } = useSidebarContext();
   const { collapseSidebar, toggleSidebar, collapsed, broken } = useProSidebar();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("proxmoxToken"); // Remove o token do armazenamento local
+    navigate("/login"); // Redireciona para a página de login
+  };
 
   return (
     <Box
@@ -233,6 +237,17 @@ const MyProSidebar = () => {
             />
           </Box>
         </Menu>
+        <Box mt="auto" p="20px">
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<LogoutIcon />}
+            fullWidth
+            onClick={handleLogout}
+          >
+            Logout
+          </Button>
+        </Box>
       </Sidebar>
     </Box>
   );

@@ -1,5 +1,5 @@
 import { ColorModeContext, useMode } from "./theme";
-import { CssBaseline, ThemeProvider } from "@mui/material";
+import { CssBaseline, ThemeProvider, Box } from "@mui/material"; // Importando Box
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { MyProSidebarProvider } from "./pages/global/sidebar/sidebarContext";
 
@@ -45,11 +45,26 @@ const App = () => {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <MyProSidebarProvider>
-          <div style={{ height: "100%", width: "100%" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: isPublicPage ? "column" : "row",
+              minHeight: "100vh",
+              width: "100%",
+            }}
+          >
             {/* Renderiza MyProSidebar e Topbar apenas em páginas protegidas */}
             {!isPublicPage && <MyProSidebar />}
-            {!isPublicPage && <Topbar />}
-            <main>
+            <Box
+              component="main"
+              sx={{
+                flexGrow: 1,
+                display: "flex",
+                flexDirection: "column",
+                padding: !isPublicPage ? "20px" : "0",
+              }}
+            >
+              {!isPublicPage && <Topbar />}
               <Routes>
                 {/* Páginas públicas */}
                 <Route path="/login" element={<Login />} />
@@ -204,8 +219,8 @@ const App = () => {
                 {/* Redireciona rotas desconhecidas para login */}
                 <Route path="*" element={<Navigate to="/login" />} />
               </Routes>
-            </main>
-          </div>
+            </Box>
+          </Box>
         </MyProSidebarProvider>
       </ThemeProvider>
     </ColorModeContext.Provider>
