@@ -209,7 +209,7 @@ const fetchVMs = async () => {
         <body>
           ${buttons}
           <script>
-            function startLinkedClone(vmid, node, name) {
+            window.startLinkedClone = function (vmid, node, name) {
               const ticket = getCookie("PVEAuthCookie");
               const csrfToken = getCookie("CSRFPreventionToken");
   
@@ -236,9 +236,9 @@ const fetchVMs = async () => {
                   console.error("Erro ao iniciar a VM:", error);
                   alert("Erro ao iniciar a VM. Verifique os logs.");
                 });
-            }
+            };
   
-            function connectVM(vmid, node) {
+            window.connectVM = function (vmid, node) {
               const ticket = getCookie("PVEAuthCookie");
   
               if (!ticket) {
@@ -249,7 +249,7 @@ const fetchVMs = async () => {
               const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
               document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None\`;
               window.open(url, "_blank");
-            }
+            };
   
             function getCookie(name) {
               const value = \`; \${document.cookie}\`;
@@ -267,6 +267,7 @@ const fetchVMs = async () => {
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
   
   
 
