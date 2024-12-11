@@ -387,7 +387,8 @@ const VmAutomation = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            Authorization: API_TOKEN, // Formato correto do token
+
           },
           body,
         }
@@ -651,7 +652,8 @@ const VmAutomation = () => {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",
-                        Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+                        Authorization: API_TOKEN, // Formato correto do token
+
                       },
                       body: JSON.stringify({
                         snapname: snapshotName,
