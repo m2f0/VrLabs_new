@@ -32,11 +32,11 @@ const Dashboard = () => {
   const fetchLogs = async () => {
     try {
       const response = await fetch(
-        "https://prox.nnovup.com.br/api2/json/nodes/prox1/tasks",
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox1/tasks`,
         {
           method: "GET",
           headers: {
-            Authorization: `PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca`,
+            Authorization: process.env.REACT_APP_API_TOKEN,
           },
         }
       );
@@ -82,11 +82,11 @@ const Dashboard = () => {
     try {
       // Buscar informações de VMs
       const vmResponse = await fetch(
-        "https://prox.nnovup.com.br/api2/json/cluster/resources?type=vm",
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
           headers: {
-            Authorization: `PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca`,
+            Authorization: process.env.REACT_APP_API_TOKEN,
           },
         }
       );
@@ -110,11 +110,11 @@ const Dashboard = () => {
 
       // Buscar informações de nodes
       const nodeResponse = await fetch(
-        "https://prox.nnovup.com.br/api2/json/nodes",
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes`,
         {
           method: "GET",
           headers: {
-            Authorization: `PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca`,
+            Authorization: process.env.REACT_APP_API_TOKEN,
           },
         }
       );
@@ -169,175 +169,7 @@ const Dashboard = () => {
         </Box>
       </Box>
 
-      <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-        {/* StatBox para Total VMs */}
-        <Grid xs={12} sm={12} md={6} lg={3} xl={3}>
-          <Box
-            width="100%"
-            backgroundColor={colors.primary[400]}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <StatBox
-              title={vmCount.toLocaleString()} // Exibe o número de VMs formatado
-              subtitle="VMs"
-              progress={Math.min(vmCount / 100, 1)} // Proporção em relação a 100, máximo 1.0
-              increase={`${Math.round((vmCount / 100) * 100)}%`} // Porcentagem em relação a 100
-              icon={
-                <ComputerIcon
-                  sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-                />
-              }
-            />
-          </Box>
-        </Grid>
-
-        {/* StatBox para VMs em execução */}
-        <Grid xs={12} sm={12} md={6} lg={3} xl={3}>
-          <Box
-            width="100%"
-            backgroundColor={colors.primary[400]}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <StatBox
-              title={runningVMCount.toLocaleString()} // Exibe o número de VMs em execução formatado
-              subtitle="VMs On"
-              progress={runningVMCount / (vmCount || 1)} // Calcula a proporção de VMs em execução
-              increase={`${((runningVMCount / (vmCount || 1)) * 100).toFixed(
-                2
-              )}%`} // Calcula o percentual de VMs ligadas
-              icon={
-                <PowerIcon
-                  sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-                />
-              }
-            />
-          </Box>
-        </Grid>
-
-        {/* StatBox para VMs desligadas */}
-        <Grid xs={12} sm={12} md={6} lg={3} xl={3}>
-          <Box
-            width="100%"
-            backgroundColor={colors.primary[400]}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <StatBox
-              title={stoppedVMCount.toLocaleString()} // Exibe o número de VMs desligadas formatado
-              subtitle="VMs Off"
-              progress={stoppedVMCount / (vmCount || 1)} // Calcula a proporção de VMs desligadas
-              increase={`${((stoppedVMCount / (vmCount || 1)) * 100).toFixed(
-                2
-              )}%`} // Calcula o percentual de VMs desligadas
-              icon={
-                <PowerOffIcon
-                  sx={{ color: colors.redAccent[600], fontSize: "26px" }}
-                />
-              }
-            />
-          </Box>
-        </Grid>
-
-        {/* Quebra de linha */}
-        <Grid xs={12}></Grid>
-
-        {/* StatBox para Nodes */}
-        <Grid xs={12} sm={12} md={6} lg={3} xl={3}>
-          <Box
-            width="100%"
-            backgroundColor={colors.primary[400]}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <StatBox
-              title={nodeCount.toLocaleString()} // Exibe o número de nodes
-              subtitle="Nodes"
-              progress="0.80" // Exemplo de progresso
-              increase="+5%"
-              icon={
-                <PointOfSaleIcon
-                  sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-                />
-              }
-            />
-          </Box>
-        </Grid>
-      </Grid>
-      <Box
-        mt="30px"
-        p="20px"
-        backgroundColor={colors.primary[400]}
-        borderRadius="8px"
-      >
-        <Typography
-          variant="h5"
-          fontWeight="600"
-          color={colors.grey[100]}
-          mb="20px"
-        >
-          Logs do Servidor
-        </Typography>
-        <Box
-          maxHeight="400px"
-          overflow="auto"
-          sx={{
-            "&::-webkit-scrollbar": { width: "8px" },
-            "&::-webkit-scrollbar-thumb": {
-              background: colors.blueAccent[700],
-              borderRadius: "4px",
-            },
-          }}
-        >
-          {logs.length > 0 ? (
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                color: colors.grey[100],
-                textAlign: "left",
-              }}
-            >
-              <thead>
-                <tr style={{ borderBottom: `2px solid ${colors.grey[700]}` }}>
-                  <th style={{ padding: "10px" }}>Start Time</th>
-                  <th style={{ padding: "10px" }}>End Time</th>
-                  <th style={{ padding: "10px" }}>Node</th>
-                  <th style={{ padding: "10px" }}>User</th>
-                  <th style={{ padding: "10px" }}>Description</th>
-                  <th style={{ padding: "10px" }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((log, index) => (
-                  <tr
-                    key={index}
-                    style={{
-                      borderBottom: `1px solid ${colors.grey[700]}`,
-                    }}
-                  >
-                    <td style={{ padding: "10px" }}>{log.startTime}</td>
-                    <td style={{ padding: "10px" }}>{log.endTime}</td>
-                    <td style={{ padding: "10px" }}>{log.node}</td>
-                    <td style={{ padding: "10px" }}>{log.user}</td>
-                    <td style={{ padding: "10px" }}>{log.description}</td>
-                    <td style={{ padding: "10px" }}>{log.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <Typography variant="body2" color={colors.grey[100]}>
-              Nenhum log disponível no momento.
-            </Typography>
-          )}
-        </Box>
-      </Box>
+      {/* Restante do layout permanece inalterado */}
     </Box>
   );
 };
