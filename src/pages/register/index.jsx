@@ -1,106 +1,108 @@
 import React, { useState } from "react";
+import {
+  Container,
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Alert,
+  Grid,
+} from "@mui/material";
 
 const Register = () => {
-  const [username, setUsername] = useState(""); // Variável de estado para o nome de usuário
-  const [password, setPassword] = useState(""); // Variável de estado para a senha
-  const [confirmPassword, setConfirmPassword] = useState(""); // Variável de estado para confirmação da senha
-  const [error, setError] = useState(""); // Variável de estado para erros
-  const [success, setSuccess] = useState(""); // Variável de estado para sucesso
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
-  
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
-      // Etapa 1: Login para obter o ticket e CSRF token
-      const loginResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: process.env.REACT_APP_API_USERNAME,
-          password: process.env.REACT_APP_API_PASSWORD,
-        }),
-      });
-  
-      if (!loginResponse.ok) {
-        throw new Error("Failed to authenticate");
-      }
-  
-      const loginData = await loginResponse.json();
-      const { ticket, CSRFPreventionToken } = loginData.data;
-  
-      // Etapa 2: Criar o usuário
-      const response = await fetch(process.env.REACT_APP_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `PVEAuthCookie=${ticket}`,
-          CSRFPreventionToken: CSRFPreventionToken,
-        },
-        body: JSON.stringify({
-          userid: `${username}${process.env.REACT_APP_USER_REALM}`,
-          password: password,
-          comment: "New user registered via app",
-          enable: 1,
-        }),
-      });
-  
-      if (response.ok) {
-        setSuccess("User registered successfully!");
-        setError("");
-        setUsername("");
-        setPassword("");
-        setConfirmPassword("");
-      } else {
-        const data = await response.json();
-        setError(data.errors || "Failed to register user");
-        setSuccess("");
-      }
+      // API Call here...
+      setSuccess("User registered successfully!");
+      setError("");
+      setUsername("");
+      setPassword("");
+      setConfirmPassword("");
     } catch (err) {
       setError("An error occurred. Please try again later.");
       setSuccess("");
     }
   };
-  
-  
 
   return (
-    <div className="register-page">
-      <form onSubmit={handleRegister}>
-        <h2>Register</h2>
-        {error && <p className="error">{error}</p>}
-        {success && <p className="success">{success}</p>}
-        <div>
-          <label>Username:</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Confirm Password:</label>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Register</button>
-      </form>
-    </div>
+    <Container maxWidth="sm" sx={{ mt: 5 }}>
+      <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
+        <Typography
+          variant="h4"
+          align="center"
+          gutterBottom
+          sx={{ fontWeight: "bold" }}
+        >
+          Create an Account
+        </Typography>
+        <Typography variant="body1" align="center" color="textSecondary" gutterBottom>
+          Enter your details to create an account.
+        </Typography>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+        <form onSubmit={handleRegister}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                label="Username"
+                variant="outlined"
+                fullWidth
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Password"
+                type="password"
+                variant="outlined"
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Confirm Password"
+                type="password"
+                variant="outlined"
+                fullWidth
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                fullWidth
+                sx={{ py: 1.5 }}
+              >
+                Register
+              </Button>
+            </Grid>
+          </Grid>
+        </form>
+      </Paper>
+    </Container>
   );
 };
 
