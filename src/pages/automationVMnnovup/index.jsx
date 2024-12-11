@@ -356,50 +356,61 @@ const VmAutomation = () => {
       alert("Selecione uma VM para criar um Linked Clone.");
       return;
     }
-
+  
     if (!selectedSnapshot || selectedSnapshot.name === "current") {
       alert(
         "A VM selecionada não possui snapshots válidos para criar um Linked Clone."
       );
       return;
     }
-
-    const { id: vmId, node, name } = selectedVM;
-    const { name: snapName } = selectedSnapshot; // Nome correto do snapshot
-
-    const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
-    if (!newVmId) {
-      alert("ID da nova VM é obrigatório.");
+  
+    const { id: vmId, node, name: originalName } = selectedVM;
+    const { name: snapName } = selectedSnapshot;
+  
+    const newVmId = prompt(
+      "Digite o ID numérico da nova VM (Linked Clone):"
+    );
+    if (!newVmId || isNaN(newVmId)) {
+      alert("ID da nova VM é obrigatório e deve ser numérico.");
       return;
     }
-
+  
+    const sanitizedNewVmName = prompt(
+      "Digite o nome para o Linked Clone (DNS válido):"
+    );
+    if (!sanitizedNewVmName || !/^[a-zA-Z0-9-]+$/.test(sanitizedNewVmName)) {
+      alert(
+        "O nome do Linked Clone é obrigatório e deve conter apenas letras, números ou hifens."
+      );
+      return;
+    }
+  
     try {
       const body = new URLSearchParams({
-        newid: newVmId,
-        name: `${name}-lab-${newVmId}`,
-        snapname: snapName, // Nome correto do snapshot
+        newid: parseInt(newVmId, 10), // Garante que `newid` seja numérico
+        name: sanitizedNewVmName, // Nome sanitizado e validado
+        snapname: snapName, // Nome do snapshot
         full: "0", // Certifique-se de enviar "0" como string
       });
-
+  
       const response = await fetch(
         `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmId}/clone`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: API_TOKEN, // Formato correto do token
-
+            Authorization: API_TOKEN, // Cabeçalho corrigido
           },
           body,
         }
       );
-
+  
       if (!response.ok) {
-        const errorText = await response.text(); // Leia o corpo da resposta para mais detalhes
+        const errorText = await response.text();
         console.error("Erro no Proxmox:", errorText);
         throw new Error("Erro ao criar Linked Clone.");
       }
-
+  
       alert("Linked Clone criado com sucesso!");
       fetchVMs(); // Atualiza a lista de VMs após criar o clone
     } catch (error) {
@@ -407,6 +418,7 @@ const VmAutomation = () => {
       alert("Erro ao criar Linked Clone. Verifique os logs.");
     }
   };
+  
 
   // Função para testar o código gerado pelo botão AUTO, abrindo-o em uma nova aba
   const testGeneratedCode = () => {
