@@ -133,8 +133,8 @@ const fetchVMs = async () => {
             "Content-Type": "application/x-www-form-urlencoded",
           },
           body: new URLSearchParams({
-            username: API_USER, // Substitua pelo usuário correto
-            password: "SUA_SENHA", // Substitua pela senha correta
+            username: process.env.REACT_APP_API_USERNAME, // Substitua pelo usuário correto
+            password: process.env.REACT_APP_API_PASSWORD, // Substitua pela senha correta
           }),
         }
       );
