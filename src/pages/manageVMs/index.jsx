@@ -11,10 +11,9 @@ const Team = () => {
 
   const [vmList, setVmList] = useState([]);
 
-  // Constantes definidas diretamente no código
-  const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca"; // Token de autenticação
-  const API_USER = "apiuser@pve"; // Usuário da API
-  const API_BASE_URL = "https://prox.nnovup.com.br"; // URL base da API
+  // Variáveis do .env
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // URL base da API
+  const API_TOKEN = process.env.REACT_APP_API_TOKEN; // Token de autenticação
 
   // Função para buscar a lista de VMs
   const fetchVMs = async () => {
@@ -24,7 +23,7 @@ const Team = () => {
         {
           method: "GET",
           headers: {
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            Authorization: API_TOKEN,
           },
         }
       );
@@ -58,7 +57,7 @@ const Team = () => {
         {
           method: "POST",
           headers: {
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            Authorization: API_TOKEN,
           },
         }
       );
@@ -85,7 +84,7 @@ const Team = () => {
         {
           method: "POST",
           headers: {
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            Authorization: API_TOKEN,
           },
         }
       );
