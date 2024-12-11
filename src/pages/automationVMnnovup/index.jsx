@@ -32,52 +32,51 @@ const VmAutomation = () => {
   };
 
   // Função para buscar a lista de VMs do Proxmox e filtrar as normais e os linked clones
-  const fetchVMs = async () => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: API_TOKEN, // Certifique-se de que a variável no .env tem o formato correto
-          },
-          
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Erro na API do Proxmox: ${response.status} ${response.statusText}`
-        );
+  // Função para buscar a lista de VMs do Proxmox e filtrar as normais e os linked clones
+const fetchVMs = async () => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: API_TOKEN, // Certifique-se de que a variável no .env tem o formato correto
+        },
       }
+    );
 
-      const data = await response.json();
-
-      // Verifica se os dados estão no formato esperado
-      const allVMs = (data.data || []).map((vm) => ({
-        id: vm.vmid,
-        name: vm.name || "Sem Nome", // Evita que "undefined" cause erro
-        status: vm.status || "Indisponível", // Tratamento de status indefinido
-        node: vm.node || "Indefinido", // Tratamento de node indefinido
-      }));
-
-      // Filtrar VMs normais (excluindo linked clones)
-      const normalVMs = allVMs.filter(
-        (vm) => vm.name && !vm.name.includes("-lab-")
+    if (!response.ok) {
+      throw new Error(
+        `Erro na API do Proxmox: ${response.status} ${response.statusText}`
       );
-
-      // Filtrar apenas linked clones
-      const clones = allVMs.filter(
-        (vm) => vm.name && vm.name.includes("-lab-")
-      );
-
-      setVmList(normalVMs);
-      setLinkedClones(clones);
-    } catch (error) {
-      console.error("Erro ao buscar lista de VMs:", error);
-      alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
     }
-  };
+
+    const data = await response.json();
+
+    // Mapeia as VMs recebidas e filtra com base no nome
+    const allVMs = (data.data || []).map((vm) => ({
+      id: vm.vmid,
+      name: vm.name || "Sem Nome", // Evita que "undefined" cause erro
+      status: vm.status || "Indisponível", // Tratamento de status indefinido
+      node: vm.node || "Indefinido", // Tratamento de node indefinido
+    }));
+
+    // Filtrar VMs normais (excluindo aquelas com "CLONE" no nome)
+    const normalVMs = allVMs.filter(
+      (vm) => vm.name && !vm.name.includes("CLONE")
+    );
+
+    // Filtrar apenas linked clones (aqueles com "CLONE" no nome)
+    const clones = allVMs.filter((vm) => vm.name && vm.name.includes("CLONE"));
+
+    setVmList(normalVMs); // Atualiza o estado das VMs normais
+    setLinkedClones(clones); // Atualiza o estado dos clones
+  } catch (error) {
+    console.error("Erro ao buscar lista de VMs:", error);
+    alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
+  }
+};
+
 
   const fetchSnapshots = async (vmid, node) => {
     try {
@@ -364,32 +363,20 @@ const VmAutomation = () => {
       return;
     }
   
-    const { id: vmId, node, name: originalName } = selectedVM;
-    const { name: snapName } = selectedSnapshot;
+    const { id: vmId, node, name } = selectedVM;
+    const { name: snapName } = selectedSnapshot; // Nome correto do snapshot
   
-    const newVmId = prompt(
-      "Digite o ID numérico da nova VM (Linked Clone):"
-    );
-    if (!newVmId || isNaN(newVmId)) {
-      alert("ID da nova VM é obrigatório e deve ser numérico.");
-      return;
-    }
-  
-    const sanitizedNewVmName = prompt(
-      "Digite o nome para o Linked Clone (DNS válido):"
-    );
-    if (!sanitizedNewVmName || !/^[a-zA-Z0-9-]+$/.test(sanitizedNewVmName)) {
-      alert(
-        "O nome do Linked Clone é obrigatório e deve conter apenas letras, números ou hifens."
-      );
+    const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
+    if (!newVmId) {
+      alert("ID da nova VM é obrigatório.");
       return;
     }
   
     try {
       const body = new URLSearchParams({
-        newid: parseInt(newVmId, 10), // Garante que `newid` seja numérico
-        name: sanitizedNewVmName, // Nome sanitizado e validado
-        snapname: snapName, // Nome do snapshot
+        newid: newVmId,
+        name: `${name}-CLONE-${newVmId}`, // Inclui a palavra CLONE automaticamente
+        snapname: snapName, // Nome correto do snapshot
         full: "0", // Certifique-se de enviar "0" como string
       });
   
@@ -399,14 +386,14 @@ const VmAutomation = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: API_TOKEN, // Cabeçalho corrigido
+            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
           },
           body,
         }
       );
   
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = await response.text(); // Leia o corpo da resposta para mais detalhes
         console.error("Erro no Proxmox:", errorText);
         throw new Error("Erro ao criar Linked Clone.");
       }
@@ -418,6 +405,7 @@ const VmAutomation = () => {
       alert("Erro ao criar Linked Clone. Verifique os logs.");
     }
   };
+  
   
 
   // Função para testar o código gerado pelo botão AUTO, abrindo-o em uma nova aba
