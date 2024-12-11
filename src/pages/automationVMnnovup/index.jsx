@@ -23,7 +23,7 @@ const VmAutomation = () => {
 
     // Variáveis do .env
     const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-    const API_TOKEN = process.env.REACT_APP_API_TOKEN;
+    const API_TOKEN = process.env.REACT_APP_API_TOKEN; // Formato: `PVEAPIToken=apiuser@pve!apitoken=<TOKEN>`
     const API_USER = process.env.REACT_APP_API_USERNAME;
     const BACKEND_URL = process.env.REACT_APP_FILE_BASE_URL;
 
