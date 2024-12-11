@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Container,
-  Box,
   TextField,
   Button,
   Typography,
@@ -19,11 +18,15 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
     try {
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ username, password }).toString(),
+        body: new URLSearchParams({
+          username: `${username}${process.env.REACT_APP_USER_REALM}`, // Inclui o realm
+          password: password,
+        }).toString(),
         credentials: "include",
       });
 
@@ -37,10 +40,10 @@ const Login = () => {
 
         navigate("/"); // Redirecione para o dashboard
       } else {
-        setError("Invalid username or password. Please try again.");
+        setError("Usuário ou senha inválidos. Por favor, tente novamente.");
       }
     } catch (err) {
-      setError("An error occurred. Please try again later.");
+      setError("Um erro ocorreu. Por favor, tente novamente mais tarde.");
     }
   };
 
