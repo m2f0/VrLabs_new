@@ -406,7 +406,7 @@ const fetchVMs = async () => {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            Authorization: API_TOKEN,
           },
           body,
         }
