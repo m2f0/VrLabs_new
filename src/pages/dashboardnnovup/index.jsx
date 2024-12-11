@@ -79,8 +79,7 @@ const Dashboard = () => {
   // Função para buscar o número total de VMs e nodes
   const fetchVMData = async () => {
     try {
-      // Buscar informações de VMs
-      const vmResponse = await fetch(
+      const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
@@ -89,51 +88,20 @@ const Dashboard = () => {
           },
         }
       );
-
-      if (!vmResponse.ok) {
+  
+      if (!response.ok) {
         throw new Error(
-          `Erro na API do Proxmox: ${vmResponse.status} ${vmResponse.statusText}`
+          `Erro na API do Proxmox: ${response.status} ${response.statusText}`
         );
       }
-
-      const vmData = await vmResponse.json();
-      const totalVMs = vmData.data.length;
-      const runningVMs = vmData.data.filter(
-        (vm) => vm.status === "running"
-      ).length;
-      const stoppedVMs = totalVMs - runningVMs;
-
-      setVMCount(totalVMs);
-      setRunningVMCount(runningVMs);
-      setStoppedVMCount(stoppedVMs);
-
-      // Buscar informações de nodes
-      const nodeResponse = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: process.env.REACT_APP_API_TOKEN,
-          },
-        }
-      );
-
-      if (!nodeResponse.ok) {
-        throw new Error(
-          `Erro na API do Proxmox: ${nodeResponse.status} ${nodeResponse.statusText}`
-        );
-      }
-
-      const nodeData = await nodeResponse.json();
-      setNodeCount(nodeData.data.length); // Número de nodes
+  
+      const data = await response.json();
+      console.log(data); // Verifique os dados retornados
     } catch (error) {
       console.error("Erro ao buscar os dados:", error);
-      setVMCount(0);
-      setRunningVMCount(0);
-      setStoppedVMCount(0);
-      setNodeCount(0);
     }
   };
+  
 
   // Carregar os dados ao montar o componente
   useEffect(() => {
