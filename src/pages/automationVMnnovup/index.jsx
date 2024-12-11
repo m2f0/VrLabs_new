@@ -133,15 +133,13 @@ const fetchVMs = async () => {
             "Content-Type": "application/x-www-form-urlencoded",
           },
           body: new URLSearchParams({
-            username: process.env.REACT_APP_API_USERNAME, // Certifique-se de que está correto
-            password: process.env.REACT_APP_API_PASSWORD, // Certifique-se de que está correto
+            username: API_USER,
+            password: "1qazxsw2", // Substitua pela senha correta
           }),
         }
       );
   
       if (!authResponse.ok) {
-        const errorText = await authResponse.text();
-        console.error("Erro ao autenticar:", errorText);
         throw new Error(`Erro ao obter o ticket: ${authResponse.statusText}`);
       }
   
@@ -155,20 +153,20 @@ const fetchVMs = async () => {
       document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
       document.cookie = `CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None`;
   
-      // Gerar os botões com o ticket incluído
+      // Gerar os botões com as funções incluídas
       const buttons = selectedClones
         .map((cloneId) => {
           const clone = linkedClones.find((lc) => lc.id === cloneId);
           if (!clone) return "";
   
           return `
-          <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
-            Iniciar ${clone.name}
-          </button>
-          <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
-            Conectar ${clone.name}
-          </button>
-        `;
+        <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
+          Iniciar ${clone.name}
+        </button>
+        <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
+          Conectar ${clone.name}
+        </button>
+      `;
         })
         .join("\n");
   
@@ -211,19 +209,48 @@ const fetchVMs = async () => {
         <body>
           ${buttons}
           <script>
+            function startLinkedClone(vmid, node, name) {
+              const ticket = getCookie("PVEAuthCookie");
+              const csrfToken = getCookie("CSRFPreventionToken");
+  
+              if (!ticket || !csrfToken) {
+                alert("Erro: Credenciais não encontradas. Refaça a autenticação.");
+                return;
+              }
+  
+              fetch(\`${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "CSRFPreventionToken": csrfToken,
+                  Authorization: \`PVEAuthCookie=\${ticket}\`,
+                },
+              })
+                .then((response) => {
+                  if (!response.ok) {
+                    throw new Error(\`Erro ao iniciar a VM: \${response.statusText}\`);
+                  }
+                  alert(\`VM \${name} iniciada com sucesso!\`);
+                })
+                .catch((error) => {
+                  console.error("Erro ao iniciar a VM:", error);
+                  alert("Erro ao iniciar a VM. Verifique os logs.");
+                });
+            }
+  
             function connectVM(vmid, node) {
               const ticket = getCookie("PVEAuthCookie");
-      
+  
               if (!ticket) {
                 alert("Erro: Ticket de autenticação não encontrado.");
                 return;
               }
-      
-              const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&vmname=\${vmid}-lab-\${vmid}&node=\${node}&resize=off&cmd=\`;
+  
+              const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
               document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None\`;
               window.open(url, "_blank");
             }
-      
+  
             function getCookie(name) {
               const value = \`; \${document.cookie}\`;
               const parts = value.split(\`; \${name}=\`);
@@ -240,6 +267,7 @@ const fetchVMs = async () => {
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
   
 
   const testGeneratedLinkedCloneCode = () => {
