@@ -9,18 +9,34 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
+  
     try {
+      // Etapa 1: Login para obter o ticket e CSRF token
+      const loginResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: process.env.REACT_APP_API_USERNAME,
+          password: process.env.REACT_APP_API_PASSWORD,
+        }),
+      });
+  
+      if (!loginResponse.ok) {
+        throw new Error("Failed to authenticate");
+      }
+  
+      const loginData = await loginResponse.json();
+      const { ticket, CSRFPreventionToken } = loginData.data;
+  
+      // Etapa 2: Criar o usuário
       const response = await fetch(process.env.REACT_APP_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: process.env.REACT_APP_API_TOKEN,
+          Authorization: `PVEAuthCookie=${ticket}`,
+          CSRFPreventionToken: CSRFPreventionToken,
         },
         body: JSON.stringify({
           userid: `${username}${process.env.REACT_APP_USER_REALM}`,
@@ -29,7 +45,7 @@ const Register = () => {
           enable: 1,
         }),
       });
-
+  
       if (response.ok) {
         setSuccess("User registered successfully!");
         setError("");
@@ -46,6 +62,8 @@ const Register = () => {
       setSuccess("");
     }
   };
+  
+  
 
   return (
     <div className="register-page">
