@@ -202,10 +202,10 @@ const fetchVMs = async () => {
               fetch(\`${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
                 method: "POST",
                 headers: {
-                  "Content-Type": "application/json",
                   "CSRFPreventionToken": csrfToken,
                   Authorization: \`PVEAuthCookie=\${ticket}\`,
                 },
+                body: null, // Envia um corpo vazio
               })
                 .then((response) => {
                   if (!response.ok) {
@@ -251,6 +251,7 @@ const fetchVMs = async () => {
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
   
   
   
