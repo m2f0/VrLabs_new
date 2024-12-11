@@ -56,14 +56,14 @@ const Login = () => {
           Login
         </Typography>
         <Typography variant="body1" align="center" color="textSecondary" gutterBottom>
-          Enter your credentials to access your account.
+          Entre com seus dados para acessar o sistema.
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <form onSubmit={handleLogin}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
-                label="Username"
+                label="Usuário"
                 variant="outlined"
                 fullWidth
                 value={username}
@@ -73,7 +73,7 @@ const Login = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Password"
+                label="Senha"
                 type="password"
                 variant="outlined"
                 fullWidth
@@ -95,7 +95,7 @@ const Login = () => {
             </Grid>
             <Grid item xs={12} textAlign="center">
               <Typography variant="body2">
-                Don't have an account? <Link to="/register">Register here</Link>
+                Não tem uma conta? <Link to="/register">Registre-se aqui</Link>
               </Typography>
             </Grid>
           </Grid>
