@@ -122,7 +122,7 @@ const fetchVMs = async () => {
       alert("Selecione pelo menos um Linked Clone para gerar o botão.");
       return;
     }
-
+  
     try {
       // Obter o ticket de autenticação
       const authResponse = await fetch(
@@ -133,43 +133,45 @@ const fetchVMs = async () => {
             "Content-Type": "application/x-www-form-urlencoded",
           },
           body: new URLSearchParams({
-            username: API_USER,
-            password: "1qazxsw2", // Substitua pela senha correta
+            username: process.env.REACT_APP_API_USERNAME, // Certifique-se de que está correto
+            password: process.env.REACT_APP_API_PASSWORD, // Certifique-se de que está correto
           }),
         }
       );
-
+  
       if (!authResponse.ok) {
+        const errorText = await authResponse.text();
+        console.error("Erro ao autenticar:", errorText);
         throw new Error(`Erro ao obter o ticket: ${authResponse.statusText}`);
       }
-
+  
       const authData = await authResponse.json();
       const ticket = authData.data.ticket; // PVEAuthCookie
       const csrfToken = authData.data.CSRFPreventionToken; // CSRF token para POST
-
+  
       console.log("Ticket e CSRF obtidos:", { ticket, csrfToken });
-
+  
       // Salvar o ticket e CSRF token em cookies
       document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
       document.cookie = `CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None`;
-
+  
       // Gerar os botões com o ticket incluído
       const buttons = selectedClones
         .map((cloneId) => {
           const clone = linkedClones.find((lc) => lc.id === cloneId);
           if (!clone) return "";
-
+  
           return `
-      <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
-        Iniciar ${clone.name}
-      </button>
-      <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
-        Conectar ${clone.name}
-      </button>
-    `;
+          <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
+            Iniciar ${clone.name}
+          </button>
+          <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
+            Conectar ${clone.name}
+          </button>
+        `;
         })
         .join("\n");
-
+  
       const code = `
         <!DOCTYPE html>
         <html lang="en">
@@ -231,13 +233,14 @@ const fetchVMs = async () => {
         </body>
         </html>
       `;
-
+  
       setLinkedCloneButtonCode(code);
     } catch (error) {
       console.error("Erro ao gerar o botão:", error);
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
 
   const testGeneratedLinkedCloneCode = () => {
     if (!linkedCloneButtonCode) {
