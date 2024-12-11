@@ -124,49 +124,51 @@ const fetchVMs = async () => {
     }
   
     try {
-      // Obter credenciais do .env
-      const username = process.env.REACT_APP_API_USERNAME;
-      const password = process.env.REACT_APP_API_PASSWORD;
+      // Solicita o ticket de autenticação no Proxmox
+      const authResponse = await fetch(
+        `${API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: API_USER, // Substitua pelo usuário correto
+            password: "SUA_SENHA", // Substitua pela senha correta
+          }),
+        }
+      );
   
-      if (!username || !password) {
-        alert("Erro: Credenciais não configuradas corretamente no .env.");
-        return;
-      }
-  
-      // Obter o ticket de autenticação
-      const authResponse = await fetch(`${API_BASE_URL}/api2/json/access/ticket`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          username: username.trim(),
-          password: password.trim(),
-        }),
-      });
-  
+      // Verifica se a autenticação foi bem-sucedida
       if (!authResponse.ok) {
-        const errorDetails = await authResponse.text();
-        throw new Error(`Erro ao obter o ticket: ${authResponse.statusText}\n${errorDetails}`);
+        throw new Error(`Erro ao obter o ticket: ${authResponse.statusText}`);
       }
   
+      // Extrai os dados do ticket e do token CSRF
       const authData = await authResponse.json();
-      const ticket = authData.data.ticket; // PVEAuthCookie
-      const csrfToken = authData.data.CSRFPreventionToken; // CSRF token para POST
+      const ticket = authData.data.ticket; // Este é o `PVEAuthCookie`
+      const csrfToken = authData.data.CSRFPreventionToken; // Este é o CSRF Token
   
-      // Configurar as credenciais no script gerado
+      console.log("Ticket e CSRF obtidos:", { ticket, csrfToken });
+  
+      // Armazena os cookies no navegador
+      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
+      document.cookie = `CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None`;
+  
+      // Gera o código do botão com as funções de controle de VMs
       const buttons = selectedClones
         .map((cloneId) => {
           const clone = linkedClones.find((lc) => lc.id === cloneId);
           if (!clone) return "";
   
           return `
-          <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
-            Iniciar ${clone.name}
-          </button>
-          <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
-            Conectar ${clone.name}
-          </button>`;
+            <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
+              Iniciar ${clone.name}
+            </button>
+            <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
+              Conectar ${clone.name}
+            </button>
+          `;
         })
         .join("\n");
   
@@ -178,46 +180,22 @@ const fetchVMs = async () => {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Teste do Código do Linked Clone</title>
           <style>
-            body {
-              font-family: Arial, sans-serif;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              height: 100vh;
-              margin: 0;
-              background-color: #1e1e2f;
-            }
-            .button {
-              font-size: 18px;
-              font-weight: bold;
-              padding: 12px 24px;
-              margin: 10px;
-              border: none;
-              border-radius: 5px;
-              cursor: pointer;
-              color: white;
-            }
-            .start {
-              background-color: #6c63ff;
-            }
-            .connect {
-              background-color: #00c9a7;
-            }
+            body { font-family: Arial, sans-serif; background-color: #1e1e2f; color: white; }
+            .button { font-size: 16px; padding: 10px; margin: 5px; }
+            .start { background-color: #4CAF50; color: white; }
+            .connect { background-color: #2196F3; color: white; }
           </style>
         </head>
         <body>
           ${buttons}
           <script>
-            // Configurar cookies
-            document.cookie = "PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None";
-            document.cookie = "CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None";
-  
+            // Função para iniciar uma VM
             window.startLinkedClone = function (vmid, node, name) {
+              const ticket = getCookie("PVEAuthCookie");
               const csrfToken = getCookie("CSRFPreventionToken");
   
-              if (!csrfToken) {
-                alert("Erro: Token CSRF não encontrado.");
+              if (!ticket || !csrfToken) {
+                alert("Erro: Credenciais não encontradas. Refaça a autenticação.");
                 return;
               }
   
@@ -226,6 +204,7 @@ const fetchVMs = async () => {
                 headers: {
                   "Content-Type": "application/json",
                   "CSRFPreventionToken": csrfToken,
+                  Authorization: \`PVEAuthCookie=\${ticket}\`,
                 },
               })
                 .then((response) => {
@@ -240,6 +219,7 @@ const fetchVMs = async () => {
                 });
             };
   
+            // Função para conectar a uma VM
             window.connectVM = function (vmid, node) {
               const ticket = getCookie("PVEAuthCookie");
   
@@ -249,9 +229,11 @@ const fetchVMs = async () => {
               }
   
               const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
+              document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None\`;
               window.open(url, "_blank");
             };
   
+            // Função para obter os cookies
             function getCookie(name) {
               const value = \`; \${document.cookie}\`;
               const parts = value.split(\`; \${name}=\`);
@@ -262,12 +244,14 @@ const fetchVMs = async () => {
         </html>
       `;
   
+      // Armazena o código gerado no estado
       setLinkedCloneButtonCode(code);
     } catch (error) {
       console.error("Erro ao gerar o botão:", error);
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
   
   
   
