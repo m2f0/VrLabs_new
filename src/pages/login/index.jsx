@@ -1,5 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import {
+  Container,
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Alert,
+  Grid,
+} from "@mui/material";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -10,22 +20,19 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(
-        "https://prox.nnovup.com.br/api2/json/access/ticket",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ username, password }).toString(),
-          credentials: "include", // Certifique-se de incluir os cookies
-        }
-      );
+      const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ username, password }).toString(),
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();
 
-        // Armazene o ticket e o cookie
-        localStorage.setItem("proxmoxToken", data.data.ticket); // Salva o ticket
-        localStorage.setItem("proxmoxCSRF", data.data.CSRFPreventionToken); // Salva o token CSRF
+        // Armazene o ticket e o CSRF token no localStorage
+        localStorage.setItem("proxmoxToken", data.data.ticket);
+        localStorage.setItem("proxmoxCSRF", data.data.CSRFPreventionToken);
         document.cookie = `PVEAuthCookie=${data.data.ticket}; Path=/; Secure; SameSite=Strict;`;
 
         navigate("/"); // Redirecione para o dashboard
@@ -38,35 +45,63 @@ const Login = () => {
   };
 
   return (
-    <div className="login-page">
-      <form onSubmit={handleLogin}>
-        <h2>Login</h2>
-        {error && <p className="error">{error}</p>}
-        <div>
-          <label>Username:</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Login</button>
-        {/* Link para a página de registro */}
-        <p>
-          Don't have an account? <Link to="/register">Register here</Link>
-        </p>
-      </form>
-    </div>
+    <Container maxWidth="sm" sx={{ mt: 5 }}>
+      <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
+        <Typography
+          variant="h4"
+          align="center"
+          gutterBottom
+          sx={{ fontWeight: "bold" }}
+        >
+          Login
+        </Typography>
+        <Typography variant="body1" align="center" color="textSecondary" gutterBottom>
+          Enter your credentials to access your account.
+        </Typography>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        <form onSubmit={handleLogin}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                label="Username"
+                variant="outlined"
+                fullWidth
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Password"
+                type="password"
+                variant="outlined"
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                fullWidth
+                sx={{ py: 1.5 }}
+              >
+                Login
+              </Button>
+            </Grid>
+            <Grid item xs={12} textAlign="center">
+              <Typography variant="body2">
+                Don't have an account? <Link to="/register">Register here</Link>
+              </Typography>
+            </Grid>
+          </Grid>
+        </form>
+      </Paper>
+    </Container>
   );
 };
 
