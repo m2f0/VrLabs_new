@@ -124,23 +124,30 @@ const fetchVMs = async () => {
     }
   
     try {
+      // Obter credenciais do .env
+      const username = process.env.REACT_APP_API_USERNAME;
+      const password = process.env.REACT_APP_API_PASSWORD;
+  
+      if (!username || !password) {
+        alert("Erro: Credenciais não configuradas corretamente no .env.");
+        return;
+      }
+  
       // Obter o ticket de autenticação
-      const authResponse = await fetch(
-        `${API_BASE_URL}/api2/json/access/ticket`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            username: API_USER,
-            password: "1qazxsw2", // Substitua pela senha correta
-          }),
-        }
-      );
+      const authResponse = await fetch(`${API_BASE_URL}/api2/json/access/ticket`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          username: username.trim(),
+          password: password.trim(),
+        }),
+      });
   
       if (!authResponse.ok) {
-        throw new Error(`Erro ao obter o ticket: ${authResponse.statusText}`);
+        const errorDetails = await authResponse.text();
+        throw new Error(`Erro ao obter o ticket: ${authResponse.statusText}\n${errorDetails}`);
       }
   
       const authData = await authResponse.json();
@@ -267,6 +274,7 @@ const fetchVMs = async () => {
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
   
   
   
