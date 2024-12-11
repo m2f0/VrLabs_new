@@ -36,20 +36,18 @@ const Dashboard = () => {
         {
           method: "GET",
           headers: {
-            Authorization: process.env.REACT_APP_API_TOKEN,
+            Authorization: process.env.REACT_APP_API_TOKEN, // Use o token formatado corretamente
           },
         }
       );
-
+  
       if (!response.ok) {
         throw new Error(
           `Erro ao buscar logs: ${response.status} ${response.statusText}`
         );
       }
-
+  
       const data = await response.json();
-
-      // Mapeamento dos campos recebidos para os exibidos
       const mappedLogs = data.data.map((log) => ({
         startTime: log.starttime
           ? new Date(log.starttime * 1000).toLocaleString()
@@ -59,16 +57,17 @@ const Dashboard = () => {
           : "N/A",
         node: log.node || "N/A",
         user: log.user || "N/A",
-        description: log.type || "N/A", // Mapeado para `type`
-        status: log.status || "N/A", // Mapeado para `status`
+        description: log.type || "N/A",
+        status: log.status || "N/A",
       }));
-
-      setLogs(mappedLogs); // Atualiza o estado com os logs mapeados
+  
+      setLogs(mappedLogs);
     } catch (error) {
       console.error("Erro ao buscar logs do servidor:", error);
-      setLogs([]); // Limpa os logs em caso de erro
+      setLogs([]);
     }
   };
+  
 
   // Atualiza os logs automaticamente a cada 5 segundos
   useEffect(() => {
