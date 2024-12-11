@@ -13,9 +13,12 @@ const HtmlFiles = () => {
   const [fileList, setFileList] = useState([]);
   const [selectedFile, setSelectedFile] = useState("");
 
+  // Variáveis de ambiente
+  const API_BASE_URL = process.env.REACT_APP_FILE_BASE_URL;
+
   const fetchFiles = async () => {
     try {
-      const response = await fetch("https://fq5n66-3000.csb.app/list-htmls");
+      const response = await fetch(`${API_BASE_URL}list-htmls`);
       if (!response.ok) {
         throw new Error("Erro ao buscar a lista de arquivos.");
       }
@@ -36,10 +39,9 @@ const HtmlFiles = () => {
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(
-        `https://jm7xgg-3000.csb.app/delete-html/${fileName}`,
-        { method: "DELETE" }
-      );
+      const response = await fetch(`${API_BASE_URL}delete-html/${fileName}`, {
+        method: "DELETE",
+      });
 
       if (!response.ok) {
         throw new Error("Erro ao excluir o arquivo.");
@@ -58,7 +60,7 @@ const HtmlFiles = () => {
       alert("Selecione um arquivo para abrir.");
       return;
     }
-    const fileUrl = `https://jm7xgg-3000.csb.app/HTMLs/${selectedFile}`;
+    const fileUrl = `${API_BASE_URL}HTMLs/${selectedFile}`;
     window.open(fileUrl, "_blank");
   };
 
