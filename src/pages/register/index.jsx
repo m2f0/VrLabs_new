@@ -27,13 +27,13 @@ const Register = () => {
 
     try {
       // API Call here...
-      setSuccess("User registered successfully!");
+      setSuccess("Usuário registrado com sucesso!");
       setError("");
       setUsername("");
       setPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setError("An error occurred. Please try again later.");
+      setError("Um erro ocorreu. Por favor, tente novamente mais tarde.");
       setSuccess("");
     }
   };
@@ -50,7 +50,7 @@ const Register = () => {
           Create an Account
         </Typography>
         <Typography variant="body1" align="center" color="textSecondary" gutterBottom>
-          Enter your details to create an account.
+          Entre com seus dados para criar uma conta.
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
@@ -58,7 +58,7 @@ const Register = () => {
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
-                label="Username"
+                label="Usuário"
                 variant="outlined"
                 fullWidth
                 value={username}
@@ -68,7 +68,7 @@ const Register = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Password"
+                label="Senha"
                 type="password"
                 variant="outlined"
                 fullWidth
@@ -79,7 +79,7 @@ const Register = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Confirm Password"
+                label="Confirmar Senha"
                 type="password"
                 variant="outlined"
                 fullWidth
@@ -90,13 +90,13 @@ const Register = () => {
             </Grid>
             <Grid item xs={12}>
               <Button
-                type="submit"
+                type="Enviar"
                 variant="contained"
                 color="primary"
                 fullWidth
                 sx={{ py: 1.5 }}
               >
-                Register
+                Registrar
               </Button>
             </Grid>
           </Grid>
