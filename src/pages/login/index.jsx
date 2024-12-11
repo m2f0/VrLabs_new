@@ -24,8 +24,8 @@ const Login = () => {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-          username: `${username}${process.env.REACT_APP_USER_REALM}`, // Inclui o realm
-          password: password,
+          username: `${username}${process.env.REACT_APP_USER_REALM}`,
+          password: encodeURIComponent(password), // Codifica a senha
         }).toString(),
         credentials: "include",
       });
