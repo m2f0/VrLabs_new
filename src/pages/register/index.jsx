@@ -14,24 +14,33 @@ const Register = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [registrationKey, setRegistrationKey] = useState(""); // Nova variável de estado
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
+    // Verificar contra senha
+    if (registrationKey !== process.env.REACT_APP_REGISTRATION_KEY) {
+      setError("Contra senha inválida. A criação do usuário não foi autorizada.");
+      return;
+    }
+
+    // Verificar senhas
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("As senhas não correspondem");
       return;
     }
 
     try {
-      // API Call here...
+      // Simular chamada à API
       setSuccess("Usuário registrado com sucesso!");
       setError("");
       setUsername("");
       setPassword("");
       setConfirmPassword("");
+      setRegistrationKey("");
     } catch (err) {
       setError("Um erro ocorreu. Por favor, tente novamente mais tarde.");
       setSuccess("");
@@ -47,7 +56,7 @@ const Register = () => {
           gutterBottom
           sx={{ fontWeight: "bold" }}
         >
-          Create an Account
+          Criar uma Conta
         </Typography>
         <Typography variant="body1" align="center" color="textSecondary" gutterBottom>
           Entre com seus dados para criar uma conta.
@@ -89,8 +98,19 @@ const Register = () => {
               />
             </Grid>
             <Grid item xs={12}>
+              <TextField
+                label="Contra Senha"
+                type="password"
+                variant="outlined"
+                fullWidth
+                value={registrationKey}
+                onChange={(e) => setRegistrationKey(e.target.value)}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
               <Button
-                type="Enviar"
+                type="submit"
                 variant="contained"
                 color="primary"
                 fullWidth
