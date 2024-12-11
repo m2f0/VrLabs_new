@@ -86,8 +86,9 @@ const VmAutomation = () => {
         {
           method: "GET",
           headers: {
-            Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            Authorization: API_TOKEN, // Certifique-se de que o formato do token no .env está correto
           },
+          
         }
       );
 
