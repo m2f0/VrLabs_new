@@ -384,20 +384,23 @@ const fetchVMs = async () => {
     }
   
     const { id: vmId, node, name } = selectedVM;
-    const { name: snapName } = selectedSnapshot; // Nome correto do snapshot
+    const { name: snapName } = selectedSnapshot;
   
-    const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
+    let newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
     if (!newVmId) {
       alert("ID da nova VM é obrigatório.");
       return;
     }
   
+    // Adiciona "CLONE" ao nome para torná-lo válido
+    const newVmName = `${name}-CLONE-${newVmId}`.replace(/[^a-zA-Z0-9-_]/g, "");
+  
     try {
       const body = new URLSearchParams({
         newid: newVmId,
-        name: `${name}-CLONE-${newVmId}`, // Inclui a palavra CLONE automaticamente
-        snapname: snapName, // Nome correto do snapshot
-        full: "0", // Certifique-se de enviar "0" como string
+        name: newVmName,
+        snapname: snapName,
+        full: "0",
       });
   
       const response = await fetch(
@@ -406,25 +409,26 @@ const fetchVMs = async () => {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: API_TOKEN,
+            Authorization: `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
           },
           body,
         }
       );
   
       if (!response.ok) {
-        const errorText = await response.text(); // Leia o corpo da resposta para mais detalhes
+        const errorText = await response.text();
         console.error("Erro no Proxmox:", errorText);
         throw new Error("Erro ao criar Linked Clone.");
       }
   
-      alert("Linked Clone criado com sucesso!");
-      fetchVMs(); // Atualiza a lista de VMs após criar o clone
+      alert(`Linked Clone "${newVmName}" criado com sucesso!`);
+      fetchVMs(); // Atualiza a lista de VMs
     } catch (error) {
       console.error("Erro ao criar Linked Clone:", error);
       alert("Erro ao criar Linked Clone. Verifique os logs.");
     }
   };
+  
   
   
 
