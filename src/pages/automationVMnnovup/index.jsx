@@ -154,26 +154,19 @@ const fetchVMs = async () => {
       const ticket = authData.data.ticket; // PVEAuthCookie
       const csrfToken = authData.data.CSRFPreventionToken; // CSRF token para POST
   
-      console.log("Ticket e CSRF obtidos:", { ticket, csrfToken });
-  
-      // Salvar o ticket e CSRF token em cookies
-      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
-      document.cookie = `CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None`;
-  
-      // Gerar os botões com as funções incluídas
+      // Configurar as credenciais no script gerado
       const buttons = selectedClones
         .map((cloneId) => {
           const clone = linkedClones.find((lc) => lc.id === cloneId);
           if (!clone) return "";
   
           return `
-        <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
-          Iniciar ${clone.name}
-        </button>
-        <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
-          Conectar ${clone.name}
-        </button>
-      `;
+          <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
+            Iniciar ${clone.name}
+          </button>
+          <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
+            Conectar ${clone.name}
+          </button>`;
         })
         .join("\n");
   
@@ -216,12 +209,15 @@ const fetchVMs = async () => {
         <body>
           ${buttons}
           <script>
+            // Configurar cookies
+            document.cookie = "PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None";
+            document.cookie = "CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None";
+  
             window.startLinkedClone = function (vmid, node, name) {
-              const ticket = getCookie("PVEAuthCookie");
               const csrfToken = getCookie("CSRFPreventionToken");
   
-              if (!ticket || !csrfToken) {
-                alert("Erro: Credenciais não encontradas. Refaça a autenticação.");
+              if (!csrfToken) {
+                alert("Erro: Token CSRF não encontrado.");
                 return;
               }
   
@@ -230,7 +226,6 @@ const fetchVMs = async () => {
                 headers: {
                   "Content-Type": "application/json",
                   "CSRFPreventionToken": csrfToken,
-                  Authorization: \`PVEAuthCookie=\${ticket}\`,
                 },
               })
                 .then((response) => {
@@ -254,7 +249,6 @@ const fetchVMs = async () => {
               }
   
               const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
-              document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None\`;
               window.open(url, "_blank");
             };
   
@@ -274,6 +268,7 @@ const fetchVMs = async () => {
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
   
   
   
