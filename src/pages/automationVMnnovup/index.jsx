@@ -21,10 +21,11 @@ const VmAutomation = () => {
   const [selectedSnapshot, setSelectedSnapshot] = useState(null); // Snapshot selecionado
   const [activeTab, setActiveTab] = useState(0);
 
-  const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca";
-  const API_USER = "apiuser@pve";
-  const API_BASE_URL = "https://prox.nnovup.com.br";
-  const BACKEND_URL = "https://fq5n66-3000.csb.app/";
+    // Variáveis do .env
+    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+    const API_TOKEN = process.env.REACT_APP_API_TOKEN;
+    const API_USER = process.env.REACT_APP_API_USERNAME;
+    const BACKEND_URL = process.env.REACT_APP_FILE_BASE_URL;
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
