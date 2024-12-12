@@ -26,13 +26,19 @@ async function startVM(vmid, node, name) {
 }
 
 function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return parts.pop().split(";").shift();
-  }
-  return null;
+  const cookies = document.cookie.split("; ");
+  const cookie = cookies.find((row) => row.startsWith(`${name}=`));
+  return cookie ? cookie.split("=")[1] : null;
 }
+
+// Usar o cookie no código
+const pveAuthCookie = getCookie("PVEAuthCookie");
+if (!pveAuthCookie) {
+  alert("Erro: Ticket de autenticação não encontrado.");
+} else {
+  console.log("Cookie encontrado:", pveAuthCookie);
+}
+
 
 
 
