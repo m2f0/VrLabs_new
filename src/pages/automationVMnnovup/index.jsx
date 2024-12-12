@@ -25,7 +25,8 @@ const VmAutomation = () => {
     const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
     const API_TOKEN = process.env.REACT_APP_API_TOKEN; // Formato: `PVEAPIToken=apiuser@pve!apitoken=<TOKEN>`
     const API_USER = process.env.REACT_APP_API_USERNAME;
-    const BACKEND_URL = process.env.REACT_APP_FILE_BASE_URL;
+    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -173,86 +174,85 @@ const fetchVMs = async () => {
         .join("\n");
   
         const code = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Teste do Código do Linked Clone</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              background-color: #1e1e2f;
-              color: white;
-            }
-            .button {
-              font-size: 16px;
-              padding: 10px;
-              margin: 5px;
-            }
-            .start {
-              background-color: #4CAF50;
-              color: white;
-            }
-            .connect {
-              background-color: #2196F3;
-              color: white;
-            }
-          </style>
-        </head>
-        <body>
-          ${buttons}
-          <script>
-            // Função para iniciar uma VM
-            window.startLinkedClone = async function (vmid, node, name) {
-              try {
-                const response = await fetch(
-                  \`${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`,
-                  {
-                    method: "POST",
-                    headers: {
-                      Authorization: API_TOKEN, // Token direto do .env
-                    },
-                  }
-                );
-        
-                if (!response.ok) {
-                  throw new Error(
-                    \`Erro ao iniciar VM: \${response.status} \${response.statusText}\`
-                  );
-                }
-        
-                alert(\`VM \${name} (ID: \${vmid}) iniciada com sucesso!\`);
-              } catch (error) {
-                console.error(\`Erro ao iniciar a VM \${vmid}:\`, error);
-                alert(\`Falha ao iniciar a VM \${name} (ID: \${vmid}).\`);
-              }
-            };
-        
-            // Função para conectar a uma VM
-            window.connectVM = function (vmid, node) {
-              const ticket = getCookie("PVEAuthCookie");
-        
-              if (!ticket) {
-                alert("Erro: Ticket de autenticação não encontrado.");
-                return;
-              }
-        
-              const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
-              document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None\`;
-              window.open(url, "_blank");
-            };
-        
-            // Função para obter os cookies
-            function getCookie(name) {
-              const value = \`; \${document.cookie}\`;
-              const parts = value.split(\`; \${name}=\`);
-              if (parts.length === 2) return parts.pop().split(";").shift();
-            }
-          </script>
-        </body>
-        </html>
-        `;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste do Código do Linked Clone</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e2f;
+      color: white;
+    }
+    .button {
+      font-size: 16px;
+      padding: 10px;
+      margin: 5px;
+    }
+    .start {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .connect {
+      background-color: #2196F3;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  ${buttons}
+  <script>
+    // Função para iniciar uma VM
+    window.startLinkedClone = async function (vmid, node, name) {
+      try {
+        // Envie uma solicitação ao backend
+        const response = await fetch(\`\${BACKEND_URL}start-vm\`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ vmid, node }), // Dados da VM a serem enviados
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(\`Erro ao iniciar a VM: \${errorText}\`);
+        }
+
+        alert(\`VM \${name} (ID: \${vmid}) iniciada com sucesso!\`);
+      } catch (error) {
+        console.error(\`Erro ao iniciar a VM \${vmid}:\`, error);
+        alert(\`Falha ao iniciar a VM \${name} (ID: \${vmid}).\`);
+      }
+    };
+
+    // Função para conectar a uma VM
+    window.connectVM = function (vmid, node) {
+      const ticket = getCookie("PVEAuthCookie");
+
+      if (!ticket) {
+        alert("Erro: Ticket de autenticação não encontrado.");
+        return;
+      }
+
+      const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
+      document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None\`;
+      window.open(url, "_blank");
+    };
+
+    // Função para obter os cookies
+    function getCookie(name) {
+      const value = \`; \${document.cookie}\`;
+      const parts = value.split(\`; \${name}=\`);
+      if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+  </script>
+</body>
+</html>
+`;
+
         
   
       // Armazena o código gerado no estado
