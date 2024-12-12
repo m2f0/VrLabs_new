@@ -88,33 +88,137 @@ const VmAutomation = () => {
       .join("\n");
   
     const pageCode = `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Linked Clones</title>
-    <style>
-      body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
-      .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
-      .start { background-color: #4CAF50; color: white; }
-      .connect { background-color: #2196F3; color: white; }
-    </style>
-  </head>
-  <body>
-    <h1>Controle de Linked Clones</h1>
-    ${buttons}
-    <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
-    <script>
-      window.API_BASE_URL = "${API_BASE_URL}";
-      window.API_TOKEN = "${API_TOKEN}";
-    </script>
-  </body>
-  </html>
-  `;
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Controle de Linked Clones</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f4f4f9;
+          color: #333;
+          text-align: center;
+          padding: 20px;
+        }
+        .button {
+          margin: 10px;
+          padding: 10px 20px;
+          font-size: 16px;
+          border: none;
+          cursor: pointer;
+        }
+        .start {
+          background-color: #4CAF50;
+          color: white;
+        }
+        .connect {
+          background-color: #2196F3;
+          color: white;
+        }
+        .login-container {
+          margin-bottom: 20px;
+        }
+        input {
+          padding: 10px;
+          margin: 5px;
+          font-size: 16px;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>Controle de Linked Clones</h1>
+      <div class="login-container">
+        <h2>Login no Proxmox</h2>
+        <input id="username" type="text" placeholder="Usuário" required>
+        <input id="password" type="password" placeholder="Senha" required>
+        <button class="button" onclick="loginProxmox()">Login</button>
+      </div>
+      <div id="buttons-container">
+        <h2>Linked Clones</h2>
+        ${buttons}
+      </div>
+      <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
+      <script>
+        const API_BASE_URL = "${API_BASE_URL}";
+  
+        async function loginProxmox() {
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
+  
+          if (!username || !password) {
+            alert("Usuário e senha são obrigatórios.");
+            return;
+          }
+  
+          try {
+            const response = await fetch(\`\${API_BASE_URL}/access/ticket\`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: new URLSearchParams({ username, password }),
+            });
+  
+            if (!response.ok) {
+              throw new Error(\`Erro ao autenticar: \${response.statusText}\`);
+            }
+  
+            const data = await response.json();
+            const ticket = data.data.ticket;
+            const csrfToken = data.data.CSRFPreventionToken;
+  
+            // Armazena os cookies manualmente
+            document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br\`;
+  
+            alert("Login realizado com sucesso!");
+          } catch (error) {
+            console.error("Erro ao realizar login:", error);
+            alert("Erro ao realizar login. Verifique o console.");
+          }
+        }
+  
+        function startVM(vmid, node, name) {
+          const ticket = getCookie("PVEAuthCookie");
+  
+          if (!ticket) {
+            alert("Erro: Ticket de autenticação não encontrado. Faça login primeiro.");
+            return;
+          }
+  
+          fetch(\`\${API_BASE_URL}/nodes/\${node}/qemu/\${vmid}/status/start\`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: \`PVEAuthCookie=\${ticket}\`,
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(\`Erro ao iniciar a VM: \${response.statusText}\`);
+              }
+              alert(\`VM \${name} (ID: \${vmid}) iniciada com sucesso!\`);
+            })
+            .catch((error) => {
+              console.error("Erro ao iniciar a VM:", error);
+              alert("Erro ao iniciar a VM.");
+            });
+        }
+  
+        function getCookie(name) {
+          const value = \`;\${document.cookie}\`;
+          const parts = value.split(\`;\${name}=\`);
+          if (parts.length === 2) return parts.pop().split(";").shift();
+        }
+      </script>
+    </body>
+    </html>
+    `;
   
     setGeneratedPageCode(pageCode);
   };
+  
   
   
 
