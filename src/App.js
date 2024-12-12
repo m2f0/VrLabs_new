@@ -26,6 +26,7 @@ import AutomationNNovup from "./pages/automationVMnnovup";
 import Files from "./pages/files";
 import Login from "./pages/login";
 import Register from "./pages/register";
+import Test from "./pages/test";
 
 // Protected Route Component
 const RequireAuth = ({ children }) => {
@@ -215,7 +216,14 @@ const App = () => {
                     </RequireAuth>
                   }
                 />
-
+                <Route
+                  path="/test"
+                  element={
+                    <RequireAuth>
+                      <Test />
+                    </RequireAuth>
+                  }
+                />
                 {/* Redireciona rotas desconhecidas para login */}
                 <Route path="*" element={<Navigate to="/login" />} />
               </Routes>
