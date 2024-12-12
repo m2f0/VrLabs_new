@@ -8,15 +8,16 @@ function startVM(vmid, node, name) {
     .then((response) => {
       console.log("Resposta do servidor:", response);
       if (!response.ok) {
-        throw new Error("Erro ao iniciar a VM");
+        throw new Error(`Erro ao iniciar a VM: ${response.statusText}`);
       }
       alert(`VM ${name} iniciada com sucesso!`);
     })
     .catch((error) => {
       console.error("Erro ao iniciar a VM:", error);
       alert(error.message);
-    });  
+    });
 }
+
 
 function connectVM(vmid, node) {
   const url = `${window.API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
