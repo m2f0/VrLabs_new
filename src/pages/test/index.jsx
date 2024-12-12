@@ -1,103 +1,191 @@
 import React, { useEffect, useState } from "react";
-import { Box } from "@mui/material";
+import { Box, Button, TextField } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import { tokens } from "../../theme";
 import Header from "../../components/Header";
+import { useTheme } from "@mui/material/styles";
+import { Tabs, Tab } from "@mui/material";
 
 const VmAutomation = () => {
-  const [consoleUrl, setConsoleUrl] = useState(null);
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+
+  const [vmList, setVmList] = useState([]);
+  const [linkedClones, setLinkedClones] = useState([]);
+  const [selectedClones, setSelectedClones] = useState([]);
+  const [generatedPageCode, setGeneratedPageCode] = useState("");
+  const [activeTab, setActiveTab] = useState(1);
+
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const API_TOKEN = process.env.REACT_APP_API_TOKEN; // Certifique-se de que o token esteja correto
-  const TEMPLATE_ID = 100; // Substitua pelo ID do template no Proxmox
-  const NODE_NAME = "nome-do-node"; // Substitua pelo nome do node no Proxmox
+  const API_TOKEN = process.env.REACT_APP_API_TOKEN;
 
-  // Função para criar um linked clone
-  const createLinkedClone = async () => {
-    try {
-      const newVmId = Math.floor(Math.random() * 10000); // Gera um ID único para a VM
-      const cloneName = `auto-clone-${newVmId}`;
-
-      // Faz a requisição para criar o clone
-      const cloneResponse = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${NODE_NAME}/qemu/${TEMPLATE_ID}/clone`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: API_TOKEN,
-          },
-          body: new URLSearchParams({
-            newid: newVmId,
-            name: cloneName,
-            full: "0", // Linked Clone
-          }),
-        }
-      );
-
-      if (!cloneResponse.ok) {
-        const error = await cloneResponse.text();
-        throw new Error(`Erro ao criar o clone: ${error}`);
-      }
-
-      console.log(`Linked Clone criado: ${cloneName} (ID: ${newVmId})`);
-      await startVM(newVmId, cloneName); // Inicia a VM após a criação
-    } catch (error) {
-      console.error("Erro ao criar Linked Clone:", error);
-    }
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
   };
 
-  // Função para iniciar a VM
-  const startVM = async (vmId, vmName) => {
+  // Função para buscar a lista de VMs do Proxmox
+  const fetchVMs = async () => {
     try {
-      const startResponse = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${NODE_NAME}/qemu/${vmId}/status/start`,
+      const response = await fetch(
+        `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
-          method: "POST",
+          method: "GET",
           headers: {
             Authorization: API_TOKEN,
           },
         }
       );
 
-      if (!startResponse.ok) {
-        const error = await startResponse.text();
-        throw new Error(`Erro ao iniciar a VM: ${error}`);
+      if (!response.ok) {
+        throw new Error(`Erro na API do Proxmox: ${response.status}`);
       }
 
-      console.log(`VM ${vmName} (ID: ${vmId}) iniciada com sucesso!`);
-      generateConsoleLink(vmId); // Gera o link para o console após iniciar a VM
+      const data = await response.json();
+      const allVMs = data.data || [];
+      const clones = allVMs.filter((vm) => vm.name && vm.name.includes("CLONE"));
+      setLinkedClones(clones);
     } catch (error) {
-      console.error("Erro ao iniciar a VM:", error);
+      console.error("Erro ao buscar VMs:", error);
+      alert("Erro ao buscar VMs. Verifique o console.");
     }
   };
 
-  // Função para gerar o link do console
-  const generateConsoleLink = (vmId) => {
-    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmId}&node=${NODE_NAME}`;
-    setConsoleUrl(url);
-    console.log(`Link do console gerado: ${url}`);
+  // Função para gerar o código da página
+  const generatePageCode = () => {
+    if (selectedClones.length === 0) {
+      alert("Selecione pelo menos um linked clone para gerar a página.");
+      return;
+    }
+
+    const buttons = selectedClones
+      .map((cloneId) => {
+        const clone = linkedClones.find((lc) => lc.id === cloneId);
+        return `
+          <button class="button start" onclick="startVM('${clone.id}', '${clone.node}', '${clone.name}')">
+            Iniciar ${clone.name}
+          </button>
+          <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
+            Conectar ${clone.name}
+          </button>
+        `;
+      })
+      .join("\n");
+
+    const pageCode = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Linked Clones</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
+    .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
+    .start { background-color: #4CAF50; color: white; }
+    .connect { background-color: #2196F3; color: white; }
+  </style>
+</head>
+<body>
+  <h1>Controle de Linked Clones</h1>
+  ${buttons}
+  <script>
+    const API_BASE_URL = "${API_BASE_URL}";
+    const API_TOKEN = "${API_TOKEN}";
+
+    function startVM(vmid, node, name) {
+      fetch(\`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
+        method: "POST",
+        headers: { Authorization: API_TOKEN },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Erro ao iniciar a VM");
+          }
+          alert(\`VM \${name} iniciada com sucesso!\`);
+        })
+        .catch((error) => alert(error.message));
+    }
+
+    function connectVM(vmid, node) {
+      const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
+      window.open(url, "_blank");
+    }
+  </script>
+</body>
+</html>
+`;
+    setGeneratedPageCode(pageCode);
   };
 
-  // Hook para executar a automação automaticamente ao carregar a página
   useEffect(() => {
-    createLinkedClone();
+    fetchVMs();
   }, []);
 
   return (
     <Box m="20px">
       <Header
         title="Automação de Máquinas Virtuais"
-        subtitle="Processo automático de criação, inicialização e conexão"
+        subtitle="Selecione Linked Clones e Gere Páginas"
       />
-      {consoleUrl ? (
+
+      <Tabs
+        value={activeTab}
+        onChange={handleTabChange}
+        textColor="primary"
+        indicatorColor="primary"
+        sx={{
+          "& .MuiTab-root": {
+            fontWeight: "bold",
+            fontSize: "16px",
+            textTransform: "none",
+          },
+        }}
+      >
+        <Tab label="Linked Clones" />
+      </Tabs>
+
+      {activeTab === 1 && (
         <Box mt="20px">
-          <h2>Console da VM</h2>
-          <a href={consoleUrl} target="_blank" rel="noopener noreferrer">
-            Acessar Console da VM
-          </a>
-        </Box>
-      ) : (
-        <Box mt="20px">
-          <h2>Processando...</h2>
-          <p>Por favor, aguarde enquanto a máquina virtual está sendo configurada.</p>
+          <Box height="40vh" sx={{ "& .MuiDataGrid-root": { borderRadius: "8px", backgroundColor: colors.primary[400] } }}>
+            <DataGrid
+              rows={linkedClones}
+              columns={[
+                { field: "id", headerName: "Clone ID", width: 100 },
+                { field: "name", headerName: "Nome", width: 200 },
+                { field: "status", headerName: "Status", width: 120 },
+              ]}
+              checkboxSelection
+              onSelectionModelChange={(ids) => setSelectedClones(ids)}
+            />
+          </Box>
+
+          <Box mt="20px" display="flex" justifyContent="center" gap="20px">
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: colors.blueAccent[600],
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+              }}
+              onClick={generatePageCode}
+            >
+              Criar Página
+            </Button>
+          </Box>
+
+          {generatedPageCode && (
+            <Box mt="20px">
+              <h3>Código Gerado</h3>
+              <TextField
+                value={generatedPageCode}
+                multiline
+                rows={10}
+                fullWidth
+                variant="outlined"
+              />
+            </Box>
+          )}
         </Box>
       )}
     </Box>
