@@ -88,7 +88,7 @@ const VmAutomation = () => {
   <body>
     <h1>Controle de Linked Clones</h1>
     ${buttons}
-    <script src="/proxmox.js"></script>
+    <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
     <script>
       window.API_BASE_URL = "${API_BASE_URL}";
       window.API_TOKEN = "${API_TOKEN}";
