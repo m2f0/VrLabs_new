@@ -56,7 +56,7 @@ const VmAutomation = () => {
       alert("Selecione pelo menos um linked clone para gerar a página.");
       return;
     }
-
+  
     const buttons = selectedClones
       .map((cloneId) => {
         const clone = linkedClones.find((lc) => lc.id === cloneId);
@@ -70,52 +70,37 @@ const VmAutomation = () => {
         `;
       })
       .join("\n");
-
+  
     const pageCode = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Linked Clones</title>
-  <style>
-    body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
-    .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
-    .start { background-color: #4CAF50; color: white; }
-    .connect { background-color: #2196F3; color: white; }
-  </style>
-</head>
-<body>
-  <h1>Controle de Linked Clones</h1>
-  ${buttons}
-  <script>
-    const API_BASE_URL = "${API_BASE_URL}";
-    const API_TOKEN = "${API_TOKEN}";
-
-    function startVM(vmid, node, name) {
-      fetch(\`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
-        method: "POST",
-        headers: { Authorization: API_TOKEN },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Erro ao iniciar a VM");
-          }
-          alert(\`VM \${name} iniciada com sucesso!\`);
-        })
-        .catch((error) => alert(error.message));
-    }
-
-    function connectVM(vmid, node) {
-      const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
-      window.open(url, "_blank");
-    }
-  </script>
-</body>
-</html>
-`;
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Linked Clones</title>
+    <style>
+      body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
+      .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
+      .start { background-color: #4CAF50; color: white; }
+      .connect { background-color: #2196F3; color: white; }
+    </style>
+  </head>
+  <body>
+    <h1>Controle de Linked Clones</h1>
+    ${buttons}
+    <script src="/proxmox.js"></script>
+    <script>
+      window.API_BASE_URL = "${API_BASE_URL}";
+      window.API_TOKEN = "${API_TOKEN}";
+    </script>
+  </body>
+  </html>
+  `;
+  
     setGeneratedPageCode(pageCode);
   };
+  
+  
 
   useEffect(() => {
     fetchVMs();
