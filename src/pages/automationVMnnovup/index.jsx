@@ -377,22 +377,20 @@ const fetchVMs = async () => {
     }
   
     if (!selectedSnapshot || selectedSnapshot.name === "current") {
-      alert(
-        "A VM selecionada não possui snapshots válidos para criar um Linked Clone."
-      );
+      alert("A VM selecionada não possui snapshots válidos para criar um Linked Clone.");
       return;
     }
   
     const { id: vmId, node, name } = selectedVM;
     const { name: snapName } = selectedSnapshot;
   
-    let newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
+    const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
     if (!newVmId) {
       alert("ID da nova VM é obrigatório.");
       return;
     }
   
-    // Adiciona "CLONE" ao nome para torná-lo válido
+    // Adiciona "CLONE" ao nome da VM
     const newVmName = `${name}-CLONE-${newVmId}`.replace(/[^a-zA-Z0-9-_]/g, "");
   
     try {
@@ -400,16 +398,16 @@ const fetchVMs = async () => {
         newid: newVmId,
         name: newVmName,
         snapname: snapName,
-        full: "0",
+        full: "0", // Linked Clone
       });
   
       const response = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmId}/clone`,
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmId}/clone`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            Authorization: process.env.REACT_APP_API_AUTHORIZATION,
           },
           body,
         }
@@ -428,6 +426,7 @@ const fetchVMs = async () => {
       alert("Erro ao criar Linked Clone. Verifique os logs.");
     }
   };
+  
   
   
   
