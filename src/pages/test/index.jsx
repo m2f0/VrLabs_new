@@ -43,12 +43,17 @@ const VmAutomation = () => {
       const data = await response.json();
       const allVMs = data.data || [];
   
-      // Filtrar Linked Clones e remover duplicados
+      // Filtrar Linked Clones, remover duplicados e ajustar o formato
       const uniqueClones = allVMs
         .filter((vm) => vm.name && vm.name.includes("CLONE")) // Apenas Linked Clones
         .reduce((acc, current) => {
           const exists = acc.find((item) => item.id === current.id);
-          if (!exists) acc.push(current);
+          if (!exists) {
+            acc.push({
+              ...current,
+              id: current.id.replace("qemu/", ""), // Remover o prefixo "qemu/"
+            });
+          }
           return acc;
         }, []);
   
@@ -58,6 +63,7 @@ const VmAutomation = () => {
       alert("Erro ao buscar VMs. Verifique o console.");
     }
   };
+  
   
 
   // Função para gerar o código da página
