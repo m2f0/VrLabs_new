@@ -172,7 +172,7 @@ const fetchVMs = async () => {
         })
         .join("\n");
   
-      const code = `
+        const code = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -180,59 +180,69 @@ const fetchVMs = async () => {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Teste do Código do Linked Clone</title>
           <style>
-            body { font-family: Arial, sans-serif; background-color: #1e1e2f; color: white; }
-            .button { font-size: 16px; padding: 10px; margin: 5px; }
-            .start { background-color: #4CAF50; color: white; }
-            .connect { background-color: #2196F3; color: white; }
+            body {
+              font-family: Arial, sans-serif;
+              background-color: #1e1e2f;
+              color: white;
+            }
+            .button {
+              font-size: 16px;
+              padding: 10px;
+              margin: 5px;
+            }
+            .start {
+              background-color: #4CAF50;
+              color: white;
+            }
+            .connect {
+              background-color: #2196F3;
+              color: white;
+            }
           </style>
         </head>
         <body>
           ${buttons}
           <script>
             // Função para iniciar uma VM
-            window.startLinkedClone = function (vmid, node, name) {
-              const ticket = getCookie("PVEAuthCookie");
-              const csrfToken = getCookie("CSRFPreventionToken");
-  
-              if (!ticket || !csrfToken) {
-                alert("Erro: Credenciais não encontradas. Refaça a autenticação.");
-                return;
-              }
-  
-              fetch(\`${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`, {
-                method: "POST",
-                headers: {
-                  "CSRFPreventionToken": csrfToken,
-                  Authorization: \`PVEAuthCookie=\${ticket}\`,
-                },
-                body: null, // Envia um corpo vazio
-              })
-                .then((response) => {
-                  if (!response.ok) {
-                    throw new Error(\`Erro ao iniciar a VM: \${response.statusText}\`);
+            window.startLinkedClone = async function (vmid, node, name) {
+              try {
+                const response = await fetch(
+                  \`${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: API_TOKEN, // Token direto do .env
+                    },
                   }
-                  alert(\`VM \${name} iniciada com sucesso!\`);
-                })
-                .catch((error) => {
-                  console.error("Erro ao iniciar a VM:", error);
-                  alert("Erro ao iniciar a VM. Verifique os logs.");
-                });
+                );
+        
+                if (!response.ok) {
+                  throw new Error(
+                    \`Erro ao iniciar VM: \${response.status} \${response.statusText}\`
+                  );
+                }
+        
+                alert(\`VM \${name} (ID: \${vmid}) iniciada com sucesso!\`);
+              } catch (error) {
+                console.error(\`Erro ao iniciar a VM \${vmid}:\`, error);
+                alert(\`Falha ao iniciar a VM \${name} (ID: \${vmid}).\`);
+              }
             };
-  
+        
             // Função para conectar a uma VM
             window.connectVM = function (vmid, node) {
               const ticket = getCookie("PVEAuthCookie");
-  
+        
               if (!ticket) {
                 alert("Erro: Ticket de autenticação não encontrado.");
                 return;
               }
-  
+        
               const url = \`${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
               document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None\`;
               window.open(url, "_blank");
             };
-  
+        
             // Função para obter os cookies
             function getCookie(name) {
               const value = \`; \${document.cookie}\`;
@@ -242,7 +252,8 @@ const fetchVMs = async () => {
           </script>
         </body>
         </html>
-      `;
+        `;
+        
   
       // Armazena o código gerado no estado
       setLinkedCloneButtonCode(code);
