@@ -35,20 +35,30 @@ const VmAutomation = () => {
           },
         }
       );
-
+  
       if (!response.ok) {
         throw new Error(`Erro na API do Proxmox: ${response.status}`);
       }
-
+  
       const data = await response.json();
       const allVMs = data.data || [];
-      const clones = allVMs.filter((vm) => vm.name && vm.name.includes("CLONE"));
-      setLinkedClones(clones);
+  
+      // Filtrar Linked Clones e remover duplicados
+      const uniqueClones = allVMs
+        .filter((vm) => vm.name && vm.name.includes("CLONE")) // Apenas Linked Clones
+        .reduce((acc, current) => {
+          const exists = acc.find((item) => item.id === current.id);
+          if (!exists) acc.push(current);
+          return acc;
+        }, []);
+  
+      setLinkedClones(uniqueClones);
     } catch (error) {
       console.error("Erro ao buscar VMs:", error);
       alert("Erro ao buscar VMs. Verifique o console.");
     }
   };
+  
 
   // Função para gerar o código da página
   const generatePageCode = () => {
