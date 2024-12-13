@@ -25,6 +25,7 @@ async function loginProxmox() {
     const csrfToken = data.data.CSRFPreventionToken;
 
     document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+    localStorage.setItem("CSRFPreventionToken", csrfToken);
 
     alert("Login realizado com sucesso!");
   } catch (error) {
@@ -35,11 +36,18 @@ async function loginProxmox() {
 
 async function startVM(vmid, node, name) {
   try {
+    const csrfToken = localStorage.getItem("CSRFPreventionToken");
+
+    if (!csrfToken) {
+      throw new Error("CSRFPreventionToken não encontrado. Faça login novamente.");
+    }
+
     const response = await fetch(`${window.API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/start`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "CSRFPreventionToken": getCookie("CSRFPreventionToken"),
+        "Authorization": `PVEAPIToken=${window.API_TOKEN}`,
+        "CSRFPreventionToken": csrfToken,
       },
     });
 
@@ -63,7 +71,7 @@ function connectVM(vmid, node) {
   }
 
   const url = `${window.API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
-  document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
+  document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
   window.open(url, "_blank");
 }
 

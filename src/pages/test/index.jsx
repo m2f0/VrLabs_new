@@ -35,14 +35,14 @@ const VmAutomation = () => {
           },
         }
       );
-  
+
       if (!response.ok) {
         throw new Error(`Erro na API do Proxmox: ${response.status}`);
       }
-  
+
       const data = await response.json();
       const allVMs = data.data || [];
-  
+
       // Filtrar Linked Clones, remover duplicados e ajustar o formato
       const uniqueClones = allVMs
         .filter((vm) => vm.name && vm.name.includes("CLONE")) // Apenas Linked Clones
@@ -56,15 +56,13 @@ const VmAutomation = () => {
           }
           return acc;
         }, []);
-  
+
       setLinkedClones(uniqueClones);
     } catch (error) {
       console.error("Erro ao buscar VMs:", error);
       alert("Erro ao buscar VMs. Verifique o console.");
     }
   };
-  
-  
 
   // Função para gerar o código da página
   const generatePageCode = () => {
@@ -72,12 +70,12 @@ const VmAutomation = () => {
       alert("Selecione pelo menos um linked clone para gerar a página.");
       return;
     }
-  
+
     const buttons = selectedClones
       .map((cloneId) => {
         const clone = linkedClones.find((lc) => lc.id === cloneId);
         return `
-          <button class="button start" onclick="startVM('${clone.id}', '${clone.node}', '${clone.name}')">
+          <button class="button start" onclick="startVM('${clone.id}', '${clone.node}')">
             Iniciar ${clone.name}
           </button>
           <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
@@ -86,49 +84,87 @@ const VmAutomation = () => {
         `;
       })
       .join("\n");
-  
+
     const pageCode = `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Linked Clones</title>
-    <style>
-      body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
-      .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
-      .start { background-color: #4CAF50; color: white; }
-      .connect { background-color: #2196F3; color: white; }
-    </style>
-  </head>
-  <body>
-    <h1>Controle de Linked Clones</h1>
-    <div id="login-section">
-      <h2>Login no Proxmox</h2>
-      <input type="text" id="username" placeholder="Usuário" />
-      <input type="password" id="password" placeholder="Senha" />
-      <button onclick="loginProxmox()">Login</button>
-    </div>
-    <div id="buttons-section">
-      ${buttons}
-    </div>
-    <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
-    <script>
-      window.API_BASE_URL = "${API_BASE_URL}";
-      window.API_TOKEN = "${API_TOKEN}";
-    </script>
-  </body>
-  </html>
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Controle de Linked Clones</title>
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
+          .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
+          .start { background-color: #4CAF50; color: white; }
+          .connect { background-color: #2196F3; color: white; }
+        </style>
+      </head>
+      <body>
+        <h1>Controle de Linked Clones</h1>
+        <div id="buttons-section">
+          ${buttons}
+        </div>
+        <script>
+          const API_BASE_URL = "${API_BASE_URL}";
+          const API_TOKEN = "${API_TOKEN}";
+
+          const startVM = async (vmid, node) => {
+            try {
+              const response = await fetch(
+                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: API_TOKEN,
+                  },
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error(\`Erro ao iniciar VM: \${response.status} \${response.statusText}\`);
+              }
+
+              alert(\`VM \${vmid} iniciada com sucesso!\`);
+            } catch (error) {
+              console.error(\`Erro ao iniciar a VM \${vmid}:", error\);
+              alert(\`Falha ao iniciar a VM \${vmid}.\`);
+            }
+          };
+
+          const connectVM = async (vmid, node) => {
+            try {
+              const vncProxyResponse = await fetch(
+                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/vncproxy\`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: API_TOKEN,
+                  },
+                }
+              );
+
+              if (!vncProxyResponse.ok) {
+                throw new Error(\`Erro ao obter informações do console VNC: \${vncProxyResponse.status} \${vncProxyResponse.statusText}\`);
+              }
+
+              const vncProxyData = await vncProxyResponse.json();
+              const { ticket: vncTicket, port } = vncProxyData.data;
+
+              const noVNCUrl = \`\${API_BASE_URL}/?console=kvm&novnc=1&node=\${node}&resize=1&vmid=\${vmid}&path=api2/json/nodes/\${node}/qemu/\${vmid}/vncwebsocket/port/\${port}/vncticket/\${vncTicket}\`;
+
+              window.open(noVNCUrl, "_blank");
+            } catch (error) {
+              console.error(\`Erro ao conectar à VM \${vmid}:", error\);
+              alert(\`Falha ao conectar à VM \${vmid}. Verifique o console para mais detalhes.\`);
+            }
+          };
+        </script>
+      </body>
+      </html>
     `;
-  
+
     setGeneratedPageCode(pageCode);
   };
-  
-  
-  
-  
-  
-  
 
   useEffect(() => {
     fetchVMs();
@@ -159,7 +195,12 @@ const VmAutomation = () => {
 
       {activeTab === 1 && (
         <Box mt="20px">
-          <Box height="40vh" sx={{ "& .MuiDataGrid-root": { borderRadius: "8px", backgroundColor: colors.primary[400] } }}>
+          <Box
+            height="40vh"
+            sx={{
+              "& .MuiDataGrid-root": { borderRadius: "8px", backgroundColor: colors.primary[400] },
+            }}
+          >
             <DataGrid
               rows={linkedClones}
               columns={[
