@@ -182,8 +182,6 @@ const connectVM = async (vmid, node) => {
       }
     );
 
-    console.log("[connectVM] Status da resposta do VNC proxy:", response.status);
-
     if (!response.ok) {
       throw new Error(
         `[connectVM] Erro ao obter informações do console VNC: ${response.status} ${response.statusText}`
@@ -195,23 +193,23 @@ const connectVM = async (vmid, node) => {
 
     const { port, ticket: vncTicket } = data.data;
 
-    // Configura manualmente o cookie PVEAuthCookie no navegador
+    // Configurar o cookie PVEAuthCookie manualmente
     document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
-
     console.log("[connectVM] Cookie configurado com sucesso.");
 
-    // Gera a URL de conexão para o console noVNC
-    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${vncTicket}`;
+    // URL correta para o WebSocket noVNC
+    const wsUrl = `wss://${node}:${port}/api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket?port=${port}&vncticket=${vncTicket}`;
+    console.log("[connectVM] WebSocket URL gerada:", wsUrl);
 
     // Atualiza o iframe com a URL gerada
-    setIframeUrl(url);
+    setIframeUrl(wsUrl);
     console.log("[connectVM] Conexão ao noVNC configurada para VM:", vmid);
-    console.log("[connectVM] URL gerada:", url);
   } catch (error) {
     console.error(`[connectVM] Erro ao conectar à VM ${vmid}:`, error);
     alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
 
 
 
