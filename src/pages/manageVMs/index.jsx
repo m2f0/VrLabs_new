@@ -168,11 +168,10 @@ const connectVM = async (vmid, node) => {
 
   try {
     console.log("[connectVM] Renovando o ticket antes de conectar...");
-    const { ticket } = await renewTicket();
-    console.log("[connectVM] Ticket renovado:", ticket);
+    const { ticket: authTicket } = await renewTicket();
+    console.log("[connectVM] Ticket renovado:", authTicket);
 
     console.log("[connectVM] Fazendo requisição para o endpoint de VNC proxy...");
-
     const response = await fetch(
       `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       {
@@ -194,10 +193,15 @@ const connectVM = async (vmid, node) => {
     const data = await response.json();
     console.log("[connectVM] Dados recebidos do VNC proxy:", data);
 
-    const { port } = data.data;
+    const { port, ticket: vncTicket } = data.data;
+
+    // Configura manualmente o cookie PVEAuthCookie no navegador
+    document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+
+    console.log("[connectVM] Cookie configurado com sucesso.");
 
     // Gera a URL de conexão para o console noVNC
-    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
+    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${vncTicket}`;
 
     // Atualiza o iframe com a URL gerada
     setIframeUrl(url);
@@ -208,6 +212,7 @@ const connectVM = async (vmid, node) => {
     alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
 
 
   useEffect(() => {
