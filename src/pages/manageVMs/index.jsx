@@ -103,11 +103,37 @@ const Team = () => {
     }
   };
 
-  // Função para conectar a uma VM
-  const connectVM = (vmid, node) => {
-    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
-    window.open(url, "_blank");
+  const connectVM = async (vmid, node) => {
+    try {
+      // Obtenha o ticket de autenticação através do API_TOKEN (se necessário)
+      const response = await fetch(`${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`, {
+        method: "POST",
+        headers: {
+          Authorization: API_TOKEN,
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error(
+          `Erro ao obter o ticket VNC: ${response.status} ${response.statusText}`
+        );
+      }
+  
+      const data = await response.json();
+      const ticket = data.data.ticket;
+      const port = data.data.port;
+  
+      // Gera a URL para conexão noVNC
+      const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
+      
+      // Abre a janela do noVNC com o ticket gerado
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error(`Erro ao conectar à VM ${vmid}:`, error);
+      alert(`Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
+    }
   };
+  
 
   useEffect(() => {
     fetchVMs();
