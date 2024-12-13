@@ -1,3 +1,4 @@
+// Função de login no Proxmox
 async function loginProxmox() {
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
@@ -34,6 +35,7 @@ async function loginProxmox() {
   }
 }
 
+// Função para iniciar uma VM
 async function startVM(vmid, node, name) {
   try {
     const csrfToken = localStorage.getItem("CSRFPreventionToken");
@@ -62,6 +64,7 @@ async function startVM(vmid, node, name) {
   }
 }
 
+// Função para conectar a uma VM
 function connectVM(vmid, node) {
   const ticket = getCookie("PVEAuthCookie");
 
@@ -75,8 +78,14 @@ function connectVM(vmid, node) {
   window.open(url, "_blank");
 }
 
+// Função para obter um cookie específico
 function getCookie(name) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(";").shift();
 }
+
+// Expondo as funções no escopo global
+window.loginProxmox = loginProxmox;
+window.startVM = startVM;
+window.connectVM = connectVM;
