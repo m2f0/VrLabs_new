@@ -3,6 +3,9 @@
     mermaid.initialize({ startOnLoad: true });
 </script>
 
+CheckPoint 1:
+
+
 # Cecyber
 
 ### **Fluxo da Solução**
