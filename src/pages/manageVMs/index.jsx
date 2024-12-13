@@ -105,7 +105,7 @@ const Team = () => {
 
   const connectVM = async (vmid, node) => {
     try {
-      // Faz a requisição para obter o ticket do console VNC
+      // Solicitação para obter o ticket VNC
       const response = await fetch(
         `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
         {
@@ -126,16 +126,17 @@ const Team = () => {
       const ticket = data.data.ticket;
       const port = data.data.port;
   
-      // Gera a URL para conexão noVNC
+      // Construir a URL para conexão noVNC
       const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
   
-      // Abre o console noVNC em uma nova janela
+      // Abrir o console noVNC em uma nova aba
       window.open(url, "_blank");
     } catch (error) {
       console.error(`Erro ao conectar à VM ${vmid}:`, error);
-      alert(`Falha ao conectar à VM ${vmid}.`);
+      alert(`Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
     }
   };
+  
   
   
 
