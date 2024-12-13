@@ -104,6 +104,7 @@ const Team = () => {
   };
 
   // Função para conectar a uma VM
+// Função para conectar a uma VM
 const connectVM = async (vmid, node) => {
   console.log("Token usado:", process.env.REACT_APP_API_TOKEN);
   console.log("Base URL:", process.env.REACT_APP_API_BASE_URL);
@@ -135,6 +136,9 @@ const connectVM = async (vmid, node) => {
     const data = await response.json();
     const { ticket, port } = data.data;
 
+    // Configurar o cookie PVEAuthCookie manualmente
+    document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+
     // Gera a URL de conexão para o console noVNC
     const url = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
 
@@ -146,6 +150,7 @@ const connectVM = async (vmid, node) => {
     alert(`Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
 
   
   
