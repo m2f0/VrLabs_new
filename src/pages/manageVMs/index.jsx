@@ -104,51 +104,111 @@ const Team = () => {
     }
   };
 
-  // Função para conectar a uma VM e atualizar o iframe
-  const connectVM = async (vmid, node) => {
-    console.log("Token usado:", API_TOKEN);
-    console.log("Base URL:", API_BASE_URL);
+  // Função para renovar o ticket
+const renewTicket = async () => {
+  console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
 
-    if (!API_BASE_URL || !API_TOKEN) {
-      console.error("Variáveis de ambiente não configuradas corretamente.");
-      alert("Erro de configuração. Verifique as variáveis de ambiente.");
-      return;
-    }
+  const username = process.env.REACT_APP_API_USERNAME;
+  const password = process.env.REACT_APP_API_PASSWORD;
 
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: API_TOKEN,
-          },
-        }
-      );
+  console.log("[renewTicket] Username:", username);
+  console.log("[renewTicket] Password:", password ? "******" : "Não fornecida");
 
-      if (!response.ok) {
-        throw new Error(
-          `Erro ao obter informações do console VNC: ${response.status} ${response.statusText}`
-        );
+  if (!username || !password) {
+    console.error("[renewTicket] Credenciais de autenticação não configuradas corretamente.");
+    throw new Error("Credenciais ausentes para autenticação.");
+  }
+
+  try {
+    console.log("[renewTicket] Fazendo a requisição para o endpoint de autenticação...");
+
+    const response = await fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          username,
+          password,
+        }),
       }
+    );
 
-      const data = await response.json();
-      const { ticket, port } = data.data;
+    console.log("[renewTicket] Status da resposta:", response.status);
 
-      // Configurar o cookie PVEAuthCookie manualmente
-      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
-
-      // Gera a URL de conexão para o console noVNC
-      const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
-
-      // Atualiza o iframe com a URL gerada
-      setIframeUrl(url);
-      console.log(`Conexão ao noVNC configurada para VM ${vmid}.`);
-    } catch (error) {
-      console.error(`Erro ao conectar à VM ${vmid}:`, error);
-      alert(`Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
+    if (!response.ok) {
+      throw new Error(`[renewTicket] Erro ao renovar o ticket: ${response.status} ${response.statusText}`);
     }
-  };
+
+    const data = await response.json();
+    console.log("[renewTicket] Dados recebidos:", data);
+
+    const { ticket, CSRFPreventionToken } = data.data;
+
+    // Configurar o cookie do PVEAuthCookie
+    document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+
+    console.log("[renewTicket] Ticket renovado com sucesso:", ticket);
+    console.log("[renewTicket] CSRFPreventionToken recebido:", CSRFPreventionToken);
+
+    return { ticket, CSRFPreventionToken };
+  } catch (error) {
+    console.error("[renewTicket] Erro ao renovar o ticket:", error);
+    throw new Error("[renewTicket] Falha ao renovar o ticket de autenticação.");
+  }
+};
+
+// Função para conectar a uma VM e atualizar o iframe
+const connectVM = async (vmid, node) => {
+  console.log("[connectVM] Iniciando conexão para VM:", vmid);
+  console.log("[connectVM] Token usado:", API_TOKEN);
+  console.log("[connectVM] Base URL:", API_BASE_URL);
+
+  try {
+    console.log("[connectVM] Renovando o ticket antes de conectar...");
+    const { ticket } = await renewTicket();
+    console.log("[connectVM] Ticket renovado:", ticket);
+
+    console.log("[connectVM] Fazendo requisição para o endpoint de VNC proxy...");
+
+    const response = await fetch(
+      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: API_TOKEN,
+        },
+      }
+    );
+
+    console.log("[connectVM] Status da resposta do VNC proxy:", response.status);
+
+    if (!response.ok) {
+      throw new Error(
+        `[connectVM] Erro ao obter informações do console VNC: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    console.log("[connectVM] Dados recebidos do VNC proxy:", data);
+
+    const { port } = data.data;
+
+    // Gera a URL de conexão para o console noVNC
+    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
+
+    // Atualiza o iframe com a URL gerada
+    setIframeUrl(url);
+    console.log("[connectVM] Conexão ao noVNC configurada para VM:", vmid);
+    console.log("[connectVM] URL gerada:", url);
+  } catch (error) {
+    console.error(`[connectVM] Erro ao conectar à VM ${vmid}:`, error);
+    alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
+  }
+};
+
 
   useEffect(() => {
     fetchVMs();
