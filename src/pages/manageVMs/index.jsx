@@ -103,39 +103,50 @@ const Team = () => {
     }
   };
 
-  const connectVM = async (vmid, node) => {
-    try {
-      // Solicitação para obter o ticket VNC
-      const response = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: API_TOKEN,
-          },
-        }
-      );
-  
-      if (!response.ok) {
-        throw new Error(
-          `Erro ao obter ticket para o console VNC: ${response.status} ${response.statusText}`
-        );
+  // Função para conectar a uma VM
+const connectVM = async (vmid, node) => {
+  console.log("Token usado:", process.env.REACT_APP_API_TOKEN);
+  console.log("Base URL:", process.env.REACT_APP_API_BASE_URL);
+
+  if (!process.env.REACT_APP_API_BASE_URL || !process.env.REACT_APP_API_TOKEN) {
+    console.error("Variáveis de ambiente não configuradas corretamente.");
+    alert("Erro de configuração. Verifique as variáveis de ambiente.");
+    return;
+  }
+
+  try {
+    // Faz a requisição para obter o ticket e informações do VNC
+    const response = await fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: process.env.REACT_APP_API_TOKEN,
+        },
       }
-  
-      const data = await response.json();
-      const ticket = data.data.ticket;
-      const port = data.data.port;
-  
-      // Construir a URL para conexão noVNC
-      const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
-  
-      // Abrir o console noVNC em uma nova aba
-      window.open(url, "_blank");
-    } catch (error) {
-      console.error(`Erro ao conectar à VM ${vmid}:`, error);
-      alert(`Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Erro ao obter informações do console VNC: ${response.status} ${response.statusText}`
+      );
     }
-  };
+
+    const data = await response.json();
+    const { ticket, port } = data.data;
+
+    // Gera a URL de conexão para o console noVNC
+    const url = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
+
+    // Abre o console noVNC em uma nova janela
+    window.open(url, "_blank");
+    console.log(`Conexão ao noVNC aberta para VM ${vmid}.`);
+  } catch (error) {
+    console.error(`Erro ao conectar à VM ${vmid}:`, error);
+    alert(`Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
+  }
+};
+
   
   
   
