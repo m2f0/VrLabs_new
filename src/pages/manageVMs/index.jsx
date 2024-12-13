@@ -197,8 +197,8 @@ const connectVM = async (vmid, node) => {
     document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
     console.log("[connectVM] Cookie configurado com sucesso.");
 
-    // URL correta para o WebSocket noVNC
-    const wsUrl = `wss://${node}:${port}/api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket?port=${port}&vncticket=${vncTicket}`;
+    // Gera a URL correta para o WebSocket noVNC
+    const wsUrl = `wss://${node}.${API_BASE_URL.replace("https://", "")}:${port}/api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket?port=${port}&vncticket=${vncTicket}`;
     console.log("[connectVM] WebSocket URL gerada:", wsUrl);
 
     // Atualiza o iframe com a URL gerada
@@ -209,6 +209,7 @@ const connectVM = async (vmid, node) => {
     alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
 
 
 
