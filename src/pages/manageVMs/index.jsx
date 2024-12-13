@@ -10,6 +10,7 @@ const Team = () => {
   const colors = tokens(theme.palette.mode);
 
   const [vmList, setVmList] = useState([]);
+  const [iframeUrl, setIframeUrl] = useState(""); // URL para o iframe
 
   // Variáveis do .env
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // URL base da API
@@ -103,58 +104,51 @@ const Team = () => {
     }
   };
 
-  // Função para conectar a uma VM
-// Função para conectar a uma VM
-const connectVM = async (vmid, node) => {
-  console.log("Token usado:", process.env.REACT_APP_API_TOKEN);
-  console.log("Base URL:", process.env.REACT_APP_API_BASE_URL);
+  // Função para conectar a uma VM e atualizar o iframe
+  const connectVM = async (vmid, node) => {
+    console.log("Token usado:", API_TOKEN);
+    console.log("Base URL:", API_BASE_URL);
 
-  if (!process.env.REACT_APP_API_BASE_URL || !process.env.REACT_APP_API_TOKEN) {
-    console.error("Variáveis de ambiente não configuradas corretamente.");
-    alert("Erro de configuração. Verifique as variáveis de ambiente.");
-    return;
-  }
-
-  try {
-    // Faz a requisição para obter o ticket e informações do VNC
-    const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: process.env.REACT_APP_API_TOKEN,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Erro ao obter informações do console VNC: ${response.status} ${response.statusText}`
-      );
+    if (!API_BASE_URL || !API_TOKEN) {
+      console.error("Variáveis de ambiente não configuradas corretamente.");
+      alert("Erro de configuração. Verifique as variáveis de ambiente.");
+      return;
     }
 
-    const data = await response.json();
-    const { ticket, port } = data.data;
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: API_TOKEN,
+          },
+        }
+      );
 
-    // Configurar o cookie PVEAuthCookie manualmente
-    document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+      if (!response.ok) {
+        throw new Error(
+          `Erro ao obter informações do console VNC: ${response.status} ${response.statusText}`
+        );
+      }
 
-    // Gera a URL de conexão para o console noVNC
-    const url = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
+      const data = await response.json();
+      const { ticket, port } = data.data;
 
-    // Abre o console noVNC em uma nova janela
-    window.open(url, "_blank");
-    console.log(`Conexão ao noVNC aberta para VM ${vmid}.`);
-  } catch (error) {
-    console.error(`Erro ao conectar à VM ${vmid}:`, error);
-    alert(`Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
-  }
-};
+      // Configurar o cookie PVEAuthCookie manualmente
+      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
 
+      // Gera a URL de conexão para o console noVNC
+      const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&port=${port}&vncticket=${ticket}`;
 
-  
-  
-  
+      // Atualiza o iframe com a URL gerada
+      setIframeUrl(url);
+      console.log(`Conexão ao noVNC configurada para VM ${vmid}.`);
+    } catch (error) {
+      console.error(`Erro ao conectar à VM ${vmid}:`, error);
+      alert(`Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
+    }
+  };
 
   useEffect(() => {
     fetchVMs();
@@ -209,7 +203,7 @@ const connectVM = async (vmid, node) => {
       </Box>
       <Box
         m="8px 0 0 0"
-        height="80vh"
+        height="50vh"
         sx={{
           "& .MuiDataGrid-root": {
             border: "none",
@@ -235,6 +229,17 @@ const connectVM = async (vmid, node) => {
       >
         <DataGrid rows={vmList} columns={columns} />
       </Box>
+      {iframeUrl && (
+        <Box mt="20px">
+          <iframe
+            src={iframeUrl}
+            width="100%"
+            height="400px"
+            style={{ border: "none" }}
+            title="Console noVNC"
+          />
+        </Box>
+      )}
     </Box>
   );
 };
