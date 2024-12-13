@@ -163,15 +163,11 @@ const renewTicket = async () => {
 // Função para conectar a uma VM e atualizar o iframe
 const connectVM = async (vmid, node) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
-  console.log("[connectVM] Token usado:", API_TOKEN);
-  console.log("[connectVM] Base URL:", API_BASE_URL);
 
   try {
-    console.log("[connectVM] Renovando o ticket antes de conectar...");
     const { ticket: authTicket } = await renewTicket();
     console.log("[connectVM] Ticket renovado:", authTicket);
 
-    console.log("[connectVM] Fazendo requisição para o endpoint de VNC proxy...");
     const response = await fetch(
       `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       {
@@ -183,25 +179,19 @@ const connectVM = async (vmid, node) => {
     );
 
     if (!response.ok) {
-      throw new Error(
-        `[connectVM] Erro ao obter informações do console VNC: ${response.status} ${response.statusText}`
-      );
+      throw new Error(`Erro ao obter informações do console VNC: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log("[connectVM] Dados recebidos do VNC proxy:", data);
-
     const { port, ticket: vncTicket } = data.data;
 
-    // Configurar o cookie PVEAuthCookie manualmente
+    // Configurar o cookie para autenticação no Proxmox
     document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
-    console.log("[connectVM] Cookie configurado com sucesso.");
 
-    // Gera a URL correta para o WebSocket noVNC
-    const wsUrl = `wss://${node}.${API_BASE_URL.replace("https://", "")}:${port}/api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket?port=${port}&vncticket=${vncTicket}`;
+    // Corrigir a URL do WebSocket
+    const wsUrl = `wss://${node}.nnovup.com.br:${port}/api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket?port=${port}&vncticket=${vncTicket}`;
     console.log("[connectVM] WebSocket URL gerada:", wsUrl);
 
-    // Atualiza o iframe com a URL gerada
     setIframeUrl(wsUrl);
     console.log("[connectVM] Conexão ao noVNC configurada para VM:", vmid);
   } catch (error) {
@@ -209,6 +199,8 @@ const connectVM = async (vmid, node) => {
     alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
+
 
 
 
