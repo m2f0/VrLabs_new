@@ -99,113 +99,31 @@ const VmAutomation = () => {
       .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
       .start { background-color: #4CAF50; color: white; }
       .connect { background-color: #2196F3; color: white; }
-      .login-container { margin: 20px 0; }
-      .login-container input { margin: 5px; padding: 10px; font-size: 14px; }
-      .login-container button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #555; color: white; border: none; }
     </style>
   </head>
   <body>
     <h1>Controle de Linked Clones</h1>
-  
-    <!-- Formulário de Login -->
-    <div class="login-container">
-      <h3>Realizar Login no Proxmox</h3>
+    <div id="login-section">
+      <h2>Login no Proxmox</h2>
       <input type="text" id="username" placeholder="Usuário" />
       <input type="password" id="password" placeholder="Senha" />
       <button onclick="loginProxmox()">Login</button>
     </div>
-  
-    <!-- Botões de Controle de VMs -->
-    ${buttons}
-  
+    <div id="buttons-section">
+      ${buttons}
+    </div>
+    <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
     <script>
-      const API_BASE_URL = "${API_BASE_URL}";
-  
-      async function loginProxmox() {
-        const username = document.getElementById("username").value;
-        const password = document.getElementById("password").value;
-  
-        if (!username || !password) {
-          alert("Usuário e senha são obrigatórios.");
-          return;
-        }
-  
-        try {
-          const response = await fetch(\`\${API_BASE_URL}/access/ticket\`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: new URLSearchParams({ username, password }),
-          });
-  
-          if (!response.ok) {
-            throw new Error(\`Erro ao autenticar: \${response.statusText}\`);
-          }
-  
-          const data = await response.json();
-          const ticket = data.data.ticket;
-          const csrfToken = data.data.CSRFPreventionToken;
-  
-          // Armazena os cookies manualmente
-          document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br\`;
-  
-          alert("Login realizado com sucesso!");
-        } catch (error) {
-          console.error("Erro ao realizar login:", error);
-          alert("Erro ao realizar login. Verifique o console.");
-        }
-      }
-  
-      // Funções para controlar as VMs
-      function startVM(vmid, node, name) {
-        const ticket = getCookie("PVEAuthCookie");
-        if (!ticket) {
-          alert("Erro: Ticket de autenticação não encontrado.");
-          return;
-        }
-  
-        fetch(\`\${API_BASE_URL}/nodes/\${node}/qemu/\${vmid}/status/start\`, {
-          method: "POST",
-          headers: {
-            Authorization: \`PVEAuthCookie=\${ticket}\`,
-          },
-        })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Erro ao iniciar a VM.");
-            }
-            alert(\`VM \${name} iniciada com sucesso!\`);
-          })
-          .catch((error) => {
-            console.error("Erro ao iniciar a VM:", error);
-            alert("Erro ao iniciar a VM. Verifique o console.");
-          });
-      }
-  
-      function connectVM(vmid, node) {
-        const ticket = getCookie("PVEAuthCookie");
-        if (!ticket) {
-          alert("Erro: Ticket de autenticação não encontrado.");
-          return;
-        }
-  
-        const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
-        window.open(url, "_blank");
-      }
-  
-      function getCookie(name) {
-        const value = \`;\${document.cookie}\`;
-        const parts = value.split(\`;\${name}=\`);
-        if (parts.length === 2) return parts.pop().split(";").shift();
-      }
+      window.API_BASE_URL = "${API_BASE_URL}";
+      window.API_TOKEN = "${API_TOKEN}";
     </script>
   </body>
   </html>
-  `;
+    `;
   
     setGeneratedPageCode(pageCode);
   };
+  
   
   
   
