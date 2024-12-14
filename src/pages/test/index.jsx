@@ -65,106 +65,110 @@ const VmAutomation = () => {
   };
 
   // Função para gerar o código da página
-  const generatePageCode = () => {
-    if (selectedClones.length === 0) {
-      alert("Selecione pelo menos um linked clone para gerar a página.");
-      return;
-    }
+  // Função para gerar o código da página
+const generatePageCode = () => {
+  if (selectedClones.length === 0) {
+    alert("Selecione pelo menos um linked clone para gerar a página.");
+    return;
+  }
 
-    const buttons = selectedClones
-      .map((cloneId) => {
-        const clone = linkedClones.find((lc) => lc.id === cloneId);
-        return `
-          <button class="button start" onclick="startVM('${clone.id}', '${clone.node}')">
-            Iniciar ${clone.name}
-          </button>
-          <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
-            Conectar ${clone.name}
-          </button>
-        `;
-      })
-      .join("\n");
+  const buttons = selectedClones
+    .map((cloneId) => {
+      const clone = linkedClones.find((lc) => lc.id === cloneId);
+      return `
+        <button class="button start" onclick="startVM('${clone.id}', '${clone.node}')">
+          Iniciar ${clone.name}
+        </button>
+        <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
+          Conectar ${clone.name}
+        </button>
+      `;
+    })
+    .join("\n");
 
-    const pageCode = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Controle de Linked Clones</title>
-        <style>
-          body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
-          .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
-          .start { background-color: #4CAF50; color: white; }
-          .connect { background-color: #2196F3; color: white; }
-        </style>
-      </head>
-      <body>
-        <h1>Controle de Linked Clones</h1>
-        <div id="buttons-section">
-          ${buttons}
-        </div>
-        <script>
-          const API_BASE_URL = "${API_BASE_URL}";
-          const API_TOKEN = "${API_TOKEN}";
+  const pageCode = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Controle de Linked Clones</title>
+      <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
+        .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
+        .start { background-color: #4CAF50; color: white; }
+        .connect { background-color: #2196F3; color: white; }
+      </style>
+    </head>
+    <body>
+      <h1>Controle de Linked Clones</h1>
+      <div id="buttons-section">
+        ${buttons}
+      </div>
+      <script>
+        const API_BASE_URL = "${API_BASE_URL}";
+        const API_TOKEN = "${API_TOKEN}";
 
-          const startVM = async (vmid, node) => {
-            try {
-              const response = await fetch(
-                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: API_TOKEN,
-                  },
-                }
-              );
-
-              if (!response.ok) {
-                throw new Error(\`Erro ao iniciar VM: \${response.status} \${response.statusText}\`);
+        // Função para iniciar uma VM
+        const startVM = async (vmid, node) => {
+          try {
+            const response = await fetch(
+              \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: API_TOKEN,
+                },
               }
+            );
 
-              alert(\`VM \${vmid} iniciada com sucesso!\`);
-            } catch (error) {
-              console.error(\`Erro ao iniciar a VM \${vmid}:", error\);
-              alert(\`Falha ao iniciar a VM \${vmid}.\`);
+            if (!response.ok) {
+              throw new Error(\`Erro ao iniciar VM: \${response.status} \${response.statusText}\`);
             }
-          };
 
-          const connectVM = async (vmid, node) => {
-            try {
-              const vncProxyResponse = await fetch(
-                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/vncproxy\`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: API_TOKEN,
-                  },
-                }
-              );
+            alert(\`VM \${vmid} iniciada com sucesso!\`);
+          } catch (error) {
+            console.error(\`Erro ao iniciar a VM \${vmid}:", error\`);
+            alert(\`Falha ao iniciar a VM \${vmid}.\`);
+          }
+        };
 
-              if (!vncProxyResponse.ok) {
-                throw new Error(\`Erro ao obter informações do console VNC: \${vncProxyResponse.status} \${vncProxyResponse.statusText}\`);
+        // Função para conectar a uma VM
+        const connectVM = async (vmid, node) => {
+          try {
+            const vncProxyResponse = await fetch(
+              \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/vncproxy\`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: API_TOKEN,
+                },
               }
+            );
 
-              const vncProxyData = await vncProxyResponse.json();
-              const { ticket: vncTicket, port } = vncProxyData.data;
-
-              const noVNCUrl = \`\${API_BASE_URL}/?console=kvm&novnc=1&node=\${node}&resize=1&vmid=\${vmid}&path=api2/json/nodes/\${node}/qemu/\${vmid}/vncwebsocket/port/\${port}/vncticket/\${vncTicket}\`;
-
-              window.open(noVNCUrl, "_blank");
-            } catch (error) {
-              console.error(\`Erro ao conectar à VM \${vmid}:", error\);
-              alert(\`Falha ao conectar à VM \${vmid}. Verifique o console para mais detalhes.\`);
+            if (!vncProxyResponse.ok) {
+              throw new Error(\`Erro ao obter informações do console VNC: \${vncProxyResponse.status} \${vncProxyResponse.statusText}\`);
             }
-          };
-        </script>
-      </body>
-      </html>
-    `;
 
-    setGeneratedPageCode(pageCode);
-  };
+            const vncProxyData = await vncProxyResponse.json();
+            const { ticket: vncTicket, port } = vncProxyData.data;
+
+            const noVNCUrl = \`\${API_BASE_URL}/?console=kvm&novnc=1&node=\${node}&resize=1&vmid=\${vmid}&path=api2/json/nodes/\${node}/qemu/\${vmid}/vncwebsocket/port/\${port}/vncticket/\${vncTicket}\`;
+
+            window.open(noVNCUrl, "_blank");
+          } catch (error) {
+            console.error(\`Erro ao conectar à VM \${vmid}:", error\`);
+            alert(\`Falha ao conectar à VM \${vmid}. Verifique o console para mais detalhes.\`);
+          }
+        };
+      </script>
+    </body>
+    </html>
+  `;
+
+  setGeneratedPageCode(pageCode);
+};
+
 
   useEffect(() => {
     fetchVMs();
