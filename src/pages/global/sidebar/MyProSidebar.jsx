@@ -197,13 +197,6 @@ const MyProSidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
-            <Item
-              title="Test"
-              to="/test"
-              icon={<HtmlIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
           </Box>
         </Menu>
         <Box mt="auto" p="20px">
