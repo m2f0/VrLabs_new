@@ -1,91 +1,81 @@
-// Função de login no Proxmox
-async function loginProxmox() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+const API_BASE_URL = "https://prox.nnovup.com.br";
+const API_TOKEN = "PVEAPIToken=apiuser@pve!api=2941a8af-6ae6-4a6e-810c-1c29910d22fc";
+const API_USERNAME = "apiuser@pve";
+const API_PASSWORD = "t?v1K!sfk/#/xSuK";
 
-  if (!username || !password) {
-    alert("Usuário e senha são obrigatórios.");
-    return;
-  }
+const vmList = [
+  { id: "3100", node: "prox", name: "VM-3100" },
+];
 
+// Função para renovar o ticket
+async function renewTicket() {
   try {
-    const response = await fetch(`${window.API_BASE_URL}/api2/json/access/ticket`, {
+    const response = await fetch(`${API_BASE_URL}/api2/json/access/ticket`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({ username, password }),
+      body: new URLSearchParams({
+        username: API_USERNAME,
+        password: API_PASSWORD,
+      }),
     });
 
     if (!response.ok) {
-      throw new Error(`Erro ao autenticar: ${response.statusText}`);
+      throw new Error(`Erro ao renovar o ticket: ${response.statusText}`);
     }
 
     const data = await response.json();
     const ticket = data.data.ticket;
-    const csrfToken = data.data.CSRFPreventionToken;
-
     document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
-    localStorage.setItem("CSRFPreventionToken", csrfToken);
-
-    alert("Login realizado com sucesso!");
+    return ticket;
   } catch (error) {
-    console.error("Erro ao realizar login:", error);
-    alert("Erro ao realizar login. Verifique o console.");
+    console.error("Erro ao renovar o ticket:", error);
+    alert("Falha ao renovar o ticket. Verifique o console.");
+    throw error;
   }
 }
 
-// Função para iniciar uma VM
-async function startVM(vmid, node, name) {
+// Função para conectar à VM
+async function connectVM(vmid, node) {
   try {
-    const csrfToken = localStorage.getItem("CSRFPreventionToken");
+    console.log(`[connectVM] Conectando à VM ${vmid} no node ${node}`);
+    const ticket = await renewTicket();
 
-    if (!csrfToken) {
-      throw new Error("CSRFPreventionToken não encontrado. Faça login novamente.");
-    }
-
-    const response = await fetch(`${window.API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/start`, {
+    const response = await fetch(`${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `PVEAPIToken=${window.API_TOKEN}`,
-        "CSRFPreventionToken": csrfToken,
+        Authorization: API_TOKEN,
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Erro ao iniciar a VM: ${response.statusText}`);
+      throw new Error(`Erro ao conectar à VM: ${response.statusText}`);
     }
 
-    alert(`VM ${name} (ID: ${vmid}) iniciada com sucesso!`);
+    const vncProxyData = await response.json();
+    const { ticket: vncTicket, port } = vncProxyData.data;
+
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=1&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
+    document.getElementById("vm-iframe").src = noVNCUrl;
+    console.log("[connectVM] URL gerada:", noVNCUrl);
   } catch (error) {
-    console.error("Erro ao iniciar VM:", error);
-    alert(`Erro ao iniciar a VM ${name}.`);
+    console.error(`Erro ao conectar à VM ${vmid}:`, error);
+    alert(`Falha ao conectar à VM. Verifique o console.`);
   }
 }
 
-// Função para conectar a uma VM
-function connectVM(vmid, node) {
-  const ticket = getCookie("PVEAuthCookie");
-
-  if (!ticket) {
-    alert("Erro: Ticket de autenticação não encontrado.");
-    return;
-  }
-
-  const url = `${window.API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
-  document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
-  window.open(url, "_blank");
+// Renderizar os botões para cada VM
+function renderButtons() {
+  const buttonSection = document.getElementById("button-section");
+  vmList.forEach((vm) => {
+    const button = document.createElement("button");
+    button.className = "button";
+    button.textContent = `Conectar ${vm.name}`;
+    button.onclick = () => connectVM(vm.id, vm.node);
+    buttonSection.appendChild(button);
+  });
 }
 
-// Função para obter um cookie específico
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-}
-
-// Expondo as funções no escopo global
-window.loginProxmox = loginProxmox;
-window.startVM = startVM;
-window.connectVM = connectVM;
+// Inicializar a página
+renderButtons();
