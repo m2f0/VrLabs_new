@@ -70,7 +70,7 @@ const VmAutomation = () => {
       alert("Selecione pelo menos um linked clone para gerar a página.");
       return;
     }
-
+  
     const buttons = selectedClones
       .map((cloneId) => {
         const clone = linkedClones.find((lc) => lc.id === cloneId);
@@ -84,7 +84,7 @@ const VmAutomation = () => {
         `;
       })
       .join("\n");
-
+  
     const pageCode = `
       <!DOCTYPE html>
       <html lang="en">
@@ -104,146 +104,14 @@ const VmAutomation = () => {
         <div id="buttons-section">
           ${buttons}
         </div>
-        <script>
-          const API_BASE_URL = "${API_BASE_URL}";
-          const API_TOKEN = "${API_TOKEN}";
-
-          const startVM = async (vmid, node) => {
-            try {
-              const response = await fetch(
-                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/status/start\`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: API_TOKEN,
-                  },
-                }
-              );
-
-              if (!response.ok) {
-                throw new Error(\`Erro ao iniciar VM: \${response.status} \${response.statusText}\`);
-              }
-
-              alert(\`VM \${vmid} iniciada com sucesso!\`);
-            } catch (error) {
-              console.error(\`Erro ao iniciar a VM \${vmid}:", error\);
-              alert(\`Falha ao iniciar a VM \${vmid}.\`);
-            }
-          };
-
-          const connectVM = async (vmid, node) => {
-            try {
-              const vncProxyResponse = await fetch(
-                \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/vncproxy\`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: API_TOKEN,
-                  },
-                }
-              );
-
-              if (!vncProxyResponse.ok) {
-                throw new Error(\`Erro ao obter informações do console VNC: \${vncProxyResponse.status} \${vncProxyResponse.statusText}\`);
-              }
-
-              const vncProxyData = await vncProxyResponse.json();
-              const { ticket: vncTicket, port } = vncProxyData.data;
-
-              const noVNCUrl = \`\${API_BASE_URL}/?console=kvm&novnc=1&node=\${node}&resize=1&vmid=\${vmid}&path=api2/json/nodes/\${node}/qemu/\${vmid}/vncwebsocket/port/\${port}/vncticket/\${vncTicket}\`;
-
-              window.open(noVNCUrl, "_blank");
-            } catch (error) {
-              console.error(\`Erro ao conectar à VM \${vmid}:", error\);
-              alert(\`Falha ao conectar à VM \${vmid}. Verifique o console para mais detalhes.\`);
-            }
-          };
-        </script>
+        <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
       </body>
       </html>
     `;
-
+  
     setGeneratedPageCode(pageCode);
   };
-
-  useEffect(() => {
-    fetchVMs();
-  }, []);
-
-  return (
-    <Box m="20px">
-      <Header
-        title="Automação de Máquinas Virtuais"
-        subtitle="Selecione Linked Clones e Gere Páginas"
-      />
-
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        textColor="primary"
-        indicatorColor="primary"
-        sx={{
-          "& .MuiTab-root": {
-            fontWeight: "bold",
-            fontSize: "16px",
-            textTransform: "none",
-          },
-        }}
-      >
-        <Tab label="Linked Clones" />
-      </Tabs>
-
-      {activeTab === 1 && (
-        <Box mt="20px">
-          <Box
-            height="40vh"
-            sx={{
-              "& .MuiDataGrid-root": { borderRadius: "8px", backgroundColor: colors.primary[400] },
-            }}
-          >
-            <DataGrid
-              rows={linkedClones}
-              columns={[
-                { field: "id", headerName: "Clone ID", width: 100 },
-                { field: "name", headerName: "Nome", width: 200 },
-                { field: "status", headerName: "Status", width: 120 },
-              ]}
-              checkboxSelection
-              onSelectionModelChange={(ids) => setSelectedClones(ids)}
-            />
-          </Box>
-
-          <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: colors.blueAccent[600],
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-              }}
-              onClick={generatePageCode}
-            >
-              Criar Página
-            </Button>
-          </Box>
-
-          {generatedPageCode && (
-            <Box mt="20px">
-              <h3>Código Gerado</h3>
-              <TextField
-                value={generatedPageCode}
-                multiline
-                rows={10}
-                fullWidth
-                variant="outlined"
-              />
-            </Box>
-          )}
-        </Box>
-      )}
-    </Box>
-  );
+  
 };
 
 export default VmAutomation;
