@@ -1,83 +1,111 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Acessar VM no Proxmox</title>
-  </head>
-  <body>
-    <h1>Acessar VM no Proxmox</h1>
-    <button id="access-vm-btn">Acessar Máquina Virtual</button>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conexão à Máquina Virtual</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      text-align: center;
+      padding: 20px;
+    }
+    iframe {
+      width: 100%;
+      height: 800px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Conectando à Máquina Virtual</h1>
+  <p id="loading-message">Carregando console noVNC...</p>
+  <iframe id="novnc-iframe" title="Console noVNC"></iframe>
 
-    <script>
-      const proxmoxURL = "https://prox.nnovup.com.br";
-      const nodeName = "prox1";
-      const vmID = "100";
-      const username = "apiuser@pve";
-      const password = "1qazxsw2";
+  <script>
+    const API_BASE_URL = "https://prox.nnovup.com.br"; // Base URL do Proxmox
+    const API_USERNAME = "apiuser@pve"; // Substitua pelo usuário do Proxmox
+    const API_PASSWORD = "sua-senha"; // Substitua pela senha do Proxmox
 
-      async function getProxmoxAuth(username, password) {
-        const authResponse = await fetch(`${proxmoxURL}/api2/json/access/ticket`, {
+    // Obtém os parâmetros da URL (vmid e node)
+    const urlParams = new URLSearchParams(window.location.search);
+    const vmid = urlParams.get("vmid");
+    const node = urlParams.get("node");
+
+    if (!vmid || !node) {
+      alert("Erro: Parâmetros inválidos. Certifique-se de fornecer vmid e node.");
+      document.getElementById("loading-message").textContent = "Erro: Parâmetros inválidos.";
+      throw new Error("Parâmetros inválidos na URL");
+    }
+
+    // Função para renovar o ticket do Proxmox
+    const renewTicket = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api2/json/access/ticket`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ username, password }),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            username: API_USERNAME,
+            password: API_PASSWORD,
+          }),
         });
 
-        if (!authResponse.ok) {
-          throw new Error(`Falha na autenticação: ${authResponse.status}`);
+        if (!response.ok) {
+          throw new Error(`Erro ao renovar o ticket: ${response.status} ${response.statusText}`);
         }
 
-        const authData = await authResponse.json();
-        const ticket = authData.data.ticket;
-        const csrfToken = authData.data.CSRFPreventionToken;
+        const data = await response.json();
+        const { ticket, CSRFPreventionToken } = data.data;
 
-        // Definindo o cookie sem especificar o domínio
-        document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
-        console.log("PVEAuthCookie configurado:", ticket);
-        console.log("CSRFPreventionToken obtido:", csrfToken);
+        // Configurar o cookie para autenticação
+        document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
 
-        return { ticket, csrfToken };
+        return { ticket, CSRFPreventionToken };
+      } catch (error) {
+        console.error("Erro ao renovar o ticket:", error);
+        throw error;
       }
+    };
 
-      async function getVNCTicket(ticket, csrfToken) {
-        const vncProxyResponse = await fetch(
-          `${proxmoxURL}/api2/json/nodes/${nodeName}/qemu/${vmID}/vncproxy`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "CSRFPreventionToken": csrfToken,
-            },
-            credentials: "include",
-          }
-        );
+    // Função para conectar à VM
+    const connectVM = async () => {
+      try {
+        // Renovar o ticket
+        const { ticket } = await renewTicket();
+
+        // Obter o ticket VNC
+        const vncProxyResponse = await fetch(`${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`, {
+          method: "POST",
+          headers: { Authorization: `PVEAPIToken=${API_USERNAME}!api=${API_PASSWORD}` },
+        });
 
         if (!vncProxyResponse.ok) {
-          throw new Error(`Erro ao obter VNC Proxy: ${vncProxyResponse.status}`);
+          throw new Error(`Erro ao obter o ticket VNC: ${vncProxyResponse.status} ${vncProxyResponse.statusText}`);
         }
 
         const vncData = await vncProxyResponse.json();
-        return vncData.data;
-      }
+        const { ticket: vncTicket, port } = vncData.data;
 
-      function openNoVNC() {
-        // A URL do noVNC sem parâmetros adicionais, pois o Proxmox usará o cookie
-        const vncURL = `${proxmoxURL}/?console=kvm&novnc=1&vmid=${vmID}&node=${nodeName}&resize=off`;
-        console.log("Abrindo NoVNC com URL:", vncURL);
-        window.open(vncURL, "_blank");
-      }
+        // Gerar a URL do console noVNC
+        const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=off&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
 
-      document.getElementById("access-vm-btn").addEventListener("click", async () => {
-        try {
-          const { ticket, csrfToken } = await getProxmoxAuth(username, password);
-          await getVNCTicket(ticket, csrfToken);
-          openNoVNC();
-        } catch (error) {
-          console.error("Erro ao acessar a VM:", error);
-          alert(`Erro ao acessar a VM: ${error.message}`);
-        }
-      });
-    </script>
-  </body>
+        // Atualizar o iframe com a URL do console noVNC
+        const iframe = document.getElementById("novnc-iframe");
+        iframe.src = noVNCUrl;
+
+        // Atualizar a mensagem de carregamento
+        document.getElementById("loading-message").textContent = "Console noVNC carregado com sucesso.";
+      } catch (error) {
+        console.error("Erro ao conectar à VM:", error);
+        document.getElementById("loading-message").textContent = "Erro ao carregar o console noVNC.";
+        alert("Erro ao carregar o console noVNC. Verifique o console para mais detalhes.");
+      }
+    };
+
+    // Chamar a função de conexão ao carregar a página
+    connectVM();
+  </script>
+</body>
 </html>
