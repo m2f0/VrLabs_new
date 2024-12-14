@@ -157,7 +157,7 @@ const MyProSidebar = () => {
           <Box paddingLeft={collapsed ? undefined : "10%"}>
             <Item
               title="Dashboard"
-              to="/"
+              to="/manageVMs"
               icon={<HomeOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
@@ -184,30 +184,9 @@ const MyProSidebar = () => {
               setSelected={setSelected}
             />
             <Item
-              title="Manager VMs Cecyber"
-              to="/manageVMscecyber"
-              icon={<Slideshow />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="Monitor VMs CeCyber"
-              to="/"
-              icon={<MonitorHeart />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
               title="Monitor VMs NNovUp"
               to="/dashboardnnovup"
               icon={<MonitorHeart />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="Automation-Cecyber"
-              to="/Automation"
-              icon={<AutoMode />}
               selected={selected}
               setSelected={setSelected}
             />
