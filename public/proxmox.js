@@ -1,7 +1,8 @@
-const API_BASE_URL = "https://prox.nnovup.com.br";
-const API_TOKEN = "PVEAPIToken=apiuser@pve!api=2941a8af-6ae6-4a6e-810c-1c29910d22fc";
-const API_USERNAME = "apiuser@pve";
-const API_PASSWORD = "t?v1K!sfk/#/xSuK";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_TOKEN = process.env.REACT_APP_API_TOKEN;
+const API_USERNAME = process.env.REACT_APP_API_USERNAME;
+const API_PASSWORD = process.env.REACT_APP_API_PASSWORD;
+
 
 const vmList = [
   { id: "3100", node: "prox", name: "VM-3100" },
