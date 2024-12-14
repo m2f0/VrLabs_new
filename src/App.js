@@ -6,7 +6,7 @@ import { MyProSidebarProvider } from "./pages/global/sidebar/sidebarContext";
 import MyProSidebar from "./pages/global/sidebar/MyProSidebar";
 import Topbar from "./pages/global/Topbar";
 
-import Dashboard from "./pages/dashboard";
+import Dashboard from "./pages/dashboardnnovup";
 import DashboardNNovup from "./pages/dashboardnnovup";
 import Team from "./pages/team";
 import Invoices from "./pages/invoices";
