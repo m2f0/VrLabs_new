@@ -66,6 +66,7 @@ const VmAutomation = () => {
 
   // Função para gerar o código da página
   // Função para gerar o código da página
+// Função para gerar o código da página
 const generatePageCode = () => {
   if (selectedClones.length === 0) {
     alert("Selecione pelo menos um linked clone para gerar a página.");
@@ -98,6 +99,7 @@ const generatePageCode = () => {
         .button { margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; }
         .start { background-color: #4CAF50; color: white; }
         .connect { background-color: #2196F3; color: white; }
+        iframe { margin-top: 20px; width: 100%; height: 800px; border: none; }
       </style>
     </head>
     <body>
@@ -105,11 +107,42 @@ const generatePageCode = () => {
       <div id="buttons-section">
         ${buttons}
       </div>
+      <iframe id="vm-console" title="Console noVNC"></iframe>
       <script>
         const API_BASE_URL = "${API_BASE_URL}";
         const API_TOKEN = "${API_TOKEN}";
 
-        // Função para iniciar uma VM
+        const renewTicket = async () => {
+          const username = "${process.env.REACT_APP_API_USERNAME}";
+          const password = "${process.env.REACT_APP_API_PASSWORD}";
+
+          try {
+            const response = await fetch(
+              \`\${API_BASE_URL}/api2/json/access/ticket\`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({
+                  username,
+                  password,
+                }),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(\`Erro ao renovar ticket: \${response.status}\`);
+            }
+
+            const data = await response.json();
+            document.cookie = \`PVEAuthCookie=\${data.data.ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br\`;
+            return data.data.ticket;
+          } catch (error) {
+            console.error("Erro ao renovar ticket:", error);
+          }
+        };
+
         const startVM = async (vmid, node) => {
           try {
             const response = await fetch(
@@ -128,14 +161,15 @@ const generatePageCode = () => {
 
             alert(\`VM \${vmid} iniciada com sucesso!\`);
           } catch (error) {
-            console.error(\`Erro ao iniciar a VM \${vmid}:", error\`);
-            alert(\`Falha ao iniciar a VM \${vmid}.\`);
+            console.error("Erro ao iniciar VM:", error);
+            alert(\`Erro ao iniciar VM \${vmid}.\`);
           }
         };
 
-        // Função para conectar a uma VM
         const connectVM = async (vmid, node) => {
           try {
+            const ticket = await renewTicket();
+
             const vncProxyResponse = await fetch(
               \`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/vncproxy\`,
               {
@@ -147,18 +181,18 @@ const generatePageCode = () => {
             );
 
             if (!vncProxyResponse.ok) {
-              throw new Error(\`Erro ao obter informações do console VNC: \${vncProxyResponse.status} \${vncProxyResponse.statusText}\`);
+              throw new Error(\`Erro ao obter proxy VNC: \${vncProxyResponse.status}\`);
             }
 
-            const vncProxyData = await vncProxyResponse.json();
-            const { ticket: vncTicket, port } = vncProxyData.data;
+            const { ticket: vncTicket, port } = await vncProxyResponse.json().data;
 
             const noVNCUrl = \`\${API_BASE_URL}/?console=kvm&novnc=1&node=\${node}&resize=1&vmid=\${vmid}&path=api2/json/nodes/\${node}/qemu/\${vmid}/vncwebsocket/port/\${port}/vncticket/\${vncTicket}\`;
 
-            window.open(noVNCUrl, "_blank");
+            const iframe = document.getElementById("vm-console");
+            iframe.src = noVNCUrl;
           } catch (error) {
-            console.error(\`Erro ao conectar à VM \${vmid}:", error\`);
-            alert(\`Falha ao conectar à VM \${vmid}. Verifique o console para mais detalhes.\`);
+            console.error("Erro ao conectar VM:", error);
+            alert(\`Erro ao conectar VM \${vmid}.\`);
           }
         };
       </script>
@@ -168,6 +202,7 @@ const generatePageCode = () => {
 
   setGeneratedPageCode(pageCode);
 };
+
 
 
   useEffect(() => {
