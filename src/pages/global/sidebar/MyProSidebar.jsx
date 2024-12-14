@@ -157,7 +157,7 @@ const MyProSidebar = () => {
           <Box paddingLeft={collapsed ? undefined : "10%"}>
             <Item
               title="Dashboard"
-              to="/manageVMs"
+              to="/dashboardnnovup"
               icon={<HomeOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
