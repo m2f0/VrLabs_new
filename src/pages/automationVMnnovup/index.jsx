@@ -231,27 +231,6 @@ const fetchVMs = async () => {
   };
   
   
-  const testGeneratedLinkedCloneCode = () => {
-    if (!linkedCloneButtonCode) {
-      alert("Gere o código primeiro usando o botão 'Criar Código'.");
-      return;
-    }
-
-    const newWindow = window.open("", "_blank");
-    newWindow.document.write(`<!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Teste do Código do Linked Clone</title>
-      </head>
-      <body>
-        ${linkedCloneButtonCode}
-      </body>
-      </html>`);
-    newWindow.document.close();
-  };
-
   const testLinkedCloneButtonCode = () => {
     if (!linkedCloneButtonCode) {
       alert("Gere o código primeiro usando o botão Criar Botão.");
@@ -747,20 +726,6 @@ const fetchVMs = async () => {
               onClick={generateLinkedCloneButtonCode}
             >
               Criar Botão
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: colors.orangeAccent?.[600] || "#ff9800",
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-                padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.orangeAccent?.[500] },
-              }}
-              onClick={testGeneratedLinkedCloneCode}
-            >
-              Testar Código
             </Button>
             <Button
               variant="contained"
