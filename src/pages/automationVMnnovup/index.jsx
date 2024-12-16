@@ -119,11 +119,6 @@ const fetchVMs = async () => {
 
   // Função para gerar o código HTML do botão AUTO, que cria linked clones para a VM selecionada
   const generateLinkedCloneButtonCode = async () => {
-    if (selectedClones.length === 0) {
-      alert("Selecione pelo menos um Linked Clone para gerar o botão.");
-      return;
-    }
-  
     try {
       // Solicita o ticket de autenticação no Proxmox
       const authResponse = await fetch(
@@ -134,8 +129,8 @@ const fetchVMs = async () => {
             "Content-Type": "application/x-www-form-urlencoded",
           },
           body: new URLSearchParams({
-            username: process.env.REACT_APP_API_USERNAME, // Substitua pelo usuário correto
-            password: process.env.REACT_APP_API_PASSWORD, // Substitua pela senha correta
+            username: process.env.REACT_APP_API_USERNAME,
+            password: process.env.REACT_APP_API_PASSWORD,
           }),
         }
       );
@@ -147,8 +142,8 @@ const fetchVMs = async () => {
   
       // Extrai os dados do ticket e do token CSRF
       const authData = await authResponse.json();
-      const ticket = authData.data.ticket; // Este é o `PVEAuthCookie`
-      const csrfToken = authData.data.CSRFPreventionToken; // Este é o CSRF Token
+      const ticket = authData.data.ticket; // PVEAuthCookie
+      const csrfToken = authData.data.CSRFPreventionToken; // CSRF Token
   
       console.log("Ticket e CSRF obtidos:", { ticket, csrfToken });
   
@@ -156,104 +151,76 @@ const fetchVMs = async () => {
       document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
       document.cookie = `CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None`;
   
-      // Gera o código do botão com as funções de controle de VMs
-      const buttons = selectedClones
-        .map((cloneId) => {
-          const clone = linkedClones.find((lc) => lc.id === cloneId);
-          if (!clone) return "";
+      // Gerar o código do HTML adaptado
+      const code = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conexão Direta à VM</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        color: #333;
+        text-align: center;
+        padding: 20px;
+        margin: 0;
+      }
+      .button {
+        margin: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        background-color: #2196F3;
+        color: white;
+        border-radius: 5px;
+      }
+      iframe {
+        width: 100%;
+        height: 800px;
+        border: none;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Conexão Direta à Máquina Virtual</h1>
+    <!-- Div para os botões -->
+    <div id="button-section">
+      <p>Carregando botões...</p>
+    </div>
+    <!-- iFrame para conexão -->
+    <iframe id="vm-iframe" title="Console noVNC"></iframe>
   
-          return `
-            <button class="button start" onclick="startLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
-              Iniciar ${clone.name}
-            </button>
-            <button class="button connect" onclick="connectVM('${clone.id}', '${clone.node}')">
-              Conectar ${clone.name}
-            </button>
-          `;
-        })
-        .join("\n");
-  
-        const code = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teste do Código do Linked Clone</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #1e1e2f;
-      color: white;
-    }
-    .button {
-      font-size: 16px;
-      padding: 10px;
-      margin: 5px;
-    }
-    .start {
-      background-color: #4CAF50;
-      color: white;
-    }
-    .connect {
-      background-color: #2196F3;
-      color: white;
-    }
-  </style>
-</head>
-<body>
-  ${buttons}
-  <script>
-    // Função para iniciar uma VM
-    window.startLinkedClone = async function (vmid, node, name) {
-      try {
-        // Envie uma solicitação ao backend
-        const response = await fetch(\`\${BACKEND_URL}start-vm\`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ vmid, node }), // Dados da VM a serem enviados
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(\`Erro ao iniciar a VM: \${errorText}\`);
+    <!-- Script para carregar botões -->
+    <script>
+      // Verificar se o script foi carregado corretamente
+      const scriptLoaded = () => {
+        if (typeof renderButtons !== 'function') {
+          console.error('Erro: O script proxmox.js não foi carregado corretamente.');
+          document.getElementById('button-section').innerHTML = '<p>Erro ao carregar os botões. Verifique o console.</p>';
+        } else {
+          console.log('Script proxmox.js carregado com sucesso.');
+          renderButtons();
         }
-
-        alert(\`VM \${name} (ID: \${vmid}) iniciada com sucesso!\`);
-      } catch (error) {
-        console.error(\`Erro ao iniciar a VM \${vmid}:\`, error);
-        alert(\`Falha ao iniciar a VM \${name} (ID: \${vmid}).\`);
-      }
-    };
-
-    // Função para conectar a uma VM
-    window.connectVM = function (vmid, node) {
-      const ticket = getCookie("PVEAuthCookie");
-
-      if (!ticket) {
-        alert("Erro: Ticket de autenticação não encontrado.");
-        return;
-      }
-
-      const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
-      document.cookie = \`PVEAuthCookie=\${ticket}; path=/; Secure; SameSite=None\`;
-      window.open(url, "_blank");
-    };
-
-    // Função para obter os cookies
-    function getCookie(name) {
-      const value = \`; \${document.cookie}\`;
-      const parts = value.split(\`; \${name}=\`);
-      if (parts.length === 2) return parts.pop().split(";").shift();
-    }
-  </script>
-</body>
-</html>
-`;
-
-        
+      };
+  
+      // Carregar o script do proxmox.js
+      const script = document.createElement('script');
+      script.src = "https://vrlabs.nnovup.com.br/proxmox.js";
+      script.onload = scriptLoaded;
+      script.onerror = () => {
+        console.error('Erro: Não foi possível carregar o script proxmox.js.');
+        document.getElementById('button-section').innerHTML = '<p>Erro ao carregar os botões. Verifique o console.</p>';
+      };
+      document.head.appendChild(script);
+    </script>
+  </body>
+  </html>
+      `;
   
       // Armazena o código gerado no estado
       setLinkedCloneButtonCode(code);
@@ -262,6 +229,7 @@ const fetchVMs = async () => {
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
   
   
   
