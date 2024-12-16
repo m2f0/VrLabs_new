@@ -119,6 +119,11 @@ const fetchVMs = async () => {
 
   // Função para gerar o código HTML do botão AUTO, que cria linked clones para a VM selecionada
   const generateLinkedCloneButtonCode = async () => {
+    if (selectedClones.length === 0) {
+      alert("Selecione pelo menos um Linked Clone para gerar o botão.");
+      return;
+    }
+  
     try {
       // Solicita o ticket de autenticação no Proxmox
       const authResponse = await fetch(
@@ -151,7 +156,20 @@ const fetchVMs = async () => {
       document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
       document.cookie = `CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None`;
   
-      // Gerar o código do HTML adaptado
+      // Gerar os botões com base nos clones selecionados
+      const buttons = selectedClones
+        .map((cloneId) => {
+          const clone = linkedClones.find((lc) => lc.id === cloneId);
+          if (!clone) return "";
+  
+          return `
+            <button class="button" onclick="connectLinkedClone('${clone.id}', '${clone.node}', '${clone.name}')">
+              Conectar à VM: ${clone.name}
+            </button>`;
+        })
+        .join("\n");
+  
+      // Gerar o HTML completo
       const code = `
   <!DOCTYPE html>
   <html lang="en">
@@ -188,35 +206,38 @@ const fetchVMs = async () => {
   </head>
   <body>
     <h1>Conexão Direta à Máquina Virtual</h1>
-    <!-- Div para os botões -->
+    <!-- Botões para cada linked clone -->
     <div id="button-section">
-      <p>Carregando botões...</p>
+      ${buttons}
     </div>
-    <!-- iFrame para conexão -->
+    <!-- iFrame para exibir a conexão -->
     <iframe id="vm-iframe" title="Console noVNC"></iframe>
   
-    <!-- Script para carregar botões -->
     <script>
-      // Verificar se o script foi carregado corretamente
-      const scriptLoaded = () => {
-        if (typeof renderButtons !== 'function') {
-          console.error('Erro: O script proxmox.js não foi carregado corretamente.');
-          document.getElementById('button-section').innerHTML = '<p>Erro ao carregar os botões. Verifique o console.</p>';
-        } else {
-          console.log('Script proxmox.js carregado com sucesso.');
-          renderButtons();
-        }
-      };
+      // Função para conectar à VM vinculada ao botão clicado
+      function connectLinkedClone(vmid, node, name) {
+        const ticket = getCookie("PVEAuthCookie");
   
-      // Carregar o script do proxmox.js
-      const script = document.createElement('script');
-      script.src = "https://vrlabs.nnovup.com.br/proxmox.js";
-      script.onload = scriptLoaded;
-      script.onerror = () => {
-        console.error('Erro: Não foi possível carregar o script proxmox.js.');
-        document.getElementById('button-section').innerHTML = '<p>Erro ao carregar os botões. Verifique o console.</p>';
-      };
-      document.head.appendChild(script);
+        if (!ticket) {
+          alert("Erro: Ticket de autenticação não encontrado.");
+          return;
+        }
+  
+        // Gerar a URL de conexão noVNC
+        const url = \`\${API_BASE_URL}/?console=kvm&novnc=1&vmid=\${vmid}&node=\${node}\`;
+        console.log("Conectando a:", url);
+  
+        // Atualizar o iFrame com a conexão
+        const iframe = document.getElementById("vm-iframe");
+        iframe.src = url;
+      }
+  
+      // Função para obter os cookies
+      function getCookie(name) {
+        const value = \`; \${document.cookie}\`;
+        const parts = value.split(\`; \${name}=\`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+      }
     </script>
   </body>
   </html>
@@ -229,6 +250,7 @@ const fetchVMs = async () => {
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
   
   
   
