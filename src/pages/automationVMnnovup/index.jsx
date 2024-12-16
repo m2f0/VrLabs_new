@@ -32,7 +32,7 @@ const VmAutomation = () => {
     setActiveTab(newValue);
   };
 
-  // Função para buscar a lista de VMs do Proxmox e filtrar as normais e os linked clones
+  
   // Função para buscar a lista de VMs do Proxmox e filtrar as normais e os linked clones
 const fetchVMs = async () => {
   try {
@@ -118,188 +118,23 @@ const fetchVMs = async () => {
   };
 
   // Função para gerar o código HTML do botão AUTO, que cria linked clones para a VM selecionada
-  const generateLinkedCloneButtonCode = async () => {
-    try {
-      // Solicita o ticket de autenticação no Proxmox
-      const authResponse = await fetch(
-        `${API_BASE_URL}/api2/json/access/ticket`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            username: process.env.REACT_APP_API_USERNAME,
-            password: process.env.REACT_APP_API_PASSWORD,
-          }),
-        }
-      );
-  
-      // Verifica se a autenticação foi bem-sucedida
-      if (!authResponse.ok) {
-        throw new Error(`Erro ao obter o ticket: ${authResponse.statusText}`);
-      }
-  
-      // Extrai os dados do ticket e do token CSRF
-      const authData = await authResponse.json();
-      const ticket = authData.data.ticket; // PVEAuthCookie
-      const csrfToken = authData.data.CSRFPreventionToken; // CSRF Token
-  
-      console.log("Ticket e CSRF obtidos:", { ticket, csrfToken });
-  
-      // Armazena os cookies no navegador
-      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
-      document.cookie = `CSRFPreventionToken=${csrfToken}; path=/; Secure; SameSite=None`;
-  
-      // Gerar o HTML completo
-      const code = `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Direta à VM</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f9;
-        color: #333;
-        text-align: center;
-        padding: 20px;
-        margin: 0;
-      }
-      .button {
-        margin: 10px;
-        padding: 10px 20px;
-        font-size: 16px;
-        border: none;
-        cursor: pointer;
-        background-color: #2196F3;
-        color: white;
-        border-radius: 5px;
-      }
-      iframe {
-        width: 100%;
-        height: 800px;
-        border: none;
-        margin-top: 20px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Conexão Direta à Máquina Virtual</h1>
-    <!-- Div para os botões -->
-    <div id="button-section">
-      <p>Carregando botões...</p>
-    </div>
-    <!-- iFrame para conexão -->
-    <iframe id="vm-iframe" title="Console noVNC"></iframe>
-  
-    <!-- Script para carregar botões -->
-    <script>
-      // Verificar se o script foi carregado corretamente
-      const scriptLoaded = () => {
-        if (typeof renderButtons !== 'function') {
-          console.error('Erro: O script proxmox.js não foi carregado corretamente.');
-          document.getElementById('button-section').innerHTML = '<p>Erro ao carregar os botões. Verifique o console.</p>';
-        } else {
-          console.log('Script proxmox.js carregado com sucesso.');
-          renderButtons();
-        }
-      };
-  
-      // Carregar o script do proxmox.js
-      const script = document.createElement('script');
-      script.src = "https://vrlabs.nnovup.com.br/proxmox.js";
-      script.onload = scriptLoaded;
-      script.onerror = () => {
-        console.error('Erro: Não foi possível carregar o script proxmox.js.');
-        document.getElementById('button-section').innerHTML = '<p>Erro ao carregar os botões. Verifique o console.</p>';
-      };
-      document.head.appendChild(script);
-    </script>
-  </body>
-  </html>
-      `;
-  
-      // Armazena o código gerado no estado
-      setLinkedCloneButtonCode(code);
-    } catch (error) {
-      console.error("Erro ao gerar o botão:", error);
-      alert(`Erro ao gerar o botão: ${error.message}`);
-    }
-  };
-  
-  
-  const testLinkedCloneButtonCode = () => {
-    if (!linkedCloneButtonCode) {
-      alert("Gere o código primeiro usando o botão Criar Botão.");
-      return;
-    }
+  <DataGrid
+  rows={linkedClones}
+  columns={[
+    { field: "id", headerName: "Clone ID", width: 100 },
+    { field: "name", headerName: "Nome", width: 200 },
+    { field: "status", headerName: "Status", width: 120 },
+  ]}
+  checkboxSelection
+  disableSelectionOnClick
+  onSelectionModelChange={(ids) => {
+    setSelectedClones(ids); // Atualiza os clones selecionados
+  }}
+/>
 
-    const newWindow = window.open("", "_blank");
-    newWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Teste do Código do Linked Clone</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              height: 100vh;
-              margin: 0;
-              background-color: #f4f4f9;
-            }
   
-            .button-container {
-              display: flex;
-              flex-direction: column;
-              gap: 16px;
-              align-items: center;
-            }
   
-            button {
-              font-size: 18px;
-              font-weight: bold;
-              padding: 12px 24px;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              transition: all 0.3s ease;
-              box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            }
   
-            button.start {
-              background-color: #6c63ff;
-              color: white;
-            }
-            button.start:hover {
-              background-color: #574bfa;
-            }
-  
-            button.connect {
-              background-color: #00c9a7;
-              color: white;
-            }
-            button.connect:hover {
-              background-color: #00b38a;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="button-container">
-            ${linkedCloneButtonCode}
-          </div>
-        </body>
-      </html>
-    `);
-    newWindow.document.close();
-  };
 
   // Função para copiar o código gerado pelo botão AUTO para a área de transferência
   const copyToClipboard = () => {
