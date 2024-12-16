@@ -3,11 +3,6 @@ const API_TOKEN = "PVEAPIToken=apiuser@pve!api=2941a8af-6ae6-4a6e-810c-1c29910d2
 const API_USERNAME = "apiuser@pve";
 const API_PASSWORD = "t?v1K!sfk/#/xSuK";
 
-const vmList = [
-  { id: "3100", node: "prox", name: "VM-3100" },
-];
-
-// Função para renovar o ticket
 async function renewTicket() {
   try {
     const response = await fetch(`${API_BASE_URL}/api2/json/access/ticket`, {
@@ -36,10 +31,8 @@ async function renewTicket() {
   }
 }
 
-// Função para conectar à VM
 async function connectVM(vmid, node) {
   try {
-    console.log(`[connectVM] Conectando à VM ${vmid} no node ${node}`);
     const ticket = await renewTicket();
 
     const response = await fetch(`${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`, {
@@ -64,18 +57,3 @@ async function connectVM(vmid, node) {
     alert(`Falha ao conectar à VM. Verifique o console.`);
   }
 }
-
-// Renderizar os botões para cada VM
-function renderButtons() {
-  const buttonSection = document.getElementById("button-section");
-  vmList.forEach((vm) => {
-    const button = document.createElement("button");
-    button.className = "button";
-    button.textContent = `Conectar ${vm.name}`;
-    button.onclick = () => connectVM(vm.id, vm.node);
-    buttonSection.appendChild(button);
-  });
-}
-
-// Inicializar a página
-renderButtons();

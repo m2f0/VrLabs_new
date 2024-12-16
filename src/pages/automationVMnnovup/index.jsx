@@ -118,23 +118,146 @@ const fetchVMs = async () => {
   };
 
   // Função para gerar o código HTML do botão AUTO, que cria linked clones para a VM selecionada
-  <DataGrid
-  rows={linkedClones}
-  columns={[
-    { field: "id", headerName: "Clone ID", width: 100 },
-    { field: "name", headerName: "Nome", width: 200 },
-    { field: "status", headerName: "Status", width: 120 },
-  ]}
-  checkboxSelection
-  disableSelectionOnClick
-  onSelectionModelChange={(ids) => {
-    setSelectedClones(ids); // Atualiza os clones selecionados
-  }}
-/>
+  const generateLinkedCloneButtonCode = async () => {
+    if (selectedClones.length === 0) {
+      alert("Selecione pelo menos um Linked Clone para gerar o botão.");
+      return;
+    }
+  
+    try {
+      const buttons = selectedClones
+        .map((cloneId) => {
+          const clone = linkedClones.find((lc) => lc.id === cloneId);
+          if (!clone) return "";
+  
+          return `
+            <button class="button" onclick="connectVM('${clone.id}', '${clone.node}')">
+              Conectar à VM: ${clone.name}
+            </button>`;
+        })
+        .join("\n");
+  
+      const code = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Conexão Direta à VM</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+          }
+          .button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            background-color: #2196F3;
+            color: white;
+            border-radius: 5px;
+          }
+          iframe {
+            width: 100%;
+            height: 800px;
+            border: none;
+            margin-top: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Conexão Direta à Máquina Virtual</h1>
+        <div id="button-section">
+          ${buttons}
+        </div>
+        <iframe id="vm-iframe" title="Console noVNC"></iframe>
+        <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
+      </body>
+      </html>`;
+      setLinkedCloneButtonCode(code);
+    } catch (error) {
+      console.error("Erro ao gerar botão de conexão:", error);
+      alert("Erro ao gerar botão de conexão. Verifique os logs.");
+    }
+  };
+  
+  
+  
+  const testLinkedCloneButtonCode = () => {
+    if (!linkedCloneButtonCode) {
+      alert("Gere o código primeiro usando o botão Criar Botão.");
+      return;
+    }
 
+    const newWindow = window.open("", "_blank");
+    newWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Teste do Código do Linked Clone</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              margin: 0;
+              background-color: #f4f4f9;
+            }
   
+            .button-container {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+              align-items: center;
+            }
   
+            button {
+              font-size: 18px;
+              font-weight: bold;
+              padding: 12px 24px;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            }
   
+            button.start {
+              background-color: #6c63ff;
+              color: white;
+            }
+            button.start:hover {
+              background-color: #574bfa;
+            }
+  
+            button.connect {
+              background-color: #00c9a7;
+              color: white;
+            }
+            button.connect:hover {
+              background-color: #00b38a;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="button-container">
+            ${linkedCloneButtonCode}
+          </div>
+        </body>
+      </html>
+    `);
+    newWindow.document.close();
+  };
 
   // Função para copiar o código gerado pelo botão AUTO para a área de transferência
   const copyToClipboard = () => {
