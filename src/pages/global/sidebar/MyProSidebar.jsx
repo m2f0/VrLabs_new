@@ -177,21 +177,21 @@ const MyProSidebar = () => {
               setSelected={setSelected}
             />
             <Item
-              title="Manager VMs NNovUp"
+              title="Manager VMs"
               to="/manageVMs"
               icon={<Slideshow />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
-              title="Monitor VMs NNovUp"
+              title="Monitor VMs"
               to="/dashboardnnovup"
               icon={<MonitorHeart />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
-              title="Automation-NNovUp"
+              title="Automation"
               to="/automationVMnnovup"
               icon={<AutoMode />}
               selected={selected}
