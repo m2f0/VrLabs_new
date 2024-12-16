@@ -388,19 +388,31 @@ const fetchVMs = async () => {
     }
   
     const { id: vmId, node, name } = selectedVM;
-    const { name: snapName } = selectedSnapshot; // Nome correto do snapshot
+    const { name: snapName } = selectedSnapshot; // Nome do snapshot válido
   
+    // Solicitar o ID e o nome do clone ao usuário
     const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
     if (!newVmId) {
       alert("ID da nova VM é obrigatório.");
       return;
     }
   
+    let cloneName = `${name}-CLONE-${newVmId}`; // Nome base do clone
+    cloneName = cloneName
+      .replace(/[^a-zA-Z0-9.-]/g, "") // Remove caracteres inválidos
+      .replace(/^-+|-+$/g, "") // Remove hífens no início/fim
+      .substring(0, 63); // Garante que o nome não ultrapasse 63 caracteres
+  
+    if (!/^[a-zA-Z0-9.-]+$/.test(cloneName)) {
+      alert("Erro: Nome gerado para o clone é inválido.");
+      return;
+    }
+  
     try {
       const body = new URLSearchParams({
         newid: newVmId,
-        name: `${name}-CLONE-${newVmId}`, // Inclui a palavra CLONE automaticamente
-        snapname: snapName, // Nome correto do snapshot
+        name: cloneName, // Nome sanitizado do clone
+        snapname: snapName, // Nome do snapshot
         full: "0", // Certifique-se de enviar "0" como string
       });
   
@@ -429,6 +441,7 @@ const fetchVMs = async () => {
       alert("Erro ao criar Linked Clone. Verifique os logs.");
     }
   };
+  
   
   
 
