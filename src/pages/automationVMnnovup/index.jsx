@@ -284,18 +284,6 @@ const fetchVMs = async () => {
     newWindow.document.close();
   };
 
-  // Função para copiar o código gerado para linked clones para a área de transferência
-  const copyLinkedCloneButtonCode = () => {
-    if (!linkedCloneButtonCode) {
-      alert("Gere o código primeiro usando o botão Criar Botão.");
-      return;
-    }
-
-    navigator.clipboard.writeText(linkedCloneButtonCode).then(() => {
-      alert("Código do Linked Clone copiado para a área de transferência!");
-    });
-  };
-
   const testLinkedCloneButtonCode = () => {
     if (!linkedCloneButtonCode) {
       alert("Gere o código primeiro usando o botão Criar Botão.");
@@ -790,20 +778,6 @@ const fetchVMs = async () => {
               onClick={generateLinkedCloneButtonCode}
             >
               Criar Botão
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: colors.greenAccent[600],
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-                padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.greenAccent[500] },
-              }}
-              onClick={copyLinkedCloneButtonCode}
-            >
-              Copiar Código
             </Button>
             <Button
               variant="contained"
