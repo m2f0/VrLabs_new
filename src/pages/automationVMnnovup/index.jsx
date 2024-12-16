@@ -214,6 +214,8 @@ const fetchVMs = async () => {
     <iframe id="vm-iframe" title="Console noVNC"></iframe>
   
     <script>
+      const API_BASE_URL = "${API_BASE_URL}"; // Adiciona o valor diretamente no script
+  
       // Função para conectar à VM vinculada ao botão clicado
       function connectLinkedClone(vmid, node, name) {
         const ticket = getCookie("PVEAuthCookie");
@@ -250,6 +252,7 @@ const fetchVMs = async () => {
       alert(`Erro ao gerar o botão: ${error.message}`);
     }
   };
+  
   
   
   
