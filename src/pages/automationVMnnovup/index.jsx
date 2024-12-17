@@ -13,7 +13,7 @@ const VmAutomation = () => {
   const [vmList, setVmList] = useState([]);
   const [linkedClones, setLinkedClones] = useState([]);
   const [selectedVM, setSelectedVM] = useState(null);
-  const [selectedClones, setSelectedClones] = useState([]); // Estado para clones selecionados
+  const [selectedClones, setSelectedClones] = useState([]); // Estado para clones selecionadosfgerencie
   const [buttonCode, setButtonCode] = useState("");
   const [isButtonGenerated, setIsButtonGenerated] = useState(false);
   const [linkedCloneButtonCode, setLinkedCloneButtonCode] = useState(""); // Código gerado para linked clones
@@ -411,7 +411,7 @@ const fetchVMs = async () => {
     <Box m="20px">
       <Header
         title="Automação de Máquinas Virtuais"
-        subtitle="Gerencie e Controle Suas VMs"
+        subtitle="Gerencie e Controle a Automação de suas VMs"
       />
 
       {/* Abas */}
@@ -487,7 +487,7 @@ const fetchVMs = async () => {
           {selectedVM && (
             <Box mt="20px">
               <h4 style={{ color: colors.primary[100] }}>
-                Snapshots da VM Selecionada: {selectedVM.name} (ID:{" "}
+                Escolha o Snapshots da VM Selecionada para criar o Linked Clone: {selectedVM.name} (ID:{" "}
                 {selectedVM.id})
               </h4>
               <Box
@@ -632,6 +632,12 @@ const fetchVMs = async () => {
       {/* Conteúdo da aba "Linked Clones" */}
       {activeTab === 1 && (
         <Box mt="20px">
+          {/* Texto acima do DataGrid */}
+          <Box mb="10px">
+            <h3 style={{ color: colors.primary[100], textAlign: "center", fontWeight: "bold" }}>
+              Selecione um ou mais linked clones para criar a página de automação:
+            </h3>
+          </Box>
           <Box
             height="40vh"
             sx={{
