@@ -461,6 +461,12 @@ const fetchVMs = async () => {
             }}
           >
             {/* Primeiro DataGrid */}
+            {/* Texto acima do DataGrid */}
+            <Box mb="10px">
+              <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
+                Selecione uma vm para criar o snapshot:
+              </h3>
+            </Box>
             <DataGrid
               rows={vmList}
               columns={[
@@ -634,7 +640,7 @@ const fetchVMs = async () => {
         <Box mt="20px">
           {/* Texto acima do DataGrid */}
           <Box mb="10px">
-            <h3 style={{ color: colors.primary[100], textAlign: "center", fontWeight: "bold" }}>
+            <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
               Selecione um ou mais linked clones para criar a página de automação:
             </h3>
           </Box>
