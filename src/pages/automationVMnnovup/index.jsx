@@ -155,6 +155,7 @@ const fetchVMs = async () => {
               color: #333;
               text-align: center;
               padding: 20px;
+              margin: 0;
             }
             .button {
               margin: 10px;
@@ -167,10 +168,28 @@ const fetchVMs = async () => {
               border-radius: 5px;
             }
             iframe {
-            width: 90%;
-            height: 90vh;
-            border: none;
-            margin-top: 20px;
+              width: 90%;
+              height: 90vh;
+              border: none;
+              margin-top: 20px;
+            }
+            #spinner {
+              display: none;
+              margin: 20px auto;
+              border: 8px solid #f3f3f3;
+              border-top: 8px solid #3498db;
+              border-radius: 50%;
+              width: 60px;
+              height: 60px;
+              animation: spin 2s linear infinite;
+            }
+            @keyframes spin {
+              0% {
+                transform: rotate(0deg);
+              }
+              100% {
+                transform: rotate(360deg);
+              }
             }
           </style>
         </head>
@@ -179,10 +198,14 @@ const fetchVMs = async () => {
           <button class="button" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}', '${newVmId}', '${linkedCloneName}')">
             Criar, Iniciar e Conectar
           </button>
+          <div id="spinner"></div>
           <iframe id="vm-iframe" title="Console noVNC"></iframe>
           <script>
             async function automateLinkedClone(vmid, node, snapName, newVmId, linkedCloneName) {
+              const spinner = document.getElementById('spinner');
+              const iframe = document.getElementById('vm-iframe');
               try {
+                spinner.style.display = 'block';
                 console.log('Criando Linked Clone...');
                 const params = new URLSearchParams({
                   newid: newVmId,
@@ -203,11 +226,10 @@ const fetchVMs = async () => {
                 if (!cloneResponse.ok) {
                   const errorText = await cloneResponse.text();
                   console.error('Erro ao criar Linked Clone:', errorText);
-                  alert('Erro ao criar Linked Clone. Verifique os logs.');
                   return;
                 }
   
-                alert('Linked Clone criado com sucesso!');
+                console.log('Linked Clone criado com sucesso.');
                 console.log('Aguardando 10 segundos...');
                 await new Promise((resolve) => setTimeout(resolve, 10000));
   
@@ -222,19 +244,20 @@ const fetchVMs = async () => {
                 if (!startResponse.ok) {
                   const errorText = await startResponse.text();
                   console.error('Erro ao iniciar Linked Clone:', errorText);
-                  alert('Erro ao iniciar Linked Clone. Verifique os logs.');
                   return;
                 }
   
-                alert('Linked Clone iniciado com sucesso!');
+                console.log('Linked Clone iniciado com sucesso.');
                 console.log('Aguardando mais 10 segundos...');
                 await new Promise((resolve) => setTimeout(resolve, 10000));
   
                 console.log('Conectando ao Linked Clone...');
+                iframe.style.display = 'block';
                 connectVM(newVmId, node);
               } catch (error) {
                 console.error('Erro no processo de automação:', error);
-                alert('Erro no processo de automação. Verifique os logs.');
+              } finally {
+                spinner.style.display = 'none';
               }
             }
           </script>
@@ -242,12 +265,12 @@ const fetchVMs = async () => {
         </html>
       `;
       setLinkedCloneButtonCode(code);
-      alert("Código gerado com sucesso!");
+      console.log("Código gerado com sucesso.");
     } catch (error) {
       console.error("Erro ao gerar código:", error);
-      alert("Erro ao gerar o código. Verifique os logs.");
     }
   };
+  
   
   
   
