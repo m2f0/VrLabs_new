@@ -431,8 +431,8 @@ const fetchVMs = async () => {
     },
   }}
 >
-  <Tab label="Máquinas Virtuais" />
-  <Tab label="> SnapShots" />
+  <Tab label="1o. Máquinas Virtuais" />
+  <Tab label="2o. SnapShots" />
 </Tabs>
 
 
