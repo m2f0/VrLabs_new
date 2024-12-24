@@ -270,67 +270,7 @@ const fetchVMs = async () => {
   
   
 
-  // Função para testar o código gerado pelo botão AUTO, abrindo-o em uma nova aba
-  const testGeneratedCode = () => {
-    if (!buttonCode) {
-      alert("Gere o código primeiro usando o botão AUTO.");
-      return;
-    }
-
-    const newWindow = window.open("", "_blank");
-    newWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Teste do Código</title>
-        </head>
-        <body>
-          ${buttonCode}
-        </body>
-      </html>
-    `);
-    newWindow.document.close();
-  };
-
-  // Função para salvar o código gerado no backend
-  const saveGeneratedCode = () => {
-    if (!linkedCloneButtonCode) {
-      alert("Gere o código primeiro usando o botão Criar Botão.");
-      return;
-    }
   
-    const fileName = prompt("Digite o nome do arquivo (sem extensão):", "linked_clone");
-    if (!fileName) {
-      alert("O nome do arquivo é obrigatório.");
-      return;
-    }
-  
-    try {
-      // Criar um blob com o conteúdo do código HTML
-      const blob = new Blob([linkedCloneButtonCode], { type: "text/html" });
-  
-      // Criar uma URL para o blob
-      const url = URL.createObjectURL(blob);
-  
-      // Criar um elemento de ancoragem para forçar o download
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${fileName}.html`;
-  
-      // Acionar o clique no elemento
-      a.click();
-  
-      // Limpar o objeto URL
-      URL.revokeObjectURL(url);
-  
-      alert("Código salvo com sucesso!");
-    } catch (error) {
-      console.error("Erro ao salvar o código localmente:", error);
-      alert("Erro ao salvar o código localmente. Verifique os logs.");
-    }
-  };
   
 
   // Hook para carregar a lista de VMs assim que o componente é montado
