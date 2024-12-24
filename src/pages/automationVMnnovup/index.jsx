@@ -416,24 +416,26 @@ const fetchVMs = async () => {
 
       {/* Abas */}
       <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        textColor="primary"
-        indicatorColor="primary"
-        sx={{
-          "& .MuiTab-root": {
-            fontWeight: "bold",
-            fontSize: "16px",
-            textTransform: "none",
-          },
-          "& .MuiTab-root.Mui-selected": {
-            color: "orange", // Define a cor do texto selecionado como laranja
-          },
-        }}
-      >
-        <Tab label="Máquinas Virtuais" />
-        <Tab label="Linked Clones" />
-      </Tabs>
+  value={activeTab}
+  onChange={handleTabChange}
+  textColor="primary"
+  indicatorColor="primary"
+  sx={{
+    "& .MuiTab-root": {
+      fontWeight: "bold",
+      fontSize: "16px",
+      textTransform: "none",
+    },
+    "& .MuiTab-root.Mui-selected": {
+      color: "orange",
+    },
+  }}
+>
+  <Tab label="Máquinas Virtuais" />
+  <Tab label="SnapShots" />
+  <Tab label="Linked Clones" />
+</Tabs>
+
 
       {/* Conteúdo da aba "Máquinas Virtuais" */}
       {activeTab === 0 && (
@@ -634,6 +636,58 @@ const fetchVMs = async () => {
           </Box>
         </Box>
       )}
+
+      {/* Conteúdo da aba "SnapShots" */}
+{activeTab === 1 && (
+  <Box mt="20px">
+    <Box mb="10px">
+      <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
+        Snapshots disponíveis para a VM selecionada:
+      </h3>
+    </Box>
+    <Box
+      height="40vh"
+      sx={{
+        "& .MuiDataGrid-root": {
+          borderRadius: "8px",
+          backgroundColor: colors.primary[400],
+        },
+        "& .MuiDataGrid-columnHeaders": {
+          backgroundColor: colors.blueAccent[700],
+          color: "white",
+          fontSize: "16px",
+          fontWeight: "bold",
+        },
+        "& .MuiDataGrid-cell": {
+          color: colors.primary[100],
+        },
+        "& .MuiDataGrid-footerContainer": {
+          backgroundColor: colors.blueAccent[700],
+          color: "white",
+        },
+      }}
+    >
+      <DataGrid
+        rows={snapshotList}
+        columns={[
+          { field: "id", headerName: "Snapshot ID", width: 150 },
+          { field: "name", headerName: "Nome", width: 200 },
+          { field: "description", headerName: "Descrição", width: 300 },
+        ]}
+        checkboxSelection
+        disableSelectionOnClick
+        selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []}
+        onSelectionModelChange={(ids) => {
+          const selectedId = ids[0];
+          const snapshot = snapshotList.find((snap) => snap.id === selectedId);
+          setSelectedSnapshot(snapshot);
+        }}
+      />
+    </Box>
+  </Box>
+)}
+
+
 
       {/* Conteúdo da aba "Linked Clones" */}
       {activeTab === 1 && (
