@@ -166,6 +166,12 @@ const fetchVMs = async () => {
               color: white;
               border-radius: 5px;
             }
+            iframe {
+            width: 90%;
+            height: 90vh;
+            border: none;
+            margin-top: 20px;
+            }
           </style>
         </head>
         <body>
