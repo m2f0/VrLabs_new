@@ -119,73 +119,73 @@ const fetchVMs = async () => {
 
   // Função para gerar o código HTML do botão AUTO, que cria linked clones para a VM selecionada
   const generateLinkedCloneButtonCode = async () => {
-    if (selectedClones.length === 0) {
-      alert("Selecione pelo menos um Linked Clone para gerar o botão.");
+    if (!selectedSnapshot) {
+      alert("Selecione um snapshot para gerar o código.");
       return;
     }
   
     try {
-      const buttons = selectedClones
-        .map((cloneId) => {
-          const clone = linkedClones.find((lc) => lc.id === cloneId);
-          if (!clone) return "";
+      const { id, name, vmid } = selectedSnapshot; // Snapshot selecionado
+      const selectedVm = vmList.find((vm) => vm.id === vmid); // VM associada ao snapshot
+      if (!selectedVm) {
+        alert("Falha ao encontrar a VM associada ao snapshot.");
+        return;
+      }
   
-          return `
-            <button class="button" onclick="connectVM('${clone.id}', '${clone.node}')">
-              Conectar à VM: ${clone.name}
-            </button>`;
-        })
-        .join("\n");
+      const { node } = selectedVm;
   
       const code = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Conexão Direta à VM</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            text-align: center;
-            padding: 20px;
-            margin: 0;
-          }
-          .button {
-            margin: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
-            background-color: #2196F3;
-            color: white;
-            border-radius: 5px;
-          }
-          iframe {
-            width: 100%;
-            height: 800px;
-            border: none;
-            margin-top: 20px;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Conexão Direta à Máquina Virtual</h1>
-        <div id="button-section">
-          ${buttons}
-        </div>
-        <iframe id="vm-iframe" title="Console noVNC"></iframe>
-        <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
-      </body>
-      </html>`;
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Conexão Direta ao Snapshot</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background-color: #f4f4f9;
+              color: #333;
+              text-align: center;
+              padding: 20px;
+              margin: 0;
+            }
+            .button {
+              margin: 10px;
+              padding: 10px 20px;
+              font-size: 16px;
+              border: none;
+              cursor: pointer;
+              background-color: #2196F3;
+              color: white;
+              border-radius: 5px;
+            }
+            iframe {
+              width: 100%;
+              height: 800px;
+              border: none;
+              margin-top: 20px;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Conexão Direta ao Snapshot</h1>
+          <div id="button-section">
+            <button class="button" onclick="connectVM('${id}', '${node}')">
+              Conectar ao Snapshot: ${name}
+            </button>
+          </div>
+          <iframe id="vm-iframe" title="Console noVNC"></iframe>
+          <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
+        </body>
+        </html>`;
       setLinkedCloneButtonCode(code);
     } catch (error) {
-      console.error("Erro ao gerar botão de conexão:", error);
-      alert("Erro ao gerar botão de conexão. Verifique os logs.");
+      console.error("Erro ao gerar o código de conexão:", error);
+      alert("Erro ao gerar o código de conexão. Verifique os logs.");
     }
   };
+  
   
   
   
