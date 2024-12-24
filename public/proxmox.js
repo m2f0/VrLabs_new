@@ -31,26 +31,24 @@ async function renewTicket() {
   }
 }
 
-async function createLinkedClone(snapshotId, node, linkedCloneName) {
+async function createLinkedClone(snapshotName, node, linkedCloneName, vmId) {
   try {
     const ticket = await renewTicket();
 
-    // Solicitar um ID exclusivo para a nova VM
     const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
     if (!newVmId) {
       alert("O ID da nova VM é obrigatório.");
       return;
     }
 
-    // Configurar os parâmetros para o Linked Clone
     const params = new URLSearchParams({
       newid: newVmId,
-      name: linkedCloneName,
-      snapname: snapshotId,
-      full: "0", // Criar como Linked Clone
+      name: linkedCloneName, // Nome do Linked Clone
+      snapname: snapshotName, // Nome do snapshot correto
+      full: "0", // Indica Linked Clone
     });
 
-    const response = await fetch(`${API_BASE_URL}/api2/json/nodes/${node}/qemu/${snapshotId}/clone`, {
+    const response = await fetch(`${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmId}/clone`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -71,6 +69,7 @@ async function createLinkedClone(snapshotId, node, linkedCloneName) {
     alert("Erro ao criar Linked Clone. Verifique o console.");
   }
 }
+
 
 
 async function connectVM(vmid, node) {
