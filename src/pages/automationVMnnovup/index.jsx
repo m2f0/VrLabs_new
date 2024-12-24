@@ -174,9 +174,10 @@ const fetchVMs = async () => {
         <body>
           <h1>Criar Linked Clone</h1>
           <div id="button-section">
-            <button class="button" onclick="createLinkedClone('${snapshotId}', '${node}', '${linkedCloneName}')">
+            <button class="button" onclick="createLinkedClone('${snapshotName}', '${node}', '${linkedCloneName}', '${vmid}')">
               Criar Linked Clone: ${linkedCloneName}
             </button>
+
           </div>
           <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
         </body>
