@@ -433,7 +433,6 @@ const fetchVMs = async () => {
 >
   <Tab label="Máquinas Virtuais" />
   <Tab label="SnapShots" />
-  <Tab label="Linked Clones" />
 </Tabs>
 
 
@@ -632,59 +631,7 @@ const fetchVMs = async () => {
         }}
       />
     </Box>
-  </Box>
-)}
-
-
-
-      {/* Conteúdo da aba "Linked Clones" */}
-      {activeTab === 1 && (
-        <Box mt="20px">
-          {/* Texto acima do DataGrid */}
-          <Box mb="10px">
-            <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
-              Selecione um ou mais linked clones para criar a página de automação:
-            </h3>
-          </Box>
-          <Box
-            height="40vh"
-            sx={{
-              "& .MuiDataGrid-root": {
-                borderRadius: "8px",
-                backgroundColor: colors.primary[400],
-              },
-              "& .MuiDataGrid-columnHeaders": {
-                backgroundColor: colors.blueAccent[700],
-                color: "white",
-                fontSize: "16px",
-                fontWeight: "bold",
-              },
-              "& .MuiDataGrid-cell": {
-                color: colors.primary[100],
-              },
-              "& .MuiDataGrid-footerContainer": {
-                backgroundColor: colors.blueAccent[700],
-                color: "white",
-              },
-            }}
-          >
-            {/* Segundo DataGrid */}
-            <DataGrid
-              rows={linkedClones}
-              columns={[
-                { field: "id", headerName: "Clone ID", width: 100 },
-                { field: "name", headerName: "Nome", width: 200 },
-                { field: "status", headerName: "Status", width: 120 },
-              ]}
-              checkboxSelection
-              disableSelectionOnClick
-              onSelectionModelChange={(ids) => {
-                setSelectedClones(ids);
-              }}
-            />
-          </Box>
-
-          <Box mt="20px" display="flex" justifyContent="center" gap="20px">
+    <Box mt="20px" display="flex" justifyContent="center" gap="20px">
             <Button
               variant="contained"
               sx={{
@@ -714,8 +661,12 @@ const fetchVMs = async () => {
               Salvar Código
             </Button>
           </Box>
-        </Box>
-      )}
+  </Box>
+)}
+
+
+
+      
     </Box>
   );
 };
