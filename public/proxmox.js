@@ -72,6 +72,8 @@ async function createLinkedClone(snapshotName, node, linkedCloneName, vmId) {
 
 
 
+
+
 async function connectVM(vmid, node) {
   try {
     const ticket = await renewTicket();

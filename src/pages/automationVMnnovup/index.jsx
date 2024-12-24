@@ -119,29 +119,26 @@ const fetchVMs = async () => {
 
   // Função para gerar o código HTML do botão AUTO, que cria linked clones para a VM selecionada
   const generateLinkedCloneButtonCode = async () => {
-    if (!selectedSnapshot) {
-      alert("Selecione um snapshot para gerar o código.");
+    if (!selectedVM || !selectedSnapshot) {
+      alert("Selecione uma VM e um Snapshot antes de continuar.");
       return;
     }
   
     try {
-      const { id: snapshotId, name: snapshotName, vmid } = selectedSnapshot; // Snapshot selecionado
-      const selectedVm = vmList.find((vm) => vm.id === vmid); // VM associada ao snapshot
-      if (!selectedVm) {
-        alert("Falha ao encontrar a VM associada ao snapshot.");
+      const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
+      if (!newVmId) {
+        alert("O ID da nova VM é obrigatório.");
         return;
       }
   
-      const { node } = selectedVm;
-  
-      // Solicitar o nome do Linked Clone ao usuário
-      const userName = prompt("Digite o nome do usuário (obtido do Moodle):");
-      if (!userName) {
-        alert("O nome do usuário é obrigatório.");
+      const linkedCloneName = prompt("Digite o nome do Linked Clone:");
+      if (!linkedCloneName) {
+        alert("O nome do Linked Clone é obrigatório.");
         return;
       }
   
-      const linkedCloneName = `${snapshotName}-CLONE-${userName}`.replace(/[^a-zA-Z0-9.-]/g, ""); // Sanitizar o nome
+      const { id: vmId, node } = selectedVM;
+      const { name: snapName } = selectedSnapshot;
   
       const code = `
         <!DOCTYPE html>
@@ -149,7 +146,8 @@ const fetchVMs = async () => {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Criar Linked Clone</title>
+          <title>Automação de Linked Clone</title>
+          <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -157,7 +155,6 @@ const fetchVMs = async () => {
               color: #333;
               text-align: center;
               padding: 20px;
-              margin: 0;
             }
             .button {
               margin: 10px;
@@ -172,22 +169,80 @@ const fetchVMs = async () => {
           </style>
         </head>
         <body>
-          <h1>Criar Linked Clone</h1>
-          <div id="button-section">
-            <button class="button" onclick="createLinkedClone('${snapshotName}', '${node}', '${linkedCloneName}', '${vmid}')">
-              Criar Linked Clone: ${linkedCloneName}
-            </button>
-
-          </div>
-          <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
+          <h1>Automação de Linked Clone</h1>
+          <button class="button" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}', '${newVmId}', '${linkedCloneName}')">
+            Criar, Iniciar e Conectar
+          </button>
+          <iframe id="vm-iframe" title="Console noVNC"></iframe>
+          <script>
+            async function automateLinkedClone(vmid, node, snapName, newVmId, linkedCloneName) {
+              try {
+                console.log('Criando Linked Clone...');
+                const params = new URLSearchParams({
+                  newid: newVmId,
+                  name: linkedCloneName,
+                  snapname: snapName,
+                  full: "0"
+                });
+  
+                const cloneResponse = await fetch(\`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    Authorization: API_TOKEN
+                  },
+                  body: params
+                });
+  
+                if (!cloneResponse.ok) {
+                  const errorText = await cloneResponse.text();
+                  console.error('Erro ao criar Linked Clone:', errorText);
+                  alert('Erro ao criar Linked Clone. Verifique os logs.');
+                  return;
+                }
+  
+                alert('Linked Clone criado com sucesso!');
+                console.log('Aguardando 10 segundos...');
+                await new Promise((resolve) => setTimeout(resolve, 10000));
+  
+                console.log('Iniciando Linked Clone...');
+                const startResponse = await fetch(\`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${newVmId}/status/start\`, {
+                  method: "POST",
+                  headers: {
+                    Authorization: API_TOKEN
+                  }
+                });
+  
+                if (!startResponse.ok) {
+                  const errorText = await startResponse.text();
+                  console.error('Erro ao iniciar Linked Clone:', errorText);
+                  alert('Erro ao iniciar Linked Clone. Verifique os logs.');
+                  return;
+                }
+  
+                alert('Linked Clone iniciado com sucesso!');
+                console.log('Aguardando mais 10 segundos...');
+                await new Promise((resolve) => setTimeout(resolve, 10000));
+  
+                console.log('Conectando ao Linked Clone...');
+                connectVM(newVmId, node);
+              } catch (error) {
+                console.error('Erro no processo de automação:', error);
+                alert('Erro no processo de automação. Verifique os logs.');
+              }
+            }
+          </script>
         </body>
-        </html>`;
+        </html>
+      `;
       setLinkedCloneButtonCode(code);
+      alert("Código gerado com sucesso!");
     } catch (error) {
-      console.error("Erro ao gerar o código de conexão:", error);
-      alert("Erro ao gerar o código de conexão. Verifique os logs.");
+      console.error("Erro ao gerar código:", error);
+      alert("Erro ao gerar o código. Verifique os logs.");
     }
   };
+  
   
   
   
