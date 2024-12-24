@@ -465,7 +465,7 @@ const fetchVMs = async () => {
             {/* Texto acima do DataGrid */}
             <Box mb="10px">
               <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
-                Selecione uma vm para criar o snapshot:
+                1o. Passo: Selecione uma vm
               </h3>
             </Box>
             <DataGrid
@@ -502,7 +502,7 @@ const fetchVMs = async () => {
   <Box mt="20px">
     <Box mb="10px">
       <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
-        Snapshots disponíveis para a VM selecionada:
+        2o. Passo: Selecione um ou mais snapshots disponíveis para a VM selecionada
       </h3>
     </Box>
     <Box
