@@ -432,7 +432,7 @@ const fetchVMs = async () => {
   }}
 >
   <Tab label="Máquinas Virtuais" />
-  <Tab label="SnapShots" />
+  <Tab label="> SnapShots" />
 </Tabs>
 
 
@@ -498,84 +498,84 @@ const fetchVMs = async () => {
       )}
 
       {/* Conteúdo da aba "SnapShots" */}
-{activeTab === 1 && (
-  <Box mt="20px">
-    <Box mb="10px">
-      <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
-        2o. Passo: Selecione um ou mais snapshots disponíveis para a VM selecionada
-      </h3>
-    </Box>
-    <Box
-      height="40vh"
-      sx={{
-        "& .MuiDataGrid-root": {
-          borderRadius: "8px",
-          backgroundColor: colors.primary[400],
-        },
-        "& .MuiDataGrid-columnHeaders": {
-          backgroundColor: colors.blueAccent[700],
-          color: "white",
-          fontSize: "16px",
-          fontWeight: "bold",
-        },
-        "& .MuiDataGrid-cell": {
-          color: colors.primary[100],
-        },
-        "& .MuiDataGrid-footerContainer": {
-          backgroundColor: colors.blueAccent[700],
-          color: "white",
-        },
-      }}
-    >
-      <DataGrid
-        rows={snapshotList}
-        columns={[
-          { field: "id", headerName: "Snapshot ID", width: 150 },
-          { field: "name", headerName: "Nome", width: 200 },
-          { field: "description", headerName: "Descrição", width: 300 },
-        ]}
-        checkboxSelection
-        disableSelectionOnClick
-        selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []}
-        onSelectionModelChange={(ids) => {
-          const selectedId = ids[0];
-          const snapshot = snapshotList.find((snap) => snap.id === selectedId);
-          setSelectedSnapshot(snapshot);
-        }}
-      />
-    </Box>
-    <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: colors.blueAccent[600],
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-                padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.blueAccent[500] },
-              }}
-              onClick={generateLinkedCloneButtonCode}
-            >
-              Criar Botão
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: colors.redAccent?.[600] || "#d32f2f",
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-                padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.redAccent?.[500] },
-              }}
-              onClick={saveGeneratedCode}
-            >
-              Salvar Código
-            </Button>
+      {activeTab === 1 && (
+        <Box mt="20px">
+          <Box mb="10px">
+            <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
+              2o. Passo: Selecione um ou mais snapshots disponíveis para a VM selecionada
+            </h3>
           </Box>
-  </Box>
-)}
+          <Box
+            height="40vh"
+            sx={{
+              "& .MuiDataGrid-root": {
+                borderRadius: "8px",
+                backgroundColor: colors.primary[400],
+              },
+              "& .MuiDataGrid-columnHeaders": {
+                backgroundColor: colors.blueAccent[700],
+                color: "white",
+                fontSize: "16px",
+                fontWeight: "bold",
+              },
+              "& .MuiDataGrid-cell": {
+                color: colors.primary[100],
+              },
+              "& .MuiDataGrid-footerContainer": {
+                backgroundColor: colors.blueAccent[700],
+                color: "white",
+              },
+            }}
+          >
+            <DataGrid
+              rows={snapshotList}
+              columns={[
+                { field: "id", headerName: "Snapshot ID", width: 150 },
+                { field: "name", headerName: "Nome", width: 200 },
+                { field: "description", headerName: "Descrição", width: 300 },
+              ]}
+              checkboxSelection
+              disableSelectionOnClick
+              selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []}
+              onSelectionModelChange={(ids) => {
+                const selectedId = ids[0];
+                const snapshot = snapshotList.find((snap) => snap.id === selectedId);
+                setSelectedSnapshot(snapshot);
+              }}
+            />
+          </Box>
+          <Box mt="20px" display="flex" justifyContent="center" gap="20px">
+                  <Button
+                    variant="contained"
+                    sx={{
+                      backgroundColor: colors.blueAccent[600],
+                      color: "white",
+                      fontWeight: "bold",
+                      fontSize: "16px",
+                      padding: "10px 20px",
+                      "&:hover": { backgroundColor: colors.blueAccent[500] },
+                    }}
+                    onClick={generateLinkedCloneButtonCode}
+                  >
+                    Criar Código
+                  </Button>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      backgroundColor: colors.redAccent?.[600] || "#d32f2f",
+                      color: "white",
+                      fontWeight: "bold",
+                      fontSize: "16px",
+                      padding: "10px 20px",
+                      "&:hover": { backgroundColor: colors.redAccent?.[500] },
+                    }}
+                    onClick={saveGeneratedCode}
+                  >
+                    Salvar Código
+                  </Button>
+                </Box>
+        </Box>
+      )}
 
 
 
