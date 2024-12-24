@@ -492,59 +492,7 @@ const fetchVMs = async () => {
               }}
             />
           </Box>
-          {selectedVM && (
-            <Box mt="20px">
-              <h4 style={{ color: colors.primary[100] }}>
-                Escolha o Snapshots da VM Selecionada para criar o Linked Clone: {selectedVM.name} (ID:{" "}
-                {selectedVM.id})
-              </h4>
-              <Box
-                height="40vh"
-                sx={{
-                  "& .MuiDataGrid-root": {
-                    borderRadius: "8px",
-                    backgroundColor: colors.primary[400],
-                  },
-                  "& .MuiDataGrid-columnHeaders": {
-                    backgroundColor: colors.blueAccent[700],
-                    color: "white",
-                    fontSize: "16px",
-                    fontWeight: "bold",
-                  },
-                  "& .MuiDataGrid-cell": {
-                    color: colors.primary[100],
-                  },
-                  "& .MuiDataGrid-footerContainer": {
-                    backgroundColor: colors.blueAccent[700],
-                    color: "white",
-                  },
-                }}
-              >
-                <DataGrid
-                  rows={snapshotList}
-                  columns={[
-                    { field: "id", headerName: "Snapshot ID", width: 150 },
-                    { field: "name", headerName: "Nome", width: 200 },
-                    {
-                      field: "description",
-                      headerName: "Descrição",
-                      width: 300,
-                    },
-                  ]}
-                  checkboxSelection // Ativa os checkboxes
-                  disableSelectionOnClick
-                  selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []} // Reflete o snapshot selecionado
-                  onSelectionModelChange={(ids) => {
-                    const selectedId = ids[0]; // Permite apenas uma seleção
-                    const snapshot = snapshotList.find(
-                      (snap) => snap.id === selectedId
-                    );
-                    setSelectedSnapshot(snapshot); // Atualizar o estado com o snapshot selecionado
-                  }}
-                />
-              </Box>
-            </Box>
-          )}
+          
 
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
             <Button
