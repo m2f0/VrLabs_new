@@ -189,75 +189,7 @@ const fetchVMs = async () => {
   
   
   
-  const testLinkedCloneButtonCode = () => {
-    if (!linkedCloneButtonCode) {
-      alert("Gere o código primeiro usando o botão Criar Botão.");
-      return;
-    }
-
-    const newWindow = window.open("", "_blank");
-    newWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Teste do Código do Linked Clone</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              height: 100vh;
-              margin: 0;
-              background-color: #f4f4f9;
-            }
   
-            .button-container {
-              display: flex;
-              flex-direction: column;
-              gap: 16px;
-              align-items: center;
-            }
-  
-            button {
-              font-size: 18px;
-              font-weight: bold;
-              padding: 12px 24px;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              transition: all 0.3s ease;
-              box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            }
-  
-            button.start {
-              background-color: #6c63ff;
-              color: white;
-            }
-            button.start:hover {
-              background-color: #574bfa;
-            }
-  
-            button.connect {
-              background-color: #00c9a7;
-              color: white;
-            }
-            button.connect:hover {
-              background-color: #00b38a;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="button-container">
-            ${linkedCloneButtonCode}
-          </div>
-        </body>
-      </html>
-    `);
-    newWindow.document.close();
-  };
 
   // Função para copiar o código gerado pelo botão AUTO para a área de transferência
   const copyToClipboard = () => {
