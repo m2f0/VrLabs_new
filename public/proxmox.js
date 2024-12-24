@@ -31,6 +31,48 @@ async function renewTicket() {
   }
 }
 
+async function createLinkedClone(snapshotId, node, linkedCloneName) {
+  try {
+    const ticket = await renewTicket();
+
+    // Solicitar um ID exclusivo para a nova VM
+    const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
+    if (!newVmId) {
+      alert("O ID da nova VM é obrigatório.");
+      return;
+    }
+
+    // Configurar os parâmetros para o Linked Clone
+    const params = new URLSearchParams({
+      newid: newVmId,
+      name: linkedCloneName,
+      snapname: snapshotId,
+      full: "0", // Criar como Linked Clone
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api2/json/nodes/${node}/qemu/${snapshotId}/clone`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: API_TOKEN,
+      },
+      body: params,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Erro ao criar Linked Clone:", errorText);
+      throw new Error("Erro ao criar Linked Clone.");
+    }
+
+    alert(`Linked Clone "${linkedCloneName}" criado com sucesso!`);
+  } catch (error) {
+    console.error(`Erro ao criar Linked Clone: ${error}`);
+    alert("Erro ao criar Linked Clone. Verifique o console.");
+  }
+}
+
+
 async function connectVM(vmid, node) {
   try {
     const ticket = await renewTicket();

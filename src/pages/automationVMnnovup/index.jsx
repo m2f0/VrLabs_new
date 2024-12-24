@@ -125,7 +125,7 @@ const fetchVMs = async () => {
     }
   
     try {
-      const { id, name, vmid } = selectedSnapshot; // Snapshot selecionado
+      const { id: snapshotId, name: snapshotName, vmid } = selectedSnapshot; // Snapshot selecionado
       const selectedVm = vmList.find((vm) => vm.id === vmid); // VM associada ao snapshot
       if (!selectedVm) {
         alert("Falha ao encontrar a VM associada ao snapshot.");
@@ -134,13 +134,22 @@ const fetchVMs = async () => {
   
       const { node } = selectedVm;
   
+      // Solicitar o nome do Linked Clone ao usuário
+      const userName = prompt("Digite o nome do usuário (obtido do Moodle):");
+      if (!userName) {
+        alert("O nome do usuário é obrigatório.");
+        return;
+      }
+  
+      const linkedCloneName = `${snapshotName}-CLONE-${userName}`.replace(/[^a-zA-Z0-9.-]/g, ""); // Sanitizar o nome
+  
       const code = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Conexão Direta ao Snapshot</title>
+          <title>Criar Linked Clone</title>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -160,22 +169,15 @@ const fetchVMs = async () => {
               color: white;
               border-radius: 5px;
             }
-            iframe {
-              width: 100%;
-              height: 800px;
-              border: none;
-              margin-top: 20px;
-            }
           </style>
         </head>
         <body>
-          <h1>Conexão Direta ao Snapshot</h1>
+          <h1>Criar Linked Clone</h1>
           <div id="button-section">
-            <button class="button" onclick="connectVM('${id}', '${node}')">
-              Conectar ao Snapshot: ${name}
+            <button class="button" onclick="createLinkedClone('${snapshotId}', '${node}', '${linkedCloneName}')">
+              Criar Linked Clone: ${linkedCloneName}
             </button>
           </div>
-          <iframe id="vm-iframe" title="Console noVNC"></iframe>
           <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
         </body>
         </html>`;
@@ -185,6 +187,7 @@ const fetchVMs = async () => {
       alert("Erro ao gerar o código de conexão. Verifique os logs.");
     }
   };
+  
   
   
   
