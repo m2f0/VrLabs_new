@@ -114,10 +114,6 @@ const VmAutomation = () => {
     }
   
     try {
-      // Gerar ID da VM entre 50000 e 90000
-      const newVmId = Math.floor(Math.random() * (90000 - 50000 + 1)) + 50000;
-      console.log(`ID da nova VM (Linked Clone): ${newVmId}`);
-  
       const { id: vmId, node } = selectedVM;
       const { name: snapName } = selectedSnapshot;
   
@@ -179,13 +175,13 @@ const VmAutomation = () => {
           <label for="studentName">Digite seu nome:</label>
           <input type="text" id="studentName" placeholder="Seu nome completo" />
           <br /><br />
-          <button class="button" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}', '${newVmId}')">
+          <button class="button" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}')">
             Criar, Iniciar e Conectar
           </button>
           <div id="spinner"></div>
           <iframe id="vm-iframe" title="Console noVNC"></iframe>
           <script>
-            async function automateLinkedClone(vmid, node, snapName, newVmId) {
+            async function automateLinkedClone(vmid, node, snapName) {
               const spinner = document.getElementById('spinner');
               const iframe = document.getElementById('vm-iframe');
   
@@ -194,6 +190,9 @@ const VmAutomation = () => {
                 alert("Por favor, insira seu nome antes de continuar.");
                 return;
               }
+  
+              // Gerar ID aleatório entre 50000 e 90000
+              const newVmId = Math.floor(Math.random() * (90000 - 50000 + 1)) + 50000;
   
               const sanitizedStudentName = studentName
                 .replace(/[^a-zA-Z0-9-]/g, "")
@@ -269,6 +268,7 @@ const VmAutomation = () => {
       console.error("Erro ao gerar código:", error);
     }
   };
+  
   
   
 
