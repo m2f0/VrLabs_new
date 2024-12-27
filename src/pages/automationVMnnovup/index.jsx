@@ -125,12 +125,28 @@ const fetchVMs = async () => {
     }
   
     try {
-      // Gerar um ID aleatório para a nova VM entre 100 e 9999
-      const newVmId = Math.floor(Math.random() * 9900) + 100;
+      // Gerar um ID aleatório para a nova VM entre 50000 e 60000
+      const newVmId = Math.floor(Math.random() * 10000) + 50000;
       console.log(`ID da nova VM (Linked Clone): ${newVmId}`);
 
       const { id: vmId, node } = selectedVM;
       const { name: snapName } = selectedSnapshot;
+  
+      // Capturar o nome do aluno
+      const studentName = document.getElementById("studentName").value.trim();
+      if (!studentName) {
+        alert("Por favor, insira seu nome antes de continuar.");
+        return;
+      }
+  
+      // Sanitizar o nome do aluno
+      const sanitizedStudentName = studentName
+        .replace(/[^a-zA-Z0-9-]/g, "") // Remove caracteres inválidos
+        .substring(0, 20); // Limita o tamanho para 20 caracteres
+  
+      // Compor o nome do linked clone
+      const linkedCloneName = `${sanitizedStudentName}-lab-${newVmId}`;
+      console.log(`Nome da nova VM (Linked Clone): ${linkedCloneName}`);
   
       const code = `
         <!DOCTYPE html>
@@ -218,6 +234,8 @@ const fetchVMs = async () => {
               try {
                 spinner.style.display = 'block';
                 console.log('Criando Linked Clone...');
+                console.log(`ID da nova VM: ${newVmId}`);
+                console.log(`Nome da nova VM: ${linkedCloneName}`);
                 const params = new URLSearchParams({
                   newid: newVmId,
                   name: linkedCloneName,
