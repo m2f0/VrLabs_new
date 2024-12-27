@@ -13,71 +13,63 @@ const VmAutomation = () => {
   const [vmList, setVmList] = useState([]);
   const [linkedClones, setLinkedClones] = useState([]);
   const [selectedVM, setSelectedVM] = useState(null);
-  const [selectedClones, setSelectedClones] = useState([]); // Estado para clones selecionadosfgerencie
+  const [selectedClones, setSelectedClones] = useState([]);
   const [buttonCode, setButtonCode] = useState("");
   const [isButtonGenerated, setIsButtonGenerated] = useState(false);
-  const [linkedCloneButtonCode, setLinkedCloneButtonCode] = useState(""); // Código gerado para linked clones
-  const [snapshotList, setSnapshotList] = useState([]); // Lista de snapshots das VMs
-  const [selectedSnapshot, setSelectedSnapshot] = useState(null); // Snapshot selecionado
+  const [linkedCloneButtonCode, setLinkedCloneButtonCode] = useState("");
+  const [snapshotList, setSnapshotList] = useState([]);
+  const [selectedSnapshot, setSelectedSnapshot] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
 
-    // Variáveis do .env
-    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-    const API_TOKEN = process.env.REACT_APP_API_TOKEN; // Formato: `PVEAPIToken=apiuser@pve!apitoken=<TOKEN>`
-    const API_USER = process.env.REACT_APP_API_USERNAME;
-    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  const API_TOKEN = process.env.REACT_APP_API_TOKEN;
+  const API_USER = process.env.REACT_APP_API_USERNAME;
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  
-  // Função para buscar a lista de VMs do Proxmox e filtrar as normais e os linked clones
-const fetchVMs = async () => {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: API_TOKEN, // Certifique-se de que a variável no .env tem o formato correto
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Erro na API do Proxmox: ${response.status} ${response.statusText}`
+  const fetchVMs = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: API_TOKEN,
+          },
+        }
       );
+
+      if (!response.ok) {
+        throw new Error(
+          `Erro na API do Proxmox: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+
+      const allVMs = (data.data || []).map((vm) => ({
+        id: vm.vmid,
+        name: vm.name || "Sem Nome",
+        status: vm.status || "Indisponível",
+        node: vm.node || "Indefinido",
+      }));
+
+      const normalVMs = allVMs.filter(
+        (vm) => vm.name && !vm.name.includes("CLONE")
+      );
+
+      const clones = allVMs.filter((vm) => vm.name && vm.name.includes("CLONE"));
+
+      setVmList(normalVMs);
+      setLinkedClones(clones);
+    } catch (error) {
+      console.error("Erro ao buscar lista de VMs:", error);
+      alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
     }
-
-    const data = await response.json();
-
-    // Mapeia as VMs recebidas e filtra com base no nome
-    const allVMs = (data.data || []).map((vm) => ({
-      id: vm.vmid,
-      name: vm.name || "Sem Nome", // Evita que "undefined" cause erro
-      status: vm.status || "Indisponível", // Tratamento de status indefinido
-      node: vm.node || "Indefinido", // Tratamento de node indefinido
-    }));
-
-    // Filtrar VMs normais (excluindo aquelas com "CLONE" no nome)
-    const normalVMs = allVMs.filter(
-      (vm) => vm.name && !vm.name.includes("CLONE")
-    );
-
-    // Filtrar apenas linked clones (aqueles com "CLONE" no nome)
-    const clones = allVMs.filter((vm) => vm.name && vm.name.includes("CLONE"));
-
-    setVmList(normalVMs); // Atualiza o estado das VMs normais
-    setLinkedClones(clones); // Atualiza o estado dos clones
-  } catch (error) {
-    console.error("Erro ao buscar lista de VMs:", error);
-    alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
-  }
-};
-
+  };
 
   const fetchSnapshots = async (vmid, node) => {
     try {
@@ -86,9 +78,8 @@ const fetchVMs = async () => {
         {
           method: "GET",
           headers: {
-            Authorization: API_TOKEN, // Certifique-se de que o formato do token no .env está correto
+            Authorization: API_TOKEN,
           },
-          
         }
       );
 
@@ -100,24 +91,22 @@ const fetchVMs = async () => {
 
       const data = await response.json();
 
-      // Filtrar os snapshots para remover o "current"
       const snapshots = (data.data || [])
-        .filter((snap) => snap.name !== "current") // Exclui o snapshot "current"
+        .filter((snap) => snap.name !== "current")
         .map((snap) => ({
-          id: `${vmid}-${snap.name}`, // ID único para o snapshot
-          vmid, // ID da VM associada
+          id: `${vmid}-${snap.name}`,
+          vmid,
           name: snap.name || "Sem Nome",
           description: snap.description || "Sem Descrição",
         }));
 
-      setSnapshotList(snapshots); // Atualiza a lista de snapshots
+      setSnapshotList(snapshots);
     } catch (error) {
       console.error("Erro ao buscar snapshots:", error);
       alert("Falha ao buscar snapshots. Verifique o console.");
     }
   };
 
-  // Função para gerar o código HTML do botão AUTO, que cria linked clones para a VM selecionada
   const generateLinkedCloneButtonCode = async () => {
     if (!selectedVM || !selectedSnapshot) {
       alert("Selecione uma VM e um Snapshot antes de continuar.");
@@ -125,28 +114,11 @@ const fetchVMs = async () => {
     }
   
     try {
-      // Gerar um ID aleatório para a nova VM entre 50000 e 60000
-      const newVmId = Math.floor(Math.random() * 10000) + 50000;
+      const newVmId = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
       console.log(`ID da nova VM (Linked Clone): ${newVmId}`);
-
+  
       const { id: vmId, node } = selectedVM;
       const { name: snapName } = selectedSnapshot;
-  
-      // Capturar o nome do aluno
-      const studentName = document.getElementById("studentName").value.trim();
-      if (!studentName) {
-        alert("Por favor, insira seu nome antes de continuar.");
-        return;
-      }
-  
-      // Sanitizar o nome do aluno
-      const sanitizedStudentName = studentName
-        .replace(/[^a-zA-Z0-9-]/g, "") // Remove caracteres inválidos
-        .substring(0, 20); // Limita o tamanho para 20 caracteres
-  
-      // Compor o nome do linked clone
-      const linkedCloneName = `${sanitizedStudentName}-lab-${newVmId}`;
-      console.log(`Nome da nova VM (Linked Clone): ${linkedCloneName}`);
   
       const code = `
         <!DOCTYPE html>
@@ -216,26 +188,23 @@ const fetchVMs = async () => {
               const spinner = document.getElementById('spinner');
               const iframe = document.getElementById('vm-iframe');
   
-              // Capturar o nome do aluno
               const studentName = document.getElementById("studentName").value.trim();
               if (!studentName) {
                 alert("Por favor, insira seu nome antes de continuar.");
                 return;
               }
   
-              // Sanitizar o nome do aluno
               const sanitizedStudentName = studentName
-                .replace(/[^a-zA-Z0-9-]/g, "") // Remove caracteres inválidos
-                .substring(0, 20); // Limita o tamanho para 20 caracteres
+                .replace(/[^a-zA-Z0-9-]/g, "")
+                .substring(0, 20);
   
-              // Compor o nome do linked clone
               const linkedCloneName = \`\${sanitizedStudentName}-lab-\${newVmId}\`;
   
               try {
                 spinner.style.display = 'block';
                 console.log('Criando Linked Clone...');
-                console.log(`ID da nova VM: ${newVmId}`);
-                console.log(`Nome da nova VM: ${linkedCloneName}`);
+                console.log(\`ID da nova VM: \${newVmId}\`);
+                console.log(\`Nome da nova VM: \${linkedCloneName}\`);
                 const params = new URLSearchParams({
                   newid: newVmId,
                   name: linkedCloneName,
@@ -300,66 +269,54 @@ const fetchVMs = async () => {
     }
   };
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
-  // Função para copiar o código gerado pelo botão AUTO para a área de transferência
   const copyToClipboard = () => {
     navigator.clipboard.writeText(buttonCode).then(() => {
       alert("Código copiado para a área de transferência!");
     });
   };
 
-  // Função para criar um linked clone diretamente da VM selecionada e do snapshot selecionado
   const createLinkedClone = async () => {
     if (!selectedVM) {
       alert("Selecione uma VM para criar um Linked Clone.");
       return;
     }
-  
+
     if (!selectedSnapshot || selectedSnapshot.name === "current") {
       alert(
         "A VM selecionada não possui snapshots válidos para criar um Linked Clone."
       );
       return;
     }
-  
+
     const { id: vmId, node, name } = selectedVM;
-    const { name: snapName } = selectedSnapshot; // Nome do snapshot válido
-  
-    // Solicitar o ID e o nome do clone ao usuário
+    const { name: snapName } = selectedSnapshot;
+
     const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
     if (!newVmId) {
       alert("ID da nova VM é obrigatório.");
       return;
     }
-  
-    let cloneName = `${name}-CLONE-${newVmId}`; // Nome base do clone
+
+    let cloneName = `${name}-CLONE-${newVmId}`;
     cloneName = cloneName
-      .replace(/[^a-zA-Z0-9.-]/g, "") // Remove caracteres inválidos
-      .replace(/^-+|-+$/g, "") // Remove hífens no início/fim
-      .substring(0, 63); // Garante que o nome não ultrapasse 63 caracteres
-  
+      .replace(/[^a-zA-Z0-9.-]/g, "")
+      .replace(/^-+|-+$/g, "")
+      .substring(0, 63);
+
     if (!/^[a-zA-Z0-9.-]+$/.test(cloneName)) {
       alert("Erro: Nome gerado para o clone é inválido.");
       return;
     }
-  
+
     try {
       const body = new URLSearchParams({
         newid: newVmId,
-        name: cloneName, // Nome sanitizado do clone
-        snapname: snapName, // Nome do snapshot
-        full: "0", // Certifique-se de enviar "0" como string
+        name: cloneName,
+        snapname: snapName,
+        full: "0",
       });
-  
+
       const response = await fetch(
         `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmId}/clone`,
         {
@@ -371,25 +328,21 @@ const fetchVMs = async () => {
           body,
         }
       );
-  
+
       if (!response.ok) {
-        const errorText = await response.text(); // Leia o corpo da resposta para mais detalhes
+        const errorText = await response.text();
         console.error("Erro no Proxmox:", errorText);
         throw new Error("Erro ao criar Linked Clone.");
       }
-  
+
       alert("Linked Clone criado com sucesso!");
-      fetchVMs(); // Atualiza a lista de VMs após criar o clone
+      fetchVMs();
     } catch (error) {
       console.error("Erro ao criar Linked Clone:", error);
       alert("Erro ao criar Linked Clone. Verifique os logs.");
     }
   };
-  
-  
-  
 
-  // Função para testar o código gerado pelo botão AUTO, abrindo-o em uma nova aba
   const testGeneratedCode = () => {
     if (!buttonCode) {
       alert("Gere o código primeiro usando o botão AUTO.");
@@ -413,51 +366,42 @@ const fetchVMs = async () => {
     newWindow.document.close();
   };
 
-  // Função para salvar o código gerado no backend
   const saveGeneratedCode = () => {
     if (!linkedCloneButtonCode) {
       alert("Gere o código primeiro usando o botão Criar Botão.");
       return;
     }
-  
+
     const fileName = prompt("Digite o nome do arquivo (sem extensão):", "linked_clone");
     if (!fileName) {
       alert("O nome do arquivo é obrigatório.");
       return;
     }
-  
+
     try {
-      // Criar um blob com o conteúdo do código HTML
       const blob = new Blob([linkedCloneButtonCode], { type: "text/html" });
-  
-      // Criar uma URL para o blob
+
       const url = URL.createObjectURL(blob);
-  
-      // Criar um elemento de ancoragem para forçar o download
+
       const a = document.createElement("a");
       a.href = url;
       a.download = `${fileName}.html`;
-  
-      // Acionar o clique no elemento
+
       a.click();
-  
-      // Limpar o objeto URL
+
       URL.revokeObjectURL(url);
-  
+
       alert("Código salvo com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar o código localmente:", error);
       alert("Erro ao salvar o código localmente. Verifique os logs.");
     }
   };
-  
 
-  // Hook para carregar a lista de VMs assim que o componente é montado
   useEffect(() => {
     fetchVMs();
   }, []);
 
-  // Renderização do componente principal, incluindo os DataGrids e os botões de ação
   return (
     <Box m="20px">
       <Header
@@ -465,29 +409,26 @@ const fetchVMs = async () => {
         subtitle="Gerencie e Controle a Automação de suas VMs"
       />
 
-      {/* Abas */}
       <Tabs
-  value={activeTab}
-  onChange={handleTabChange}
-  textColor="primary"
-  indicatorColor="primary"
-  sx={{
-    "& .MuiTab-root": {
-      fontWeight: "bold",
-      fontSize: "16px",
-      textTransform: "none",
-    },
-    "& .MuiTab-root.Mui-selected": {
-      color: "orange",
-    },
-  }}
->
-  <Tab label="1o. Máquinas Virtuais" />
-  <Tab label="2o. SnapShots" />
-</Tabs>
+        value={activeTab}
+        onChange={handleTabChange}
+        textColor="primary"
+        indicatorColor="primary"
+        sx={{
+          "& .MuiTab-root": {
+            fontWeight: "bold",
+            fontSize: "16px",
+            textTransform: "none",
+          },
+          "& .MuiTab-root.Mui-selected": {
+            color: "orange",
+          },
+        }}
+      >
+        <Tab label="1o. Máquinas Virtuais" />
+        <Tab label="2o. SnapShots" />
+      </Tabs>
 
-
-      {/* Conteúdo da aba "Máquinas Virtuais" */}
       {activeTab === 0 && (
         <Box mt="20px">
           <Box
@@ -512,8 +453,6 @@ const fetchVMs = async () => {
               },
             }}
           >
-            {/* Primeiro DataGrid */}
-            {/* Texto acima do DataGrid */}
             <Box mb="10px">
               <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
                 1o. Passo: Selecione uma vm
@@ -537,18 +476,14 @@ const fetchVMs = async () => {
                 const vm = vmList.find((vm) => vm.id === selectedId);
                 setSelectedVM(vm);
                 if (vm) {
-                  fetchSnapshots(vm.id, vm.node); // Buscar snapshots da VM
+                  fetchSnapshots(vm.id, vm.node);
                 }
               }}
             />
           </Box>
-          
-
-          
         </Box>
       )}
 
-      {/* Conteúdo da aba "SnapShots" */}
       {activeTab === 1 && (
         <Box mt="20px">
           <Box mb="10px">
@@ -596,41 +531,37 @@ const fetchVMs = async () => {
             />
           </Box>
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-                  <Button
-                    variant="contained"
-                    sx={{
-                      backgroundColor: colors.blueAccent[600],
-                      color: "white",
-                      fontWeight: "bold",
-                      fontSize: "16px",
-                      padding: "10px 20px",
-                      "&:hover": { backgroundColor: colors.blueAccent[500] },
-                    }}
-                    onClick={generateLinkedCloneButtonCode}
-                  >
-                    Criar Código
-                  </Button>
-                  <Button
-                    variant="contained"
-                    sx={{
-                      backgroundColor: colors.redAccent?.[600] || "#d32f2f",
-                      color: "white",
-                      fontWeight: "bold",
-                      fontSize: "16px",
-                      padding: "10px 20px",
-                      "&:hover": { backgroundColor: colors.redAccent?.[500] },
-                    }}
-                    onClick={saveGeneratedCode}
-                  >
-                    Salvar Código
-                  </Button>
-                </Box>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: colors.blueAccent[600],
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "10px 20px",
+                "&:hover": { backgroundColor: colors.blueAccent[500] },
+              }}
+              onClick={generateLinkedCloneButtonCode}
+            >
+              Criar Código
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: colors.redAccent?.[600] || "#d32f2f",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "16px",
+                padding: "10px 20px",
+                "&:hover": { backgroundColor: colors.redAccent?.[500] },
+              }}
+              onClick={saveGeneratedCode}
+            >
+              Salvar Código
+            </Button>
+          </Box>
         </Box>
       )}
-
-
-
-      
     </Box>
   );
 };
