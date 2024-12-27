@@ -114,7 +114,8 @@ const VmAutomation = () => {
     }
   
     try {
-      const newVmId = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+      // Gerar ID da VM entre 50000 e 90000
+      const newVmId = Math.floor(Math.random() * (90000 - 50000 + 1)) + 50000;
       console.log(`ID da nova VM (Linked Clone): ${newVmId}`);
   
       const { id: vmId, node } = selectedVM;
@@ -268,6 +269,7 @@ const VmAutomation = () => {
       console.error("Erro ao gerar código:", error);
     }
   };
+  
   
 
   const copyToClipboard = () => {
