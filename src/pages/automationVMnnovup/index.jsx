@@ -131,12 +131,6 @@ const fetchVMs = async () => {
         return;
       }
   
-      const linkedCloneName = prompt("Digite o nome do Linked Clone:");
-      if (!linkedCloneName) {
-        alert("O nome do Linked Clone é obrigatório.");
-        return;
-      }
-  
       const { id: vmId, node } = selectedVM;
       const { name: snapName } = selectedSnapshot;
   
@@ -195,15 +189,34 @@ const fetchVMs = async () => {
         </head>
         <body>
           <h1>Automação de Linked Clone</h1>
-          <button class="button" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}', '${newVmId}', '${linkedCloneName}')">
+          <label for="studentName">Digite seu nome:</label>
+          <input type="text" id="studentName" placeholder="Seu nome completo" />
+          <br /><br />
+          <button class="button" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}', '${newVmId}')">
             Criar, Iniciar e Conectar
           </button>
           <div id="spinner"></div>
           <iframe id="vm-iframe" title="Console noVNC"></iframe>
           <script>
-            async function automateLinkedClone(vmid, node, snapName, newVmId, linkedCloneName) {
+            async function automateLinkedClone(vmid, node, snapName, newVmId) {
               const spinner = document.getElementById('spinner');
               const iframe = document.getElementById('vm-iframe');
+  
+              // Capturar o nome do aluno
+              const studentName = document.getElementById("studentName").value.trim();
+              if (!studentName) {
+                alert("Por favor, insira seu nome antes de continuar.");
+                return;
+              }
+  
+              // Sanitizar o nome do aluno
+              const sanitizedStudentName = studentName
+                .replace(/[^a-zA-Z0-9-]/g, "") // Remove caracteres inválidos
+                .substring(0, 20); // Limita o tamanho para 20 caracteres
+  
+              // Compor o nome do linked clone
+              const linkedCloneName = `${sanitizedStudentName}-lab-${newVmId}`;
+  
               try {
                 spinner.style.display = 'block';
                 console.log('Criando Linked Clone...');
@@ -270,6 +283,7 @@ const fetchVMs = async () => {
       console.error("Erro ao gerar código:", error);
     }
   };
+  
   
   
   
