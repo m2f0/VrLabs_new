@@ -215,7 +215,7 @@ const fetchVMs = async () => {
                 .substring(0, 20); // Limita o tamanho para 20 caracteres
   
               // Compor o nome do linked clone
-              const linkedCloneName = `${sanitizedStudentName}-lab-${newVmId}`;
+              const linkedCloneName = \`\${sanitizedStudentName}-lab-\${newVmId}\`;
   
               try {
                 spinner.style.display = 'block';
