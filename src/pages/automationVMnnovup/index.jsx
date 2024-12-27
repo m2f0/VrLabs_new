@@ -125,8 +125,8 @@ const fetchVMs = async () => {
     }
   
     try {
-      // Gerar um ID aleatório para a nova VM
-      const newVmId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + 1;
+      // Gerar um ID aleatório para a nova VM entre 100 e 9999
+      const newVmId = Math.floor(Math.random() * 9900) + 100;
       console.log(`ID da nova VM (Linked Clone): ${newVmId}`);
 
       const { id: vmId, node } = selectedVM;
@@ -200,16 +200,19 @@ const fetchVMs = async () => {
               const spinner = document.getElementById('spinner');
               const iframe = document.getElementById('vm-iframe');
   
+              // Capturar o nome do aluno
               const studentName = document.getElementById("studentName").value.trim();
               if (!studentName) {
                 alert("Por favor, insira seu nome antes de continuar.");
                 return;
               }
   
+              // Sanitizar o nome do aluno
               const sanitizedStudentName = studentName
-                .replace(/[^a-zA-Z0-9-]/g, "")
-                .substring(0, 20);
+                .replace(/[^a-zA-Z0-9-]/g, "") // Remove caracteres inválidos
+                .substring(0, 20); // Limita o tamanho para 20 caracteres
   
+              // Compor o nome do linked clone
               const linkedCloneName = \`\${sanitizedStudentName}-lab-\${newVmId}\`;
   
               try {
@@ -278,6 +281,7 @@ const fetchVMs = async () => {
       console.error("Erro ao gerar código:", error);
     }
   };
+  
   
   
   
