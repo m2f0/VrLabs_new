@@ -125,12 +125,10 @@ const fetchVMs = async () => {
     }
   
     try {
-      const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
-      if (!newVmId) {
-        alert("O ID da nova VM é obrigatório.");
-        return;
-      }
-  
+      // Gerar um ID aleatório para a nova VM
+      const newVmId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + 1;
+      console.log(`ID da nova VM (Linked Clone): ${newVmId}`);
+
       const { id: vmId, node } = selectedVM;
       const { name: snapName } = selectedSnapshot;
   
@@ -202,19 +200,16 @@ const fetchVMs = async () => {
               const spinner = document.getElementById('spinner');
               const iframe = document.getElementById('vm-iframe');
   
-              // Capturar o nome do aluno
               const studentName = document.getElementById("studentName").value.trim();
               if (!studentName) {
                 alert("Por favor, insira seu nome antes de continuar.");
                 return;
               }
   
-              // Sanitizar o nome do aluno
               const sanitizedStudentName = studentName
-                .replace(/[^a-zA-Z0-9-]/g, "") // Remove caracteres inválidos
-                .substring(0, 20); // Limita o tamanho para 20 caracteres
+                .replace(/[^a-zA-Z0-9-]/g, "")
+                .substring(0, 20);
   
-              // Compor o nome do linked clone
               const linkedCloneName = \`\${sanitizedStudentName}-lab-\${newVmId}\`;
   
               try {
