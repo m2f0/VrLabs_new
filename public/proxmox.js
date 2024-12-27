@@ -31,31 +31,43 @@ async function renewTicket() {
   }
 }
 
-async function createLinkedClone(snapshotName, node, linkedCloneName, vmId) {
+async function createLinkedClone(snapshotName, node, vmId, studentName) {
   try {
     const ticket = await renewTicket();
 
+    // Validar e sanitizar o nome do aluno
+    const sanitizedStudentName = studentName
+      ? studentName.replace(/[^a-zA-Z0-9-]/g, "").substring(0, 20)
+      : "SemNome";
+
+    // Solicitar o ID da nova VM
     const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
     if (!newVmId) {
       alert("O ID da nova VM é obrigatório.");
       return;
     }
 
+    // Compor o nome do linked clone
+    const linkedCloneName = `${sanitizedStudentName}-lab-${newVmId}`;
+
     const params = new URLSearchParams({
       newid: newVmId,
-      name: linkedCloneName, // Nome do Linked Clone
-      snapname: snapshotName, // Nome do snapshot correto
-      full: "0", // Indica Linked Clone
+      name: linkedCloneName,
+      snapname: snapshotName,
+      full: "0",
     });
 
-    const response = await fetch(`${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmId}/clone`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: API_TOKEN,
-      },
-      body: params,
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmId}/clone`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: API_TOKEN,
+        },
+        body: params,
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -69,6 +81,8 @@ async function createLinkedClone(snapshotName, node, linkedCloneName, vmId) {
     alert("Erro ao criar Linked Clone. Verifique o console.");
   }
 }
+
+
 
 
 
