@@ -536,39 +536,6 @@ const VmAutomation = () => {
           <Button
   variant="contained"
   sx={{
-    backgroundColor: colors.greenAccent?.[600] || "#4caf50",
-    color: "white",
-    fontWeight: "bold",
-    fontSize: "16px",
-    padding: "10px 20px",
-    "&:hover": { backgroundColor: colors.greenAccent?.[500] || "#45a049" },
-  }}
-  onClick={async () => {
-    try {
-      // Gera o código HTML
-      await generateLinkedCloneButtonCode();
-
-      if (!linkedCloneButtonCode) {
-        alert("Falha ao gerar o código HTML. Verifique os logs.");
-        return;
-      }
-
-      // Abre uma nova aba e executa o código gerado
-      const newWindow = window.open("", "_blank");
-      newWindow.document.write(linkedCloneButtonCode);
-      newWindow.document.close();
-    } catch (error) {
-      console.error("Erro ao gerar e testar automação:", error);
-      alert("Erro ao gerar e testar automação. Verifique os logs.");
-    }
-  }}
->
-  Teste de Automação
-</Button>
-
-          <Button
-  variant="contained"
-  sx={{
     backgroundColor: colors.blueAccent[600],
     color: "white",
     fontWeight: "bold",
