@@ -435,7 +435,7 @@ const VmAutomation = () => {
       {activeTab === 0 && (
         <Box mt="20px">
           <Box
-            height="40vh"
+            height="150vh"
             sx={{
               "& .MuiDataGrid-root": {
                 borderRadius: "8px",
@@ -495,7 +495,7 @@ const VmAutomation = () => {
             </h3>
           </Box>
           <Box
-            height="40vh"
+            height="150vh"
             sx={{
               "& .MuiDataGrid-root": {
                 borderRadius: "8px",
