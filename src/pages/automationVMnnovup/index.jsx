@@ -369,10 +369,7 @@ const VmAutomation = () => {
   };
 
   const saveGeneratedCode = () => {
-    if (!linkedCloneButtonCode) {
-      alert("Gere o código primeiro usando o botão Criar Botão.");
-      return;
-    }
+    
 
     const fileName = prompt("Digite o nome do arquivo (sem extensão):", "linked_clone");
     if (!fileName) {
