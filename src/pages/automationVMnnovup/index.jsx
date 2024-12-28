@@ -20,6 +20,8 @@ const VmAutomation = () => {
   const [snapshotList, setSnapshotList] = useState([]);
   const [selectedSnapshot, setSelectedSnapshot] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [showSaveButton, setShowSaveButton] = useState(false); // Estado para controlar a exibição do botão "SALVAR"
+
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const API_TOKEN = process.env.REACT_APP_API_TOKEN;
@@ -263,6 +265,7 @@ const VmAutomation = () => {
         </html>
       `;
       setLinkedCloneButtonCode(code);
+      setShowSaveButton(true); // Exibe o botão "SALVAR" após gerar o código
       console.log("Código gerado com sucesso.");
     } catch (error) {
       console.error("Erro ao gerar código:", error);
@@ -391,6 +394,7 @@ const VmAutomation = () => {
       URL.revokeObjectURL(url);
 
       alert("Código salvo com sucesso!");
+      setShowSaveButton(false); // Oculta o botão "SALVAR" após salvar o código
     } catch (error) {
       console.error("Erro ao salvar o código localmente:", error);
       alert("Erro ao salvar o código localmente. Verifique os logs.");
@@ -530,37 +534,42 @@ const VmAutomation = () => {
             />
           </Box>
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-          <Button
-  variant="contained"
-  sx={{
-    backgroundColor: colors.blueAccent[600],
-    color: "white",
-    fontWeight: "bold",
-    fontSize: "16px",
-    padding: "10px 20px",
-    "&:hover": { backgroundColor: colors.blueAccent[500] },
-  }}
-  onClick={async () => {
-    try {
-      // Gera o código HTML
-      await generateLinkedCloneButtonCode();
+          <Box mt="20px" display="flex" justifyContent="center" gap="20px">
+  {/* Botão para gerar o código */}
+  <Button
+    variant="contained"
+    sx={{
+      backgroundColor: colors.blueAccent[600],
+      color: "white",
+      fontWeight: "bold",
+      fontSize: "16px",
+      padding: "10px 20px",
+      "&:hover": { backgroundColor: colors.blueAccent[500] },
+    }}
+    onClick={generateLinkedCloneButtonCode}
+  >
+    Criar Automação
+  </Button>
 
-      // Aguarda um pequeno intervalo para garantir que o estado seja atualizado
-      setTimeout(() => {
-        if (linkedCloneButtonCode) {
-          saveGeneratedCode(); // Salva o código HTML gerado
-        } else {
-          alert("Falha ao gerar o código HTML. Verifique os logs.");
-        }
-      }, 500);
-    } catch (error) {
-      console.error("Erro ao criar e salvar automação:", error);
-      alert("Erro ao criar e salvar automação. Verifique os logs para mais detalhes.");
-    }
-  }}
->
-  Criar e Salvar Automação
-</Button>
+  {/* Botão para salvar o código, visível somente após o código ser gerado */}
+  {showSaveButton && (
+    <Button
+      variant="contained"
+      sx={{
+        backgroundColor: colors.greenAccent[600],
+        color: "white",
+        fontWeight: "bold",
+        fontSize: "16px",
+        padding: "10px 20px",
+        "&:hover": { backgroundColor: colors.greenAccent[500] },
+      }}
+      onClick={saveGeneratedCode}
+    >
+      Salvar Automação
+    </Button>
+  )}
+</Box>
+
 
 
 
