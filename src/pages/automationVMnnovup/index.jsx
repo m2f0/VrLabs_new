@@ -545,8 +545,14 @@ const VmAutomation = () => {
       // Gera o código HTML
       await generateLinkedCloneButtonCode();
 
-      // Salva o código HTML gerado
-      saveGeneratedCode();
+      // Aguarda um pequeno intervalo para garantir que o estado seja atualizado
+      setTimeout(() => {
+        if (linkedCloneButtonCode) {
+          saveGeneratedCode(); // Salva o código HTML gerado
+        } else {
+          alert("Falha ao gerar o código HTML. Verifique os logs.");
+        }
+      }, 500);
     } catch (error) {
       console.error("Erro ao criar e salvar automação:", error);
       alert("Erro ao criar e salvar automação. Verifique os logs para mais detalhes.");
@@ -555,6 +561,7 @@ const VmAutomation = () => {
 >
   Criar e Salvar Automação
 </Button>
+
 
 
 
