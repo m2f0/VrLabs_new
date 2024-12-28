@@ -307,7 +307,7 @@ const connectVM = async (vmid, node) => {
       </Box>
       <Box
         m="8px 0 0 0"
-        height="50vh"
+        height="100vh"
         sx={{
           "& .MuiDataGrid-root": {
             border: "none",
