@@ -232,6 +232,39 @@ const connectVM = async (vmid, node) => {
   }
 };
 
+const createSnapshot = async (vmid, node) => {
+  try {
+    const snapshotName = prompt(`Digite o nome do Snapshot para a VM ${vmid}:`);
+    if (!snapshotName) {
+      alert("O nome do Snapshot é obrigatório.");
+      return;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: API_TOKEN,
+        },
+        body: JSON.stringify({ snapname: snapshotName }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Erro ao criar Snapshot: ${response.status} ${response.statusText}`
+      );
+    }
+
+    alert(`Snapshot "${snapshotName}" criado com sucesso!`);
+    fetchVMs(); // Atualiza a lista de VMs após criar o Snapshot
+  } catch (error) {
+    console.error(`Erro ao criar Snapshot para a VM ${vmid}:`, error);
+    alert(`Falha ao criar Snapshot para a VM ${vmid}.`);
+  }
+};
 
 
 
@@ -277,6 +310,14 @@ const connectVM = async (vmid, node) => {
           >
             Conectar
           </Button>
+          <Button
+  variant="contained"
+  style={{ backgroundColor: "orange", color: "white" }}
+  onClick={() => createSnapshot(row.id, row.node)}
+>
+  Snapshot
+</Button>
+
           <Button
       variant="contained"
       style={{ backgroundColor: "red", color: "white" }}
