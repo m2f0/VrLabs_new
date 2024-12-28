@@ -284,7 +284,7 @@ const createSnapshot = async (vmid, node) => {
     {
       field: "actions",
       headerName: "Ações",
-      width: 400,
+      width: 500,
       renderCell: ({ row }) => (
         <Box display="flex" gap="10px">
           <Button
