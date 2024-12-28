@@ -458,7 +458,7 @@ const VmAutomation = () => {
           >
             <Box mb="10px">
               <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
-                1o. Passo: Selecione uma vm
+                1o. Passo: Selecione uma vm.
               </h3>
             </Box>
             <DataGrid
@@ -491,7 +491,7 @@ const VmAutomation = () => {
         <Box mt="20px">
           <Box mb="10px">
             <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
-              2o. Passo: Selecione um ou mais snapshots disponíveis para a VM selecionada
+              2o. Passo: Selecione o snapshots desejado
             </h3>
           </Box>
           <Box
