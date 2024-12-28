@@ -533,34 +533,28 @@ const VmAutomation = () => {
             />
           </Box>
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: colors.blueAccent[600],
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-                padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.blueAccent[500] },
-              }}
-              onClick={generateLinkedCloneButtonCode}
-            >
-              Criar Código
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: colors.redAccent?.[600] || "#d32f2f",
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "16px",
-                padding: "10px 20px",
-                "&:hover": { backgroundColor: colors.redAccent?.[500] },
-              }}
-              onClick={saveGeneratedCode}
-            >
-              Salvar Código
-            </Button>
+          <Button
+  variant="contained"
+  sx={{
+    backgroundColor: colors.blueAccent[600],
+    color: "white",
+    fontWeight: "bold",
+    fontSize: "16px",
+    padding: "10px 20px",
+    "&:hover": { backgroundColor: colors.blueAccent[500] },
+  }}
+  onClick={async () => {
+    try {
+      await generateLinkedCloneButtonCode(); // Executa a função para criar o código
+      saveGeneratedCode(); // Executa a função para salvar o código
+    } catch (error) {
+      console.error("Erro ao criar e salvar automação:", error);
+    }
+  }}
+>
+  Criar e Salvar Automação
+</Button>
+
           </Box>
         </Box>
       )}
