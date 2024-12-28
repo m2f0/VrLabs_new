@@ -160,6 +160,34 @@ const renewTicket = async () => {
   }
 };
 
+// Função para excluir uma VM
+const deleteVM = async (vmid, node) => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: API_TOKEN,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Erro ao excluir VM: ${response.status} ${response.statusText}`
+      );
+    }
+
+    alert(`VM ${vmid} excluída com sucesso!`);
+    fetchVMs();
+  } catch (error) {
+    console.error(`Erro ao excluir a VM ${vmid}:`, error);
+    alert(`Falha ao excluir a VM ${vmid}.`);
+  }
+};
+
+
 const connectVM = async (vmid, node) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
@@ -249,6 +277,21 @@ const connectVM = async (vmid, node) => {
           >
             Conectar
           </Button>
+          <Button
+      variant="contained"
+      style={{ backgroundColor: "red", color: "white" }}
+      onClick={() => {
+        if (
+          window.confirm(
+            `Tem certeza de que deseja excluir a VM ${row.name} (ID: ${row.id})?`
+          )
+        ) {
+          deleteVM(row.id, row.node);
+        }
+      }}
+    >
+      Excluir
+    </Button>
         </Box>
       ),
     },
