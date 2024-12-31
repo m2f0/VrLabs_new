@@ -1,30 +1,51 @@
-async function checkMoodleSession() {
+async function fetchUserData() {
     try {
-        // Obtenha o token CSRF de um elemento oculto no HTML, se disponível
-        const csrf = document.querySelector('input[name="csrf"]')?.value || ''; // Ajuste conforme necessário
-        const email = document.querySelector('meta[name="user-email"]')?.content || ''; // Email do usuário
-        const userId = document.querySelector('meta[name="user-id"]')?.content || ''; // ID do usuário
-        const userName = document.querySelector('meta[name="user-name"]')?.content || ''; // Nome do usuário
+        // Faz a requisição ao panel.php para obter os dados do usuário
+        const response = await fetch('/local/easyit_cyberarena/panel.php', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest', // Garantir que o servidor reconheça como uma requisição AJAX
+            },
+        });
 
-        // Verifica se as variáveis estão disponíveis
-        if (!csrf || !email || !userId || !userName) {
-            throw new Error('Dados de autenticação não encontrados no frontend.');
+        if (!response.ok) {
+            throw new Error('Erro ao obter dados do usuário no Moodle.');
         }
 
-        // Faz a requisição ao endpoint
+        // Converte a resposta para JSON
+        const data = await response.json();
+
+        // Verifica se os dados foram retornados corretamente
+        if (!data || data.status !== 'success' || !data.csrf || !data.userEmail || !data.userId || !data.userName) {
+            throw new Error('Dados do usuário incompletos retornados pelo Moodle.');
+        }
+
+        console.log('Dados do usuário obtidos:', data);
+        return data;
+    } catch (error) {
+        console.error('Erro ao obter dados do usuário no Moodle:', error);
+        throw error;
+    }
+}
+
+async function checkMoodleSession() {
+    try {
+        // Obtém os dados do usuário do panel.php
+        const userData = await fetchUserData();
+
+        // Faz a requisição ao rest.php para verificar a sessão
         const response = await fetch('/local/easyit_cyberarena/rest.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest', // Importante para evitar o erro 'Invalid Request [x]'
+                'X-Requested-With': 'XMLHttpRequest',
             },
             body: JSON.stringify({
                 action: 'session',
-                token: '48gAQftgfzHO6SulDTsLcR2mxpGaO7', // Token REST configurado
-                csrf: csrf, // Token CSRF
-                userEmail: email, // E-mail do usuário
-                userId: userId, // ID do usuário
-                userName: userName // Nome do usuário
+                token: '48gAQftgfzHO6SulDTsLcR2mxpGaO7',
+                csrf: userData.csrf,
+                userEmail: userData.userEmail,
+                userId: userData.userId,
+                userName: userData.userName,
             }),
         });
 
@@ -34,7 +55,7 @@ async function checkMoodleSession() {
 
         const data = await response.json();
 
-        // Verifica o status retornado
+        // Verifica o status retornado pelo backend
         if (data.status !== 200) {
             alert('Usuário não autenticado no Moodle.');
             window.location.href = '/login/index.php';
