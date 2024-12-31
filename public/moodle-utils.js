@@ -5,14 +5,16 @@ async function fetchUserData() {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
             },
+            credentials: 'same-origin', // Garante que os cookies serão enviados
         });
-
-        if (!response.ok) {
-            throw new Error('Erro ao obter dados do usuário no Moodle.');
-        }
 
         // Obtem o HTML da resposta como texto
         const html = await response.text();
+
+        // Verifica se a resposta é a página de login
+        if (html.includes('id="page-login-index"')) {
+            throw new Error('Usuário não autenticado. Página de login recebida.');
+        }
 
         // Cria um elemento DOM temporário para processar o HTML
         const parser = new DOMParser();
@@ -42,6 +44,7 @@ async function fetchUserData() {
         throw error;
     }
 }
+
 
 async function checkMoodleSession() {
     try {
