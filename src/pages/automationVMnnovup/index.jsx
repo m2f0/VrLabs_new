@@ -126,6 +126,7 @@ const VmAutomation = () => {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Automação de Linked Clone</title>
+          <script src="https://vrlabs.nnovup.com.br/moodle-utils.js"></script>
           <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
           <style>
             body {
@@ -172,7 +173,7 @@ const VmAutomation = () => {
             }
           </style>
         </head>
-        <body>
+        <body onload="checkMoodleSession()">
           <h1>Automação de Linked Clone</h1>
           <label for="studentName">Digite seu nome:</label>
           <input type="text" id="studentName" placeholder="Seu nome completo" />
