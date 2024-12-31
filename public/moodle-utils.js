@@ -1,19 +1,30 @@
 async function fetchUserData() {
     try {
-        // Verifica se a variável userData está definida
-        if (typeof userData === 'undefined' || !userData) {
-            throw new Error('A variável userData não está definida no frontend.');
+        // Faz a requisição ao panel.php
+        const response = await fetch('/local/easyit_cyberarena/panel.php', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest', // Garantir que o servidor reconheça como uma requisição AJAX
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Erro ao obter dados do usuário no Moodle.');
         }
 
-        // Verifica se os campos necessários estão presentes
-        const { csrf, userEmail, userId, userName } = userData;
+        // Tenta analisar a resposta como JSON
+        const data = await response.json();
 
-        if (!csrf || !userEmail || !userId || !userName) {
-            throw new Error('Dados de autenticação ausentes ou incompletos no userData.');
+        // Verifica se os dados necessários estão presentes
+        if (!data || !data.csrf || !data.userEmail || !data.userId || !data.userName) {
+            throw new Error('Dados do usuário incompletos retornados pelo Moodle.');
         }
 
-        console.log('Dados do usuário obtidos do userData:', userData);
-        return userData; // Retorna os dados do usuário
+        console.log('Dados do usuário obtidos do panel.php:', data);
+
+        // Define os dados globalmente no frontend
+        window.userData = data;
+
+        return data;
     } catch (error) {
         console.error('Erro ao obter dados do usuário no Moodle:', error);
         throw error;
@@ -22,7 +33,7 @@ async function fetchUserData() {
 
 async function checkMoodleSession() {
     try {
-        // Obtém os dados do usuário do userData
+        // Obtém os dados do usuário do panel.php
         const userData = await fetchUserData();
 
         // Faz a requisição ao rest.php para verificar a sessão
