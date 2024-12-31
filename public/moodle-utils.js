@@ -3,7 +3,7 @@ async function fetchUserData() {
         // Faz a requisição ao panel.php
         const response = await fetch('/local/easyit_cyberarena/panel.php', {
             headers: {
-                'X-Requested-With': 'XMLHttpRequest', // Garantir que o servidor reconheça como uma requisição AJAX
+                'X-Requested-With': 'XMLHttpRequest',
             },
         });
 
@@ -11,20 +11,32 @@ async function fetchUserData() {
             throw new Error('Erro ao obter dados do usuário no Moodle.');
         }
 
-        // Tenta analisar a resposta como JSON
-        const data = await response.json();
+        // Obtem o HTML da resposta como texto
+        const html = await response.text();
 
-        // Verifica se os dados necessários estão presentes
-        if (!data || !data.csrf || !data.userEmail || !data.userId || !data.userName) {
-            throw new Error('Dados do usuário incompletos retornados pelo Moodle.');
+        // Cria um elemento DOM temporário para processar o HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Busca o script que define a variável userData
+        const scriptContent = Array.from(doc.scripts)
+            .map(script => script.textContent)
+            .find(content => content && content.includes('var userData ='));
+
+        if (!scriptContent) {
+            throw new Error('A variável userData não foi encontrada na resposta do panel.php.');
         }
 
-        console.log('Dados do usuário obtidos do panel.php:', data);
+        // Executa o script para definir a variável userData
+        eval(scriptContent); // Executa o código encontrado no script para criar a variável userData
 
-        // Define os dados globalmente no frontend
-        window.userData = data;
+        // Verifica se userData foi definida
+        if (typeof userData === 'undefined' || !userData) {
+            throw new Error('A variável userData não foi definida corretamente.');
+        }
 
-        return data;
+        console.log('Dados do usuário obtidos do panel.php:', userData);
+        return userData;
     } catch (error) {
         console.error('Erro ao obter dados do usuário no Moodle:', error);
         throw error;
