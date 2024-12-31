@@ -180,7 +180,7 @@ const VmAutomation = () => {
         <body onload="checkMoodleSession()">
             <h1>Automação de Linked Clone</h1>
             <button class="button" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}')">
-                Criar, Iniciar e Conectar
+                Criar laboratório
             </button>
             <div id="spinner"></div>
             <iframe id="vm-iframe" title="Console noVNC"></iframe>
