@@ -611,7 +611,7 @@ const VmAutomation = () => {
     }}
     onClick={generateLinkedCloneButtonCode}
   >
-    Criar Automação
+    Criar HTML
   </Button>
 
   <Button
@@ -626,7 +626,7 @@ const VmAutomation = () => {
     }}
     onClick={saveGeneratedCode}
   >
-    Salvar Automação
+    Salvar HTML
   </Button>
   <Button
     variant="contained"
