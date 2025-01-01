@@ -119,83 +119,29 @@ const VmAutomation = () => {
         const { id: vmId, node } = selectedVM;
         const { name: snapName } = selectedSnapshot;
 
-        const code = `
-<p>
-    <button id="linked-clone-button"
-        style="margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; background-color: #2196f3; color: white; border-radius: 5px;"
-        onclick="(function() {
-            const htmlContent = \`
-            <!DOCTYPE html>
-            <html lang='en'>
-            <head>
-                <meta charset='UTF-8'>
-                <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                <title>Automação de Linked Clone</title>
-                <script src='https://vrlabs.nnovup.com.br/moodle-utils.js'></script>
-                <script src='https://vrlabs.nnovup.com.br/proxmox.js'></script>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        background-color: #f4f4f9;
-                        color: #333;
-                        text-align: center;
-                        padding: 20px;
-                        margin: 0;
-                    }
-                    .button {
-                        margin: 10px;
-                        padding: 10px 20px;
-                        font-size: 16px;
-                        border: none;
-                        cursor: pointer;
-                        background-color: #2196F3;
-                        color: white;
-                        border-radius: 5px;
-                    }
-                    iframe {
-                        width: 90%;
-                        height: 90vh;
-                        border: none;
-                        margin-top: 20px;
-                    }
-                    #spinner {
-                        display: none;
-                        margin: 20px auto;
-                        border: 8px solid #f3f3f3;
-                        border-top: 8px solid #3498db;
-                        border-radius: 50%;
-                        width: 60px;
-                        height: 60px;
-                        animation: spin 2s linear infinite;
-                    }
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                </style>
-            </head>
-            <body onload='checkMoodleSession()'>
-                <h1>Automação de Linked Clone</h1>
-                <button class='button' onclick='automateLinkedClone("${vmId}", "${node}", "${snapName}")'>Criar laboratório</button>
-                <div id='spinner'></div>
-                <iframe id='vm-iframe' title='Console noVNC'></iframe>
-            </body>
-            </html>\`;
-            const newWindow = window.open('', '_blank');
-            newWindow.document.write(htmlContent);
-            newWindow.document.close();
-        })();">
-        Criar laboratório
-    </button>
-</p>`;
+        // Código do botão gerado para ser colado no Moodle
+        const buttonCode = `
+        <button onclick="executeLab('${vmId}', '${node}', '${snapName}')">
+            Criar laboratório
+        </button>
+        <script src="https://vrlabs.nnovup.com.br/executeLab.js"></script>
+        `;
 
-        setButtonCode(code);
-        setIsButtonGenerated(true);
-        console.log("Código gerado com sucesso.");
+        // Copiar o código do botão gerado para a área de transferência
+        navigator.clipboard.writeText(buttonCode).then(() => {
+            alert("Código do botão copiado para a área de transferência!");
+        }).catch(err => {
+            console.error("Erro ao copiar o código para a área de transferência:", err);
+            alert("Erro ao copiar o código para a área de transferência.");
+        });
+
+        console.log("Código do botão gerado com sucesso:", buttonCode);
     } catch (error) {
-        console.error("Erro ao gerar o botão:", error);
+        console.error("Erro ao gerar o código do botão:", error);
+        alert("Erro ao gerar o código do botão. Verifique os logs.");
     }
 };
+
 
 
 
