@@ -614,43 +614,36 @@ const VmAutomation = () => {
     Criar Automação
   </Button>
 
-  {/* Botão para salvar o código, visível somente após o código ser gerado */}
-  {showSaveButton && (
-    <Button
-      variant="contained"
-      sx={{
-        backgroundColor: colors.greenAccent[600],
-        color: "white",
-        fontWeight: "bold",
-        fontSize: "16px",
-        padding: "10px 20px",
-        "&:hover": { backgroundColor: colors.greenAccent[500] },
-      }}
-      onClick={saveGeneratedCode}
-    >
-      Salvar Automação
-    </Button>
+  <Button
+    variant="contained"
+    sx={{
+      backgroundColor: colors.greenAccent[600],
+      color: "white",
+      fontWeight: "bold",
+      fontSize: "16px",
+      padding: "10px 20px",
+      "&:hover": { backgroundColor: colors.greenAccent[500] },
+    }}
+    onClick={saveGeneratedCode}
+  >
+    Salvar Automação
+  </Button>
     
-  )}
-</Box>
-{/* Botão para gerar o código de um botão simples */}
-<Button
-  variant="contained"
-  sx={{
-    backgroundColor: colors.orangeAccent?.[600] || "#FF7700", // Cor padrão
-    color: "white",
-    fontWeight: "bold",
-    fontSize: "16px",
-    padding: "10px 20px",
-    "&:hover": { backgroundColor: colors.orangeAccent?.[500] || "#FF8C00" },
-  }}
-  onClick={generateSingleButtonCode}
->
-  Criar Código do Botão
-</Button>
-
-{/* Botão para copiar o código gerado */}
-{buttonCode && (
+  </Box>
+  <Button
+    variant="contained"
+    sx={{
+      backgroundColor: colors.orangeAccent?.[600] || "#FF7700", // Cor padrão
+      color: "white",
+      fontWeight: "bold",
+      fontSize: "16px",
+      padding: "10px 20px",
+      "&:hover": { backgroundColor: colors.orangeAccent?.[500] || "#FF8C00" },
+    }}
+    onClick={generateSingleButtonCode}
+  >
+    Criar Código do Botão
+  </Button>
   <Button
     variant="contained"
     sx={{
@@ -665,13 +658,6 @@ const VmAutomation = () => {
   >
     Copiar Código
   </Button>
-)}
-
-
-
-
-
-
           </Box>
         </Box>
       )}
