@@ -120,84 +120,99 @@ const VmAutomation = () => {
         const { name: snapName } = selectedSnapshot;
 
         const buttonCode = `
-        <button id="linked-clone-button" class="button" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}')">
-            Criar laboratório
-        </button>
-        <script>
-            async function automateLinkedClone(vmid, node, snapName) {
-                const spinner = document.createElement('div');
-                spinner.id = "spinner";
-                spinner.style = "margin: 20px auto; border: 8px solid #f3f3f3; border-top: 8px solid #3498db; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite;";
-                document.body.appendChild(spinner);
-
-                try {
-                    // Fetch user information
-                    const userResponse = await fetch('https://mod.nnovup.com.br/local/easyit_cyberarena/user_info.php');
-                    if (!userResponse.ok) {
-                        throw new Error('Erro ao obter informações do usuário.');
-                    }
-                    const user = await userResponse.json();
-                    const studentName = \`\${user.user.firstname} \${user.user.lastname}\`;
-                    const studentId = user.user.id;
-
-                    // Generate unique VM name
-                    const newVmId = Math.floor(Math.random() * (90000 - 50000 + 1)) + 50000;
-                    const sanitizedStudentName = studentName.replace(/[^a-zA-Z0-9-]/g, "").substring(0, 20);
-                    const linkedCloneName = \`\${studentId}-\${sanitizedStudentName}-Lab-\${newVmId}\`;
-
-                    // Create linked clone
-                    const params = new URLSearchParams({
-                        newid: newVmId,
-                        name: linkedCloneName,
-                        snapname: snapName,
-                        full: "0"
+            <button id="linked-clone-button" style="margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; background-color: #2196F3; color: white; border-radius: 5px;" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}')">
+                Criar laboratório
+            </button>
+            <script>
+                // Incluindo os scripts necessários diretamente no botão
+                (function loadScripts() {
+                    const scripts = [
+                        "https://vrlabs.nnovup.com.br/moodle-utils.js",
+                        "https://vrlabs.nnovup.com.br/proxmox.js"
+                    ];
+                    scripts.forEach(src => {
+                        const script = document.createElement('script');
+                        script.src = src;
+                        document.body.appendChild(script);
                     });
+                })();
 
-                    const cloneResponse = await fetch(\`https://mod.nnovup.com.br/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            Authorization: "Bearer <seu-token-aqui>"
-                        },
-                        body: params
-                    });
+                async function automateLinkedClone(vmid, node, snapName) {
+                    const spinner = document.createElement('div');
+                    spinner.id = "spinner";
+                    spinner.style = "margin: 20px auto; border: 8px solid #f3f3f3; border-top: 8px solid #3498db; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite;";
+                    document.body.appendChild(spinner);
 
-                    if (!cloneResponse.ok) {
-                        throw new Error('Erro ao criar Linked Clone.');
-                    }
-
-                    // Wait for VM creation
-                    await new Promise((resolve) => setTimeout(resolve, 10000));
-
-                    // Start the VM
-                    const startResponse = await fetch(\`https://mod.nnovup.com.br/api2/json/nodes/\${node}/qemu/\${newVmId}/status/start\`, {
-                        method: "POST",
-                        headers: {
-                            Authorization: "Bearer <seu-token-aqui>"
+                    try {
+                        // Obtendo informações do usuário do Moodle
+                        const userResponse = await fetch('/local/easyit_cyberarena/user_info.php');
+                        if (!userResponse.ok) {
+                            throw new Error('Erro ao obter informações do usuário.');
                         }
-                    });
+                        const user = await userResponse.json();
+                        const studentName = \`\${user.user.firstname} \${user.user.lastname}\`;
+                        const studentId = user.user.id;
 
-                    if (!startResponse.ok) {
-                        throw new Error('Erro ao iniciar Linked Clone.');
+                        // Gerando ID e nome para a VM
+                        const newVmId = Math.floor(Math.random() * (90000 - 50000 + 1)) + 50000;
+                        const sanitizedStudentName = studentName.replace(/[^a-zA-Z0-9-]/g, "").substring(0, 20);
+                        const linkedCloneName = \`\${studentId}-\${sanitizedStudentName}-Lab-\${newVmId}\`;
+
+                        // Fazendo a requisição para criar a VM
+                        const params = new URLSearchParams({
+                            newid: newVmId,
+                            name: linkedCloneName,
+                            snapname: snapName,
+                            full: "0"
+                        });
+
+                        const cloneResponse = await fetch(\`https://mod.nnovup.com.br/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded",
+                                Authorization: "Bearer <seu-token-aqui>"
+                            },
+                            body: params
+                        });
+
+                        if (!cloneResponse.ok) {
+                            throw new Error('Erro ao criar Linked Clone.');
+                        }
+
+                        console.log('Linked Clone criado com sucesso.');
+                        await new Promise((resolve) => setTimeout(resolve, 10000));
+
+                        // Iniciando a VM
+                        const startResponse = await fetch(\`https://mod.nnovup.com.br/api2/json/nodes/\${node}/qemu/\${newVmId}/status/start\`, {
+                            method: "POST",
+                            headers: {
+                                Authorization: "Bearer <seu-token-aqui>"
+                            }
+                        });
+
+                        if (!startResponse.ok) {
+                            throw new Error('Erro ao iniciar Linked Clone.');
+                        }
+
+                        console.log('Linked Clone iniciado com sucesso.');
+                    } catch (error) {
+                        console.error('Erro no processo de automação:', error);
+                        alert('Erro no processo de automação. Verifique os logs.');
+                    } finally {
+                        document.body.removeChild(spinner);
                     }
-
-                    console.log('Linked Clone criado e iniciado com sucesso.');
-                } catch (error) {
-                    console.error('Erro no processo de automação:', error);
-                    alert('Erro no processo de automação. Verifique os logs.');
-                } finally {
-                    document.body.removeChild(spinner);
                 }
-            }
-        </script>
+            </script>
         `;
 
-        setButtonCode(buttonCode);
+        setLinkedCloneButtonCode(buttonCode);
+        setShowSaveButton(true); // Exibe o botão "SALVAR" após gerar o código
         console.log("Código do botão gerado com sucesso.");
     } catch (error) {
         console.error("Erro ao gerar código do botão:", error);
     }
 };
+
 
   
 
