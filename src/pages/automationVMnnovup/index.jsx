@@ -124,7 +124,6 @@ const VmAutomation = () => {
                 Criar laboratório
             </button>
             <script>
-                // Incluindo os scripts necessários diretamente no botão
                 (function loadScripts() {
                     const scripts = [
                         "https://vrlabs.nnovup.com.br/moodle-utils.js",
@@ -144,7 +143,6 @@ const VmAutomation = () => {
                     document.body.appendChild(spinner);
 
                     try {
-                        // Obtendo informações do usuário do Moodle
                         const userResponse = await fetch('/local/easyit_cyberarena/user_info.php');
                         if (!userResponse.ok) {
                             throw new Error('Erro ao obter informações do usuário.');
@@ -153,12 +151,10 @@ const VmAutomation = () => {
                         const studentName = \`\${user.user.firstname} \${user.user.lastname}\`;
                         const studentId = user.user.id;
 
-                        // Gerando ID e nome para a VM
                         const newVmId = Math.floor(Math.random() * (90000 - 50000 + 1)) + 50000;
                         const sanitizedStudentName = studentName.replace(/[^a-zA-Z0-9-]/g, "").substring(0, 20);
                         const linkedCloneName = \`\${studentId}-\${sanitizedStudentName}-Lab-\${newVmId}\`;
 
-                        // Fazendo a requisição para criar a VM
                         const params = new URLSearchParams({
                             newid: newVmId,
                             name: linkedCloneName,
@@ -182,7 +178,6 @@ const VmAutomation = () => {
                         console.log('Linked Clone criado com sucesso.');
                         await new Promise((resolve) => setTimeout(resolve, 10000));
 
-                        // Iniciando a VM
                         const startResponse = await fetch(\`https://mod.nnovup.com.br/api2/json/nodes/\${node}/qemu/\${newVmId}/status/start\`, {
                             method: "POST",
                             headers: {
@@ -206,12 +201,22 @@ const VmAutomation = () => {
         `;
 
         setLinkedCloneButtonCode(buttonCode);
+
+        // Copia o código para a área de transferência
+        navigator.clipboard.writeText(buttonCode).then(() => {
+            alert("Código do botão copiado para a área de transferência!");
+        }).catch(err => {
+            console.error("Erro ao copiar código para a área de transferência:", err);
+            alert("Falha ao copiar o código. Verifique os logs.");
+        });
+
         setShowSaveButton(true); // Exibe o botão "SALVAR" após gerar o código
         console.log("Código do botão gerado com sucesso.");
     } catch (error) {
         console.error("Erro ao gerar código do botão:", error);
     }
 };
+
 
 
   
