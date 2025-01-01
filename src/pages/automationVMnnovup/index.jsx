@@ -637,17 +637,18 @@ const VmAutomation = () => {
 <Button
   variant="contained"
   sx={{
-    backgroundColor: colors.orangeAccent[600],
+    backgroundColor: colors.orangeAccent?.[600] || "#FF7700", // Cor padrão
     color: "white",
     fontWeight: "bold",
     fontSize: "16px",
     padding: "10px 20px",
-    "&:hover": { backgroundColor: colors.orangeAccent[500] },
+    "&:hover": { backgroundColor: colors.orangeAccent?.[500] || "#FF8C00" },
   }}
   onClick={generateSingleButtonCode}
 >
   Criar Código do Botão
 </Button>
+
 {/* Botão para copiar o código gerado */}
 {buttonCode && (
   <Button
