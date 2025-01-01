@@ -109,6 +109,67 @@ const VmAutomation = () => {
     }
   };
 
+  const generateSingleButtonCode = async () => {
+    if (!selectedVM || !selectedSnapshot) {
+      alert("Selecione uma VM e um Snapshot antes de continuar.");
+      return;
+    }
+  
+    try {
+      const { id: vmId, node } = selectedVM;
+      const { name: snapName } = selectedSnapshot;
+  
+      const buttonCode = `
+        <button
+          class="linked-clone-button"
+          onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}')"
+        >
+          Criar laboratório
+        </button>
+        <script>
+          async function automateLinkedClone(vmid, node, snapName) {
+            try {
+              const newVmId = Math.floor(Math.random() * (90000 - 50000 + 1)) + 50000;
+              const linkedCloneName = \`Clone-\${newVmId}\`;
+  
+              const params = new URLSearchParams({
+                newid: newVmId,
+                name: linkedCloneName,
+                snapname: snapName,
+                full: "0"
+              });
+  
+              const response = await fetch(\`https://mod.nnovup.com.br/api2/json/nodes/\${node}/qemu/\${vmid}/clone\`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                  Authorization: "Bearer <seu-token-aqui>"
+                },
+                body: params
+              });
+  
+              if (!response.ok) {
+                throw new Error("Erro ao criar Linked Clone.");
+              }
+              alert("Linked Clone criado com sucesso!");
+            } catch (error) {
+              console.error("Erro ao criar Linked Clone:", error);
+              alert("Erro ao criar Linked Clone.");
+            }
+          }
+        </script>
+      `;
+  
+      setButtonCode(buttonCode); // Salva o código gerado no estado
+      alert("Código do botão gerado com sucesso! Clique para copiá-lo.");
+    } catch (error) {
+      console.error("Erro ao gerar código do botão:", error);
+      alert("Erro ao gerar código do botão.");
+    }
+  };
+  
+
+
   const generateLinkedCloneButtonCode = async () => {
     if (!selectedVM || !selectedSnapshot) {
         alert("Selecione uma VM e um Snapshot antes de continuar.");
@@ -278,9 +339,10 @@ const VmAutomation = () => {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(buttonCode).then(() => {
-      alert("Código copiado para a área de transferência!");
+      alert("Código do botão copiado para a área de transferência!");
     });
   };
+
 
   const createLinkedClone = async () => {
     if (!selectedVM) {
@@ -568,8 +630,41 @@ const VmAutomation = () => {
     >
       Salvar Automação
     </Button>
+    
   )}
 </Box>
+{/* Botão para gerar o código de um botão simples */}
+<Button
+  variant="contained"
+  sx={{
+    backgroundColor: colors.orangeAccent[600],
+    color: "white",
+    fontWeight: "bold",
+    fontSize: "16px",
+    padding: "10px 20px",
+    "&:hover": { backgroundColor: colors.orangeAccent[500] },
+  }}
+  onClick={generateSingleButtonCode}
+>
+  Criar Código do Botão
+</Button>
+{/* Botão para copiar o código gerado */}
+{buttonCode && (
+  <Button
+    variant="contained"
+    sx={{
+      backgroundColor: colors.greenAccent[600],
+      color: "white",
+      fontWeight: "bold",
+      fontSize: "16px",
+      padding: "10px 20px",
+      "&:hover": { backgroundColor: colors.greenAccent[500] },
+    }}
+    onClick={copyToClipboard}
+  >
+    Copiar Código
+  </Button>
+)}
 
 
 
