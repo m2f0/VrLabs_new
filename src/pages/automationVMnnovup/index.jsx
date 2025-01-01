@@ -628,8 +628,6 @@ const VmAutomation = () => {
   >
     Salvar Automação
   </Button>
-    
-  </Box>
   <Button
     variant="contained"
     sx={{
@@ -657,7 +655,9 @@ const VmAutomation = () => {
     onClick={copyToClipboard}
   >
     Copiar Código
-  </Button>
+  </Button>  
+  </Box>
+  
           </Box>
         </Box>
       )}
