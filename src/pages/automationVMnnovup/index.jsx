@@ -119,28 +119,31 @@ const VmAutomation = () => {
         const { id: vmId, node } = selectedVM;
         const { name: snapName } = selectedSnapshot;
 
-        // Código do botão gerado para ser colado no Moodle
         const buttonCode = `
-        <button onclick="executeLab('${vmId}', '${node}', '${snapName}')">
-            Criar laboratório
-        </button>
-        <script src="https://vrlabs.nnovup.com.br/executeLab.js"></script>
+<p>
+  <a
+    href="/local/easyit_cyberarena/create_lab.php?vmid=${vmId}&node=${node}&snapshot=${snapName}"
+    target="_blank"
+    style="margin: 10px; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; background-color: #2196f3; color: white; border-radius: 5px; text-decoration: none;"
+  >
+    Criar laboratório
+  </a>
+</p>
         `;
 
-        // Copiar o código do botão gerado para a área de transferência
         navigator.clipboard.writeText(buttonCode).then(() => {
             alert("Código do botão copiado para a área de transferência!");
         }).catch(err => {
-            console.error("Erro ao copiar o código para a área de transferência:", err);
-            alert("Erro ao copiar o código para a área de transferência.");
+            console.error("Erro ao copiar o código:", err);
+            alert("Erro ao copiar o código. Verifique os logs.");
         });
 
-        console.log("Código do botão gerado com sucesso:", buttonCode);
+        console.log("Código gerado com sucesso:", buttonCode);
     } catch (error) {
-        console.error("Erro ao gerar o código do botão:", error);
-        alert("Erro ao gerar o código do botão. Verifique os logs.");
+        console.error("Erro ao gerar o botão:", error);
     }
 };
+
 
 
 
