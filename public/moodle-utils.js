@@ -34,3 +34,4 @@ async function checkMoodleSession() {
         window.location.href = '/login/index.php';
     }
 }
+

@@ -1,6 +1,9 @@
 (function () {
     // Essa função será chamada ao clicar no botão do Moodle
     window.executeLab = function (vmId, node, snapName) {
+        const API_BASE_URL = "https://mod.nnovup.com.br";
+        const API_TOKEN = "Bearer <seu-token-aqui>";
+
         const htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
@@ -55,9 +58,6 @@
                 }
             </style>
             <script>
-                const API_BASE_URL = "https://mod.nnovup.com.br";
-                const API_TOKEN = "Bearer <seu-token-aqui>";
-
                 async function checkMoodleSession() {
                     try {
                         const user = await fetchUserInfo();
@@ -86,6 +86,8 @@
 
                     try {
                         spinner.style.display = 'block';
+
+                        // 1. Criar Linked Clone
                         const params = new URLSearchParams({
                             newid: newVmId,
                             name: linkedCloneName,
@@ -111,6 +113,7 @@
                         console.log('Linked Clone criado com sucesso.');
                         await new Promise((resolve) => setTimeout(resolve, 10000));
 
+                        // 2. Iniciar Linked Clone
                         const startResponse = await fetch(\`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${newVmId}/status/start\`, {
                             method: "POST",
                             headers: {
@@ -124,21 +127,50 @@
                             return;
                         }
 
-                        iframe.style.display = 'block';
-                        connectVM(newVmId, node);
+                        console.log('Linked Clone iniciado com sucesso.');
+                        await new Promise((resolve) => setTimeout(resolve, 10000));
+
+                        // 3. Obter VNC Ticket e Gerar URL
+                        const vncResponse = await fetch(\`\${API_BASE_URL}/api2/json/nodes/\${node}/qemu/\${newVmId}/vncproxy\`, {
+                            method: "POST",
+                            headers: {
+                                Authorization: API_TOKEN
+                            }
+                        });
+
+                        if (!vncResponse.ok) {
+                            const errorText = await vncResponse.text();
+                            console.error('Erro ao obter VNC Ticket:', errorText);
+                            return;
+                        }
+
+                        const vncData = await vncResponse.json();
+                        const vncticket = vncData.data.ticket;
+                        const port = vncData.data.port;
+
+                        const vncUrl = \`\${API_BASE_URL}/?console=kvm&novnc=1&node=\${node}&resize=1&vmid=\${newVmId}&path=api2/json/nodes/\${node}/qemu/\${newVmId}/vncwebsocket/port/\${port}/vncticket/\${encodeURIComponent(vncticket)}\`;
+
+                        console.log('URL do noVNC:', vncUrl);
+
+                        // 4. Conectar via noVNC
+                        iframe.src = vncUrl;
+                        iframe.style.display = "block";
+
                     } catch (error) {
                         console.error('Erro no processo de automação:', error);
                     } finally {
                         spinner.style.display = 'none';
                     }
                 }
+
+                window.onload = () => {
+                    checkMoodleSession();
+                    automateLinkedClone('${vmId}', '${node}', '${snapName}');
+                };
             </script>
         </head>
-        <body onload="checkMoodleSession()">
+        <body>
             <h1>Automação de Linked Clone</h1>
-            <button class="button" onclick="automateLinkedClone('${vmId}', '${node}', '${snapName}')">
-                Criar laboratório
-            </button>
             <div id="spinner"></div>
             <iframe id="vm-iframe" title="Console noVNC"></iframe>
         </body>
