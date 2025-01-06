@@ -23,6 +23,7 @@ import ManageVMs from "./pages/manageVMs";
 import ManageVMsCecyber from "./pages/manageVMscecyber";
 import Automation from "./pages/automation";
 import AutomationNNovup from "./pages/automationVMnnovup";
+import AutomationNNovupMultiples from "./pages/automationVMnnovupMultiples";
 import Files from "./pages/files";
 import Login from "./pages/login";
 import Register from "./pages/register";
@@ -205,6 +206,14 @@ const App = () => {
                   element={
                     <RequireAuth>
                       <AutomationNNovup />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/automationVMnnovupMultiples"
+                  element={
+                    <RequireAuth>
+                      <AutomationNNovupMultiples />
                     </RequireAuth>
                   }
                 />

@@ -197,6 +197,13 @@ const MyProSidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
+            <Item
+              title="Automation Multiples"
+              to="/automationVMnnovupMultiples"
+              icon={<AutoMode />}
+              selected={selected}
+              setSelected={setSelected}
+            />
           </Box>
         </Menu>
         <Box mt="auto" p="20px">
