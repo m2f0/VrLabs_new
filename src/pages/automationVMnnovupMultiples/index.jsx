@@ -562,7 +562,7 @@ const VmAutomation = () => {
       }}
     >
       <h3 style={{ color: colors.primary[100], fontWeight: "bold" }}>
-        3o. Passo: Selecione uma ou mais VMs
+        1o. Passo: Selecione uma ou mais VMs
       </h3>
       <DataGrid
         rows={vmList}
@@ -579,28 +579,6 @@ const VmAutomation = () => {
           console.log("VMs selecionadas:", selected);
         }}
       />
-    </Box>
-    <Box mt="20px">
-      <Button
-        variant="contained"
-        sx={{
-          backgroundColor: colors.greenAccent[600],
-          color: "white",
-          fontWeight: "bold",
-          fontSize: "16px",
-          padding: "10px 20px",
-          "&:hover": { backgroundColor: colors.greenAccent[500] },
-        }}
-        onClick={() =>
-          alert(
-            `VMs selecionadas: ${selectedVMs
-              .map((vm) => vm.name)
-              .join(", ")}`
-          )
-        }
-      >
-        Confirmar Seleção
-      </Button>
     </Box>
   </Box>
 )}
@@ -629,7 +607,7 @@ const VmAutomation = () => {
       }}
     >
       <h3 style={{ color: colors.primary[100], fontWeight: "bold" }}>
-        4o. Passo: Selecione os snapshots das VMs selecionadas
+        2o. Passo: Selecione os snapshots das VMs selecionadas
       </h3>
       <DataGrid
         rows={snapshotsByVM.flatMap((group) => group.snapshots)} // Lista de snapshots agrupados
@@ -648,7 +626,6 @@ const VmAutomation = () => {
           console.log("Snapshots selecionados:", selected);
         }}
       />
-    </Box>
     <Box mt="20px">
       <Button
         variant="contained"
@@ -671,6 +648,8 @@ const VmAutomation = () => {
         Confirmar Seleção
       </Button>
     </Box>
+    </Box>
+    
   </Box>
 )}
 
