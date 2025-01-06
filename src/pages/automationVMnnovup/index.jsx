@@ -22,6 +22,9 @@ const VmAutomation = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [showSaveButton, setShowSaveButton] = useState(false); // Estado para controlar a exibição do botão "SALVAR"
   const [selectedVMs, setSelectedVMs] = useState([]); // Armazena múltiplas VMs selecionadas
+  const [snapshotsByVM, setSnapshotsByVM] = useState([]); // Snapshots agrupados por VM
+  const [selectedSnapshots, setSelectedSnapshots] = useState([]); // Snapshots selecionados
+
 
 
 
@@ -32,7 +35,13 @@ const VmAutomation = () => {
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+  
+    if (newValue === 3) {
+      // Aba "Snapshots Selecionados"
+      fetchSnapshotsForSelectedVMs();
+    }
   };
+  
 
   const fetchVMs = async () => {
     try {
@@ -110,6 +119,50 @@ const VmAutomation = () => {
       alert("Falha ao buscar snapshots. Verifique o console.");
     }
   };
+
+  const fetchSnapshotsForSelectedVMs = async () => {
+    try {
+      const snapshots = await Promise.all(
+        selectedVMs.map(async (vm) => {
+          const response = await fetch(
+            `${API_BASE_URL}/api2/json/nodes/${vm.node}/qemu/${vm.id}/snapshot`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: API_TOKEN,
+              },
+            }
+          );
+  
+          if (!response.ok) {
+            throw new Error(
+              `Erro ao buscar snapshots para a VM ${vm.name}: ${response.statusText}`
+            );
+          }
+  
+          const data = await response.json();
+          return {
+            vmName: vm.name,
+            vmId: vm.id,
+            snapshots: data.data.map((snap) => ({
+              id: `${vm.id}-${snap.name}`,
+              vmId: vm.id,
+              vmName: vm.name,
+              name: snap.name || "Sem Nome",
+              description: snap.description || "Sem Descrição",
+            })),
+          };
+        })
+      );
+  
+      setSnapshotsByVM(snapshots);
+    } catch (error) {
+      console.error("Erro ao buscar snapshots das VMs selecionadas:", error);
+      alert("Erro ao buscar snapshots. Verifique os logs para mais detalhes.");
+    }
+  };
+  
+  
 
   const generateSingleButtonCode = async () => {
     if (!selectedVM || !selectedSnapshot) {
@@ -480,6 +533,8 @@ const VmAutomation = () => {
         <Tab label="1o. Máquinas Virtuais" />
         <Tab label="2o. SnapShots" />
         <Tab label="3o. Selecionar VMs" />
+        <Tab label="4o. Multiplos Snapshots" />
+
 
       </Tabs>
 
@@ -716,6 +771,76 @@ const VmAutomation = () => {
     </Box>
   </Box>
 )}
+{activeTab === 3 && ( // Nova aba
+  <Box mt="20px">
+    <Box
+      height="150vh"
+      sx={{
+        "& .MuiDataGrid-root": {
+          borderRadius: "8px",
+          backgroundColor: colors.primary[400],
+        },
+        "& .MuiDataGrid-columnHeaders": {
+          backgroundColor: colors.blueAccent[700],
+          color: "white",
+          fontSize: "16px",
+          fontWeight: "bold",
+        },
+        "& .MuiDataGrid-cell": {
+          color: colors.primary[100],
+        },
+        "& .MuiDataGrid-footerContainer": {
+          backgroundColor: colors.blueAccent[700],
+          color: "white",
+        },
+      }}
+    >
+      <h3 style={{ color: colors.primary[100], fontWeight: "bold" }}>
+        4o. Passo: Selecione os snapshots das VMs selecionadas
+      </h3>
+      <DataGrid
+        rows={snapshotsByVM.flatMap((group) => group.snapshots)} // Lista de snapshots agrupados
+        columns={[
+          { field: "vmName", headerName: "VM", width: 200 },
+          { field: "name", headerName: "Snapshot", width: 200 },
+          { field: "description", headerName: "Descrição", width: 300 },
+        ]}
+        checkboxSelection // Permite múltiplos snapshots
+        disableSelectionOnClick
+        onSelectionModelChange={(ids) => {
+          const selected = snapshotsByVM
+            .flatMap((group) => group.snapshots)
+            .filter((snap) => ids.includes(snap.id));
+          setSelectedSnapshots(selected);
+          console.log("Snapshots selecionados:", selected);
+        }}
+      />
+    </Box>
+    <Box mt="20px">
+      <Button
+        variant="contained"
+        sx={{
+          backgroundColor: colors.greenAccent[600],
+          color: "white",
+          fontWeight: "bold",
+          fontSize: "16px",
+          padding: "10px 20px",
+          "&:hover": { backgroundColor: colors.greenAccent[500] },
+        }}
+        onClick={() =>
+          alert(
+            `Snapshots selecionados: ${selectedSnapshots
+              .map((snap) => snap.name)
+              .join(", ")}`
+          )
+        }
+      >
+        Confirmar Seleção
+      </Button>
+    </Box>
+  </Box>
+)}
+
 
     </Box>
   );
