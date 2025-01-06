@@ -170,35 +170,35 @@ const MyProSidebar = () => {
               VMs
             </Typography>
             <Item
-              title="Create VMs"
+              title="Criar VMs"
               to="/createVM"
               icon={<ViewInAr />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
-              title="Manager VMs"
+              title="Gerenciar VMs"
               to="/manageVMs"
               icon={<Slideshow />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
-              title="Monitor VMs"
+              title="Monitorar VMs"
               to="/dashboardnnovup"
               icon={<MonitorHeart />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
-              title="Automation"
+              title="Automação Simples"
               to="/automationVMnnovup"
               icon={<AutoMode />}
               selected={selected}
               setSelected={setSelected}
             />
             <Item
-              title="Automation Multiples"
+              title="Automação Multipla"
               to="/automationVMnnovupMultiples"
               icon={<AutoMode />}
               selected={selected}
