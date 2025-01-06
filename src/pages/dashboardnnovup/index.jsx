@@ -40,7 +40,7 @@ const Dashboard = () => {
 
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox/tasks`,
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/cecqa/tasks`,
         {
           method: "GET",
           headers: {
