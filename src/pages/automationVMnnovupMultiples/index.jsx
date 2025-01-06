@@ -530,181 +530,14 @@ const VmAutomation = () => {
           },
         }}
       >
-        <Tab label="1o. Máquinas Virtuais" />
-        <Tab label="2o. SnapShots" />
         <Tab label="3o. Selecionar VMs" />
         <Tab label="4o. Multiplos Snapshots" />
 
 
       </Tabs>
 
-      {activeTab === 0 && (
-        <Box mt="20px">
-          <Box
-            height="150vh"
-            sx={{
-              "& .MuiDataGrid-root": {
-                borderRadius: "8px",
-                backgroundColor: colors.primary[400],
-              },
-              "& .MuiDataGrid-columnHeaders": {
-                backgroundColor: colors.blueAccent[700],
-                color: "white",
-                fontSize: "16px",
-                fontWeight: "bold",
-              },
-              "& .MuiDataGrid-cell": {
-                color: colors.primary[100],
-              },
-              "& .MuiDataGrid-footerContainer": {
-                backgroundColor: colors.blueAccent[700],
-                color: "white",
-              },
-            }}
-          >
-            <Box mb="10px">
-              <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
-                1o. Passo: Selecione uma vm:
-              </h3>
-            </Box>
-            <DataGrid
-              rows={vmList}
-              columns={[
-                { field: "id", headerName: "VM ID", width: 100 },
-                { field: "name", headerName: "Nome", width: 200 },
-                { field: "status", headerName: "Status", width: 120 },
-              ]}
-              checkboxSelection
-              disableSelectionOnClick
-              onSelectionModelChange={(ids) => {
-                if (ids.length > 1) {
-                  alert("Selecione apenas uma VM por vez.");
-                  return;
-                }
-                const selectedId = ids[0];
-                const vm = vmList.find((vm) => vm.id === selectedId);
-                setSelectedVM(vm);
-                if (vm) {
-                  fetchSnapshots(vm.id, vm.node);
-                }
-              }}
-            />
-          </Box>
-        </Box>
-      )}
-
-      {activeTab === 1 && (
-        <Box mt="20px">
-          <Box mb="10px">
-            <h3 style={{ color: colors.primary[100], textAlign: "left", fontWeight: "bold" }}>
-              2o. Passo: Selecione o snapshots desejado:
-            </h3>
-          </Box>
-          <Box
-            height="150vh"
-            sx={{
-              "& .MuiDataGrid-root": {
-                borderRadius: "8px",
-                backgroundColor: colors.primary[400],
-              },
-              "& .MuiDataGrid-columnHeaders": {
-                backgroundColor: colors.blueAccent[700],
-                color: "white",
-                fontSize: "16px",
-                fontWeight: "bold",
-              },
-              "& .MuiDataGrid-cell": {
-                color: colors.primary[100],
-              },
-              "& .MuiDataGrid-footerContainer": {
-                backgroundColor: colors.blueAccent[700],
-                color: "white",
-              },
-            }}
-          >
-            <DataGrid
-              rows={snapshotList}
-              columns={[
-                { field: "id", headerName: "Snapshot ID", width: 150 },
-                { field: "name", headerName: "Nome", width: 200 },
-                { field: "description", headerName: "Descrição", width: 300 },
-              ]}
-              checkboxSelection
-              disableSelectionOnClick
-              selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []}
-              onSelectionModelChange={(ids) => {
-                const selectedId = ids[0];
-                const snapshot = snapshotList.find((snap) => snap.id === selectedId);
-                setSelectedSnapshot(snapshot);
-              }}
-            />
-          </Box>
-          <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-          <Box mt="20px" display="flex" justifyContent="center" gap="20px">
-  {/* Botão para gerar o código */}
-  <Button
-    variant="contained"
-    sx={{
-      backgroundColor: colors.blueAccent[600],
-      color: "white",
-      fontWeight: "bold",
-      fontSize: "16px",
-      padding: "10px 20px",
-      "&:hover": { backgroundColor: colors.blueAccent[500] },
-    }}
-    onClick={generateLinkedCloneButtonCode}
-  >
-    Criar HTML
-  </Button>
-
-  <Button
-    variant="contained"
-    sx={{
-      backgroundColor: colors.greenAccent[600],
-      color: "white",
-      fontWeight: "bold",
-      fontSize: "16px",
-      padding: "10px 20px",
-      "&:hover": { backgroundColor: colors.greenAccent[500] },
-    }}
-    onClick={saveGeneratedCode}
-  >
-    Salvar HTML
-  </Button>
-  <Button
-    variant="contained"
-    sx={{
-      backgroundColor: colors.orangeAccent?.[600] || "#FF7700", // Cor padrão
-      color: "white",
-      fontWeight: "bold",
-      fontSize: "16px",
-      padding: "10px 20px",
-      "&:hover": { backgroundColor: colors.orangeAccent?.[500] || "#FF8C00" },
-    }}
-    onClick={generateSingleButtonCode}
-  >
-    Criar Código do Botão
-  </Button>
-  <Button
-    variant="contained"
-    sx={{
-      backgroundColor: colors.greenAccent[600],
-      color: "white",
-      fontWeight: "bold",
-      fontSize: "16px",
-      padding: "10px 20px",
-      "&:hover": { backgroundColor: colors.greenAccent[500] },
-    }}
-    onClick={copyToClipboard}
-  >
-    Copiar Código
-  </Button>  
-  </Box>
-  
-          </Box>
-        </Box>
-      )}
-      {activeTab === 2 && ( // Nova aba
+      
+      {activeTab === 0 && ( // Nova aba
   <Box mt="20px">
     <Box
       height="150vh"
@@ -771,7 +604,7 @@ const VmAutomation = () => {
     </Box>
   </Box>
 )}
-{activeTab === 3 && ( // Nova aba
+{activeTab === 1 && ( // Nova aba
   <Box mt="20px">
     <Box
       height="150vh"
