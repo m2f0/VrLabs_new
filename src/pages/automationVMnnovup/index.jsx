@@ -21,6 +21,8 @@ const VmAutomation = () => {
   const [selectedSnapshot, setSelectedSnapshot] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [showSaveButton, setShowSaveButton] = useState(false); // Estado para controlar a exibição do botão "SALVAR"
+  const [selectedVMs, setSelectedVMs] = useState([]); // Armazena múltiplas VMs selecionadas
+
 
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -477,6 +479,8 @@ const VmAutomation = () => {
       >
         <Tab label="1o. Máquinas Virtuais" />
         <Tab label="2o. SnapShots" />
+        <Tab label="3o. Selecionar VMs" />
+
       </Tabs>
 
       {activeTab === 0 && (
@@ -645,6 +649,74 @@ const VmAutomation = () => {
           </Box>
         </Box>
       )}
+      {activeTab === 2 && ( // Nova aba
+  <Box mt="20px">
+    <Box
+      height="150vh"
+      sx={{
+        "& .MuiDataGrid-root": {
+          borderRadius: "8px",
+          backgroundColor: colors.primary[400],
+        },
+        "& .MuiDataGrid-columnHeaders": {
+          backgroundColor: colors.blueAccent[700],
+          color: "white",
+          fontSize: "16px",
+          fontWeight: "bold",
+        },
+        "& .MuiDataGrid-cell": {
+          color: colors.primary[100],
+        },
+        "& .MuiDataGrid-footerContainer": {
+          backgroundColor: colors.blueAccent[700],
+          color: "white",
+        },
+      }}
+    >
+      <h3 style={{ color: colors.primary[100], fontWeight: "bold" }}>
+        3o. Passo: Selecione uma ou mais VMs
+      </h3>
+      <DataGrid
+        rows={vmList}
+        columns={[
+          { field: "id", headerName: "VM ID", width: 100 },
+          { field: "name", headerName: "Nome", width: 200 },
+          { field: "status", headerName: "Status", width: 120 },
+        ]}
+        checkboxSelection // Permite seleção múltipla
+        disableSelectionOnClick
+        onSelectionModelChange={(ids) => {
+          const selected = vmList.filter((vm) => ids.includes(vm.id));
+          setSelectedVMs(selected);
+          console.log("VMs selecionadas:", selected);
+        }}
+      />
+    </Box>
+    <Box mt="20px">
+      <Button
+        variant="contained"
+        sx={{
+          backgroundColor: colors.greenAccent[600],
+          color: "white",
+          fontWeight: "bold",
+          fontSize: "16px",
+          padding: "10px 20px",
+          "&:hover": { backgroundColor: colors.greenAccent[500] },
+        }}
+        onClick={() =>
+          alert(
+            `VMs selecionadas: ${selectedVMs
+              .map((vm) => vm.name)
+              .join(", ")}`
+          )
+        }
+      >
+        Confirmar Seleção
+      </Button>
+    </Box>
+  </Box>
+)}
+
     </Box>
   );
 };
