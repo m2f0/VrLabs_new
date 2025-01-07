@@ -28,13 +28,13 @@ const Team = () => {
           },
         }
       );
-
+  
       if (!response.ok) {
         throw new Error(
           `Erro na API do Proxmox: ${response.status} ${response.statusText}`
         );
       }
-
+  
       const data = await response.json();
       setVmList(
         data.data.map((vm) => ({
@@ -42,6 +42,7 @@ const Team = () => {
           name: vm.name,
           status: vm.status,
           node: vm.node,
+          type: vm.type || "qemu", // Adicionar o tipo
         }))
       );
     } catch (error) {
@@ -49,6 +50,7 @@ const Team = () => {
       alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
     }
   };
+  
 
   // Função para iniciar uma VM
   const startVM = async (vmid, node) => {
@@ -232,7 +234,7 @@ const connectVM = async (vmid, node) => {
   }
 };
 
-const createSnapshot = async (vmid, node) => {
+const createSnapshot = async (vmid, node, type) => {
   try {
     const snapshotName = prompt(`Digite o nome do Snapshot para a VM ${vmid}:`);
     if (!snapshotName) {
@@ -240,17 +242,20 @@ const createSnapshot = async (vmid, node) => {
       return;
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: API_TOKEN,
-        },
-        body: JSON.stringify({ snapname: snapshotName }),
-      }
-    );
+    // Escolher o endpoint correto com base no tipo da VM
+    const endpoint =
+      type === "qemu"
+        ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`
+        : `${API_BASE_URL}/api2/json/nodes/${node}/lxc/${vmid}/snapshot`;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: API_TOKEN,
+      },
+      body: JSON.stringify({ snapname: snapshotName }),
+    });
 
     if (!response.ok) {
       throw new Error(
@@ -265,6 +270,7 @@ const createSnapshot = async (vmid, node) => {
     alert(`Falha ao criar Snapshot para a VM ${vmid}.`);
   }
 };
+
 
 
 
@@ -313,10 +319,11 @@ const createSnapshot = async (vmid, node) => {
           <Button
   variant="contained"
   style={{ backgroundColor: "orange", color: "white" }}
-  onClick={() => createSnapshot(row.id, row.node)}
+  onClick={() => createSnapshot(row.id, row.node, row.type)} // Passar o tipo
 >
   Snapshot
 </Button>
+
 
           <Button
       variant="contained"
