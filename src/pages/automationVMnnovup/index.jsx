@@ -54,56 +54,54 @@ const VmAutomation = () => {
           },
         }
       );
-
+  
       if (!response.ok) {
         throw new Error(
           `Erro na API do Proxmox: ${response.status} ${response.statusText}`
         );
       }
-
+  
       const data = await response.json();
-
+  
       const allVMs = (data.data || []).map((vm) => ({
         id: vm.vmid,
         name: vm.name || "Sem Nome",
         status: vm.status || "Indisponível",
         node: vm.node || "Indefinido",
+        type: vm.type || "qemu", // Adicionar o tipo
       }));
-
-      const normalVMs = allVMs.filter(
-        (vm) => vm.name && !vm.name.includes("CLONE")
-      );
-
-      const clones = allVMs.filter((vm) => vm.name && vm.name.includes("CLONE"));
-
-      setVmList(normalVMs);
-      setLinkedClones(clones);
+  
+      setVmList(allVMs);
     } catch (error) {
       console.error("Erro ao buscar lista de VMs:", error);
       alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
     }
   };
+  
 
-  const fetchSnapshots = async (vmid, node) => {
+  const fetchSnapshots = async (vmid, node, type) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: API_TOKEN,
-          },
-        }
-      );
-
+      // Escolher o endpoint correto com base no tipo
+      const endpoint =
+        type === "qemu"
+          ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`
+          : `${API_BASE_URL}/api2/json/nodes/${node}/lxc/${vmid}/snapshot`;
+  
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          Authorization: API_TOKEN,
+        },
+      });
+  
       if (!response.ok) {
         throw new Error(
           `Erro ao buscar snapshots: ${response.status} ${response.statusText}`
         );
       }
-
+  
       const data = await response.json();
-
+  
       const snapshots = (data.data || [])
         .filter((snap) => snap.name !== "current")
         .map((snap) => ({
@@ -112,13 +110,14 @@ const VmAutomation = () => {
           name: snap.name || "Sem Nome",
           description: snap.description || "Sem Descrição",
         }));
-
+  
       setSnapshotList(snapshots);
     } catch (error) {
       console.error("Erro ao buscar snapshots:", error);
       alert("Falha ao buscar snapshots. Verifique o console.");
     }
   };
+  
 
   const fetchSnapshotsForSelectedVMs = async () => {
     try {
@@ -630,9 +629,14 @@ const VmAutomation = () => {
               selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []}
               onSelectionModelChange={(ids) => {
                 const selectedId = ids[0];
-                const snapshot = snapshotList.find((snap) => snap.id === selectedId);
-                setSelectedSnapshot(snapshot);
+                const vm = vmList.find((vm) => vm.id === selectedId);
+                setSelectedVM(vm);
+                if (vm) {
+                  // Passar o tipo da VM para buscar snapshots
+                  fetchSnapshots(vm.id, vm.node, vm.type);
+                }
               }}
+              
             />
           </Box>
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
