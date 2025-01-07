@@ -38,9 +38,11 @@ const Dashboard = () => {
       return;
     }
 
+    const nodeName = process.env.REACT_APP_NODE_NAME;
+
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/cecpa/tasks`,
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/${nodeName}/tasks`,
         {
           method: "GET",
           headers: {
