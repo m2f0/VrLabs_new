@@ -80,13 +80,14 @@ const VmAutomation = () => {
   
 
   const fetchSnapshots = async (vmid, node, type) => {
-    try {
-      // Escolher o endpoint correto com base no tipo da VM
-      const endpoint =
-        type === "qemu"
-          ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`
-          : `${API_BASE_URL}/api2/json/nodes/${node}/lxc/${vmid}/snapshot`;
+    if (type !== "qemu") {
+      console.warn(`Snapshots não suportados para o tipo: ${type}`);
+      return;
+    }
   
+    const endpoint = `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`;
+  
+    try {
       const response = await fetch(endpoint, {
         method: "GET",
         headers: {
@@ -114,54 +115,62 @@ const VmAutomation = () => {
       setSnapshotList(snapshots);
     } catch (error) {
       console.error("Erro ao buscar snapshots:", error);
-      alert("Falha ao buscar snapshots. Verifique o console.");
     }
   };
+  
   
 
   const fetchSnapshotsForSelectedVMs = async () => {
     try {
-      const snapshots = await Promise.all(
+      // Buscar snapshots para cada VM selecionada
+      const snapshotResults = await Promise.all(
         selectedVMs.map(async (vm) => {
-          const endpoint =
-            vm.type === "qemu"
-              ? `${API_BASE_URL}/api2/json/nodes/${vm.node}/qemu/${vm.id}/snapshot`
-              : `${API_BASE_URL}/api2/json/nodes/${vm.node}/lxc/${vm.id}/snapshot`;
+          try {
+            // Determinar o endpoint com base no tipo da VM
+            const endpoint =
+              vm.type === "qemu"
+                ? `${API_BASE_URL}/api2/json/nodes/${vm.node}/qemu/${vm.id}/snapshot`
+                : `${API_BASE_URL}/api2/json/nodes/${vm.node}/lxc/${vm.id}/snapshot`;
   
-          const response = await fetch(endpoint, {
-            method: "GET",
-            headers: {
-              Authorization: API_TOKEN,
-            },
-          });
+            const response = await fetch(endpoint, {
+              method: "GET",
+              headers: {
+                Authorization: API_TOKEN,
+              },
+            });
   
-          if (!response.ok) {
-            throw new Error(
-              `Erro ao buscar snapshots para a VM ${vm.name}: ${response.statusText}`
-            );
+            if (!response.ok) {
+              console.warn(`Snapshots não disponíveis para VM ${vm.name}: ${response.statusText}`);
+              return { vmId: vm.id, snapshots: [] };
+            }
+  
+            const data = await response.json();
+            const snapshots = (data.data || [])
+              .filter((snap) => snap.name !== "current")
+              .map((snap) => ({
+                id: `${vm.id}-${snap.name}`,
+                vmId: vm.id,
+                vmName: vm.name,
+                name: snap.name,
+                description: snap.description || "Sem Descrição",
+              }));
+  
+            return { vmId: vm.id, snapshots };
+          } catch (error) {
+            console.error(`Erro ao buscar snapshots para VM ${vm.name}:`, error);
+            return { vmId: vm.id, snapshots: [] };
           }
-  
-          const data = await response.json();
-          return {
-            vmName: vm.name,
-            vmId: vm.id,
-            snapshots: data.data.map((snap) => ({
-              id: `${vm.id}-${snap.name}`,
-              vmId: vm.id,
-              vmName: vm.name,
-              name: snap.name || "Sem Nome",
-              description: snap.description || "Sem Descrição",
-            })),
-          };
         })
       );
   
-      setSnapshotsByVM(snapshots);
+      // Atualizar o estado agrupando os snapshots por VM
+      setSnapshotsByVM(snapshotResults);
     } catch (error) {
-      console.error("Erro ao buscar snapshots das VMs selecionadas:", error);
+      console.error("Erro ao buscar snapshots para VMs selecionadas:", error);
       alert("Erro ao buscar snapshots. Verifique os logs para mais detalhes.");
     }
   };
+  
   
   
   
@@ -578,15 +587,15 @@ const VmAutomation = () => {
   onSelectionModelChange={(ids) => {
     const selected = vmList.filter((vm) => ids.includes(vm.id));
     setSelectedVMs(selected);
-    // Atualizar snapshots ao selecionar VMs
-    selected.forEach((vm) => fetchSnapshots(vm.id, vm.node, vm.type));
+    fetchSnapshotsForSelectedVMs(); // Buscar snapshots para as VMs selecionadas
   }}
 />
+
 
     </Box>
   </Box>
 )}
-{activeTab === 1 && ( // Nova aba
+{activeTab === 1 && (
   <Box mt="20px">
     <Box
       height="150vh"
@@ -614,13 +623,13 @@ const VmAutomation = () => {
         2o. Passo: Selecione os snapshots das VMs selecionadas
       </h3>
       <DataGrid
-        rows={snapshotsByVM.flatMap((group) => group.snapshots)} // Lista de snapshots agrupados
+        rows={snapshotsByVM.flatMap((group) => group.snapshots)}
         columns={[
           { field: "vmName", headerName: "VM", width: 200 },
           { field: "name", headerName: "Snapshot", width: 200 },
           { field: "description", headerName: "Descrição", width: 300 },
         ]}
-        checkboxSelection // Permite múltiplos snapshots
+        checkboxSelection
         disableSelectionOnClick
         onSelectionModelChange={(ids) => {
           const selected = snapshotsByVM
@@ -630,32 +639,10 @@ const VmAutomation = () => {
           console.log("Snapshots selecionados:", selected);
         }}
       />
-    <Box mt="20px">
-      <Button
-        variant="contained"
-        sx={{
-          backgroundColor: colors.greenAccent[600],
-          color: "white",
-          fontWeight: "bold",
-          fontSize: "16px",
-          padding: "10px 20px",
-          "&:hover": { backgroundColor: colors.greenAccent[500] },
-        }}
-        onClick={() =>
-          alert(
-            `Snapshots selecionados: ${selectedSnapshots
-              .map((snap) => snap.name)
-              .join(", ")}`
-          )
-        }
-      >
-        Confirmar Seleção
-      </Button>
     </Box>
-    </Box>
-    
   </Box>
 )}
+
 
 
     </Box>
