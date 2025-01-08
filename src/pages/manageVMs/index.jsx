@@ -225,7 +225,8 @@ const connectVM = async (vmid, node, type) => {
     const { ticket: vncTicket, port } = vncProxyData.data;
 
     // Gerar URL do noVNC
-    const noVNCUrl =  `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${newVmId}&vmname=${linkedCloneName}&node=${node}&resize=off&cmd=`;
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&vmname=${vmid}-${node}-${type}&node=${node}&resize=off&cmd=`;
+
 
     // Atualizar o iframe com a URL gerada
     setIframeUrl(noVNCUrl);
