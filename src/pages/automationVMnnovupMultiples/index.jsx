@@ -54,56 +54,54 @@ const VmAutomation = () => {
           },
         }
       );
-
+  
       if (!response.ok) {
         throw new Error(
           `Erro na API do Proxmox: ${response.status} ${response.statusText}`
         );
       }
-
+  
       const data = await response.json();
-
+  
       const allVMs = (data.data || []).map((vm) => ({
         id: vm.vmid,
         name: vm.name || "Sem Nome",
         status: vm.status || "Indisponível",
         node: vm.node || "Indefinido",
+        type: vm.type || "qemu", // Adicionando o tipo (qemu ou lxc)
       }));
-
-      const normalVMs = allVMs.filter(
-        (vm) => vm.name && !vm.name.includes("CLONE")
-      );
-
-      const clones = allVMs.filter((vm) => vm.name && vm.name.includes("CLONE"));
-
-      setVmList(normalVMs);
-      setLinkedClones(clones);
+  
+      setVmList(allVMs);
     } catch (error) {
       console.error("Erro ao buscar lista de VMs:", error);
       alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
     }
   };
+  
 
-  const fetchSnapshots = async (vmid, node) => {
+  const fetchSnapshots = async (vmid, node, type) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: API_TOKEN,
-          },
-        }
-      );
-
+      // Escolher o endpoint correto com base no tipo da VM
+      const endpoint =
+        type === "qemu"
+          ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`
+          : `${API_BASE_URL}/api2/json/nodes/${node}/lxc/${vmid}/snapshot`;
+  
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          Authorization: API_TOKEN,
+        },
+      });
+  
       if (!response.ok) {
         throw new Error(
           `Erro ao buscar snapshots: ${response.status} ${response.statusText}`
         );
       }
-
+  
       const data = await response.json();
-
+  
       const snapshots = (data.data || [])
         .filter((snap) => snap.name !== "current")
         .map((snap) => ({
@@ -112,27 +110,30 @@ const VmAutomation = () => {
           name: snap.name || "Sem Nome",
           description: snap.description || "Sem Descrição",
         }));
-
+  
       setSnapshotList(snapshots);
     } catch (error) {
       console.error("Erro ao buscar snapshots:", error);
       alert("Falha ao buscar snapshots. Verifique o console.");
     }
   };
+  
 
   const fetchSnapshotsForSelectedVMs = async () => {
     try {
       const snapshots = await Promise.all(
         selectedVMs.map(async (vm) => {
-          const response = await fetch(
-            `${API_BASE_URL}/api2/json/nodes/${vm.node}/qemu/${vm.id}/snapshot`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: API_TOKEN,
-              },
-            }
-          );
+          const endpoint =
+            vm.type === "qemu"
+              ? `${API_BASE_URL}/api2/json/nodes/${vm.node}/qemu/${vm.id}/snapshot`
+              : `${API_BASE_URL}/api2/json/nodes/${vm.node}/lxc/${vm.id}/snapshot`;
+  
+          const response = await fetch(endpoint, {
+            method: "GET",
+            headers: {
+              Authorization: API_TOKEN,
+            },
+          });
   
           if (!response.ok) {
             throw new Error(
@@ -161,6 +162,7 @@ const VmAutomation = () => {
       alert("Erro ao buscar snapshots. Verifique os logs para mais detalhes.");
     }
   };
+  
   
   
 
@@ -565,20 +567,22 @@ const VmAutomation = () => {
         1o. Passo: Selecione uma ou mais VMs
       </h3>
       <DataGrid
-        rows={vmList}
-        columns={[
-          { field: "id", headerName: "VM ID", width: 100 },
-          { field: "name", headerName: "Nome", width: 200 },
-          { field: "status", headerName: "Status", width: 120 },
-        ]}
-        checkboxSelection // Permite seleção múltipla
-        disableSelectionOnClick
-        onSelectionModelChange={(ids) => {
-          const selected = vmList.filter((vm) => ids.includes(vm.id));
-          setSelectedVMs(selected);
-          console.log("VMs selecionadas:", selected);
-        }}
-      />
+  rows={vmList}
+  columns={[
+    { field: "id", headerName: "VM ID", width: 100 },
+    { field: "name", headerName: "Nome", width: 200 },
+    { field: "status", headerName: "Status", width: 120 },
+  ]}
+  checkboxSelection
+  disableSelectionOnClick
+  onSelectionModelChange={(ids) => {
+    const selected = vmList.filter((vm) => ids.includes(vm.id));
+    setSelectedVMs(selected);
+    // Atualizar snapshots ao selecionar VMs
+    selected.forEach((vm) => fetchSnapshots(vm.id, vm.node, vm.type));
+  }}
+/>
+
     </Box>
   </Box>
 )}
