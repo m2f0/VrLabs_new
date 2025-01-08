@@ -190,7 +190,7 @@ const deleteVM = async (vmid, node) => {
 };
 
 
-const connectVM = async (vmid, node) => {
+const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
@@ -201,16 +201,19 @@ const connectVM = async (vmid, node) => {
     // Configurar o cookie para autenticação no Proxmox
     document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
 
+    // Escolher o endpoint correto com base no tipo da VM
+    const endpoint =
+      type === "qemu"
+        ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`
+        : `${API_BASE_URL}/api2/json/nodes/${node}/lxc/${vmid}/vncproxy`;
+
     // Fazer requisição ao endpoint VNC proxy para obter o ticket VNC
-    const vncProxyResponse = await fetch(
-      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: API_TOKEN,
-        },
-      }
-    );
+    const vncProxyResponse = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: API_TOKEN,
+      },
+    });
 
     if (!vncProxyResponse.ok) {
       throw new Error(
@@ -222,7 +225,7 @@ const connectVM = async (vmid, node) => {
     const { ticket: vncTicket, port } = vncProxyData.data;
 
     // Gerar URL do noVNC
-    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=1&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
+    const noVNCUrl = `${API_BASE_URL}/?console=${type}&novnc=1&node=${node}&resize=1&vmid=${vmid}&path=api2/json/nodes/${node}/${type}/${vmid}/vncwebsocket&port=${port}&ticket=${encodeURIComponent(vncTicket)}`;
 
     // Atualizar o iframe com a URL gerada
     setIframeUrl(noVNCUrl);
@@ -233,6 +236,7 @@ const connectVM = async (vmid, node) => {
     alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
 
 const createSnapshot = async (vmid, node, type) => {
   try {
@@ -310,12 +314,13 @@ const createSnapshot = async (vmid, node, type) => {
             Parar
           </Button>
           <Button
-            variant="contained"
-            color="info"
-            onClick={() => connectVM(row.id, row.node)}
-          >
-            Conectar
-          </Button>
+  variant="contained"
+  color="info"
+  onClick={() => connectVM(row.id, row.node, row.type)} // Passar o tipo correto
+>
+  Conectar
+</Button>
+
           <Button
   variant="contained"
   style={{ backgroundColor: "orange", color: "white" }}
