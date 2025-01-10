@@ -277,6 +277,7 @@ const createSnapshot = async (vmid, node, type) => {
     { field: "name", headerName: "Nome", width: 200 },
     { field: "status", headerName: "Status", width: 150 },
     { field: "node", headerName: "Node", width: 150 },
+    { field: "type", headerName: "Tipo", width: 150 },
     {
       field: "actions",
       headerName: "Ações",
