@@ -80,8 +80,13 @@ const VmAutomation = () => {
   
 
   const fetchSnapshots = async (vmid, node, type) => {
+    if (!type || (type !== "qemu" && type !== "lxc")) {
+      console.error("Tipo de VM inválido ou não especificado:", type);
+      alert("Erro: Tipo de VM inválido ou não especificado.");
+      return;
+    }
+  
     try {
-      // Escolher o endpoint correto com base no tipo
       const endpoint =
         type === "qemu"
           ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`
@@ -101,7 +106,6 @@ const VmAutomation = () => {
       }
   
       const data = await response.json();
-  
       const snapshots = (data.data || [])
         .filter((snap) => snap.name !== "current")
         .map((snap) => ({
@@ -123,15 +127,17 @@ const VmAutomation = () => {
     try {
       const snapshots = await Promise.all(
         selectedVMs.map(async (vm) => {
-          const response = await fetch(
-            `${API_BASE_URL}/api2/json/nodes/${vm.node}/qemu/${vm.id}/snapshot`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: API_TOKEN,
-              },
-            }
-          );
+          const endpoint =
+            vm.type === "qemu"
+              ? `${API_BASE_URL}/api2/json/nodes/${vm.node}/qemu/${vm.id}/snapshot`
+              : `${API_BASE_URL}/api2/json/nodes/${vm.node}/lxc/${vm.id}/snapshot`;
+  
+          const response = await fetch(endpoint, {
+            method: "GET",
+            headers: {
+              Authorization: API_TOKEN,
+            },
+          });
   
           if (!response.ok) {
             throw new Error(
@@ -143,13 +149,15 @@ const VmAutomation = () => {
           return {
             vmName: vm.name,
             vmId: vm.id,
-            snapshots: data.data.map((snap) => ({
-              id: `${vm.id}-${snap.name}`,
-              vmId: vm.id,
-              vmName: vm.name,
-              name: snap.name || "Sem Nome",
-              description: snap.description || "Sem Descrição",
-            })),
+            snapshots: data.data
+              .filter((snap) => snap.name !== "current")
+              .map((snap) => ({
+                id: `${vm.id}-${snap.name}`,
+                vmId: vm.id,
+                vmName: vm.name,
+                name: snap.name || "Sem Nome",
+                description: snap.description || "Sem Descrição",
+              })),
           };
         })
       );
@@ -160,6 +168,10 @@ const VmAutomation = () => {
       alert("Erro ao buscar snapshots. Verifique os logs para mais detalhes.");
     }
   };
+  
+  
+
+  
   
   
 
@@ -580,7 +592,7 @@ const VmAutomation = () => {
                 const vm = vmList.find((vm) => vm.id === selectedId);
                 setSelectedVM(vm);
                 if (vm) {
-                  fetchSnapshots(vm.id, vm.node);
+                  fetchSnapshots(vm.id, vm.node, vm.type);
                 }
               }}
             />
