@@ -107,60 +107,45 @@ const Team = () => {
   };
 
   // Função para renovar o ticket
-const renewTicket = async () => {
-  console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
-
-  const username = process.env.REACT_APP_API_USERNAME;
-  const password = process.env.REACT_APP_API_PASSWORD;
-
-  console.log("[renewTicket] Username:", username);
-  console.log("[renewTicket] Password:", password ? "******" : "Não fornecida");
-
-  if (!username || !password) {
-    console.error("[renewTicket] Credenciais de autenticação não configuradas corretamente.");
-    throw new Error("Credenciais ausentes para autenticação.");
-  }
-
-  try {
-    console.log("[renewTicket] Fazendo a requisição para o endpoint de autenticação...");
-
-    const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
-      {
+  const renewTicket = async () => {
+    console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
+  
+    const username = process.env.REACT_APP_API_USERNAME;
+    const password = process.env.REACT_APP_API_PASSWORD;
+  
+    if (!username || !password) {
+      console.error("[renewTicket] Credenciais de autenticação ausentes.");
+      throw new Error("Credenciais de autenticação não configuradas.");
+    }
+  
+    try {
+      const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({
-          username,
-          password,
-        }),
+        body: new URLSearchParams({ username, password }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`[renewTicket] Erro ao renovar o ticket: ${response.status} ${response.statusText}`);
       }
-    );
-
-    console.log("[renewTicket] Status da resposta:", response.status);
-
-    if (!response.ok) {
-      throw new Error(`[renewTicket] Erro ao renovar o ticket: ${response.status} ${response.statusText}`);
+  
+      const data = await response.json();
+      const { ticket, CSRFPreventionToken } = data.data;
+  
+      const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
+  
+      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.${domain}`;
+      console.log(`[renewTicket] Cookie configurado para o domínio: .${domain}`);
+  
+      return { ticket, CSRFPreventionToken };
+    } catch (error) {
+      console.error("[renewTicket] Erro:", error);
+      throw error;
     }
-
-    const data = await response.json();
-    console.log("[renewTicket] Dados recebidos:", data);
-
-    const { ticket, CSRFPreventionToken } = data.data;
-
-    // Configurar o cookie do PVEAuthCookie
-    document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
-
-    console.log("[renewTicket] Ticket renovado com sucesso:", ticket);
-    console.log("[renewTicket] CSRFPreventionToken recebido:", CSRFPreventionToken);
-
-    return { ticket, CSRFPreventionToken };
-  } catch (error) {
-    console.error("[renewTicket] Erro ao renovar o ticket:", error);
-    throw new Error("[renewTicket] Falha ao renovar o ticket de autenticação.");
-  }
-};
+  };
+  
 
 // Função para excluir uma VM
 const deleteVM = async (vmid, node) => {
@@ -193,50 +178,47 @@ const deleteVM = async (vmid, node) => {
 const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
+  if (!type) {
+    console.error("[connectVM] Tipo da VM não fornecido ou inválido.");
+    alert("Erro: Tipo de VM inválido para conexão.");
+    return;
+  }
+
   try {
-    // Renovar o ticket antes de conectar
-    const { ticket: authTicket } = await renewTicket();
-    console.log("[connectVM] Ticket renovado:", authTicket);
+    const { ticket: authTicket, CSRFPreventionToken } = await renewTicket();
 
-    // Configurar o cookie para autenticação no Proxmox
-    document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+    const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
+    document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.${domain}`;
 
-    // Escolher o endpoint correto com base no tipo da VM
     const endpoint =
       type === "qemu"
         ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`
         : `${API_BASE_URL}/api2/json/nodes/${node}/lxc/${vmid}/vncproxy`;
 
-    // Fazer requisição ao endpoint VNC proxy para obter o ticket VNC
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
         Authorization: API_TOKEN,
+        "CSRFPreventionToken": CSRFPreventionToken,
       },
     });
 
     if (!vncProxyResponse.ok) {
-      throw new Error(
-        `Erro ao obter informações do console VNC: ${vncProxyResponse.status} ${vncProxyResponse.statusText}`
-      );
+      throw new Error(`[connectVM] Erro ao obter VNC proxy: ${vncProxyResponse.status} ${vncProxyResponse.statusText}`);
     }
 
-    const vncProxyData = await vncProxyResponse.json();
-    const { ticket: vncTicket, port } = vncProxyData.data;
+    const { ticket: vncTicket, port } = (await vncProxyResponse.json()).data;
 
-    // Gerar URL do noVNC
     const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&vmname=${vmid}-${node}-${type}&node=${node}&resize=off&cmd=`;
 
-
-    // Atualizar o iframe com a URL gerada
     setIframeUrl(noVNCUrl);
-    console.log("[connectVM] Conexão ao noVNC configurada para VM:", vmid);
-    console.log("[connectVM] URL gerada:", noVNCUrl);
+    console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
   } catch (error) {
-    console.error(`[connectVM] Erro ao conectar à VM ${vmid}:`, error);
+    console.error(`[connectVM] Falha ao conectar à VM ${vmid}:`, error);
     alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
 
 
 const createSnapshot = async (vmid, node, type) => {
