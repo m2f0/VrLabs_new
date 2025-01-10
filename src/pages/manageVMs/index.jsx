@@ -136,6 +136,7 @@ const Team = () => {
   
       const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
   
+      // Configurar o cookie dinamicamente
       document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.${domain}`;
       console.log(`[renewTicket] Cookie configurado para o domínio: .${domain}`);
   
@@ -145,6 +146,7 @@ const Team = () => {
       throw error;
     }
   };
+  
   
 
 // Função para excluir uma VM
@@ -218,6 +220,7 @@ const connectVM = async (vmid, node, type) => {
     alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
 
 
 
