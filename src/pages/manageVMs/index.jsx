@@ -134,10 +134,9 @@ const Team = () => {
       const data = await response.json();
       const { ticket, CSRFPreventionToken } = data.data;
   
+      // Configura o cookie PVEAuthCookie
       const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
-  
-      // Configurar o cookie dinamicamente
-      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.${domain}`;
+      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=${domain}`;
       console.log(`[renewTicket] Cookie configurado para o domínio: .${domain}`);
   
       return { ticket, CSRFPreventionToken };
@@ -146,6 +145,7 @@ const Team = () => {
       throw error;
     }
   };
+  
   
   
 
@@ -187,10 +187,8 @@ const connectVM = async (vmid, node, type) => {
   }
 
   try {
+    // Obtém o ticket e CSRFPreventionToken
     const { ticket: authTicket, CSRFPreventionToken } = await renewTicket();
-
-    const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
-    document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.${domain}`;
 
     const endpoint =
       type === "qemu"
@@ -211,15 +209,17 @@ const connectVM = async (vmid, node, type) => {
 
     const { ticket: vncTicket, port } = (await vncProxyResponse.json()).data;
 
-    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&vmname=${vmid}-${node}-${type}&node=${node}&resize=off&cmd=`;
-
+    // Gera a URL para o noVNC
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=off&port=${port}&vncticket=${vncTicket}`;
     setIframeUrl(noVNCUrl);
+
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
   } catch (error) {
     console.error(`[connectVM] Falha ao conectar à VM ${vmid}:`, error);
     alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
 
 
 
