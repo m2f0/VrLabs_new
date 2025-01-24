@@ -183,48 +183,36 @@ const deleteVM = async (vmid, node) => {
 const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
-  if (!type) {
-    console.error("[connectVM] Tipo da VM não fornecido ou inválido.");
-    alert("Erro: Tipo de VM inválido para conexão.");
-    return;
-  }
-
   try {
-    // Obtém o ticket e CSRFPreventionToken
-    const { ticket: authTicket, CSRFPreventionToken } = await renewTicket();
-
-    const endpoint =
-      type === "qemu"
-        ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`
-        : `${API_BASE_URL}/api2/json/nodes/${node}/lxc/${vmid}/vncproxy`;
+    const endpoint = `${API_BASE_URL}/api2/json/nodes/${node}/${type}/${vmid}/vncproxy`;
 
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
-        // Formato correto para o cabeçalho Authorization
         Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN}`,
-        "CSRFPreventionToken": CSRFPreventionToken,
+        "CSRFPreventionToken": "<seu-token-CSRF>",
         "Content-Type": "application/json",
       },
-      credentials: "include", // Inclui cookies na requisição
+      credentials: "include",
     });
 
     if (!vncProxyResponse.ok) {
-      throw new Error(`[connectVM] Erro ao obter VNC proxy: ${vncProxyResponse.status} ${vncProxyResponse.statusText}`);
+      throw new Error(`[connectVM] Erro ao obter VNC proxy: ${vncProxyResponse.status}`);
     }
 
     const { ticket: vncTicket, port } = (await vncProxyResponse.json()).data;
 
     // Gera a URL para o noVNC
     const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=off&port=${port}&vncticket=${vncTicket}`;
-    setIframeUrl(noVNCUrl);
-
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
+
+    setIframeUrl(noVNCUrl);
   } catch (error) {
-    console.error(`[connectVM] Falha ao conectar à VM ${vmid}:`, error);
-    alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
+    console.error("[connectVM] Erro ao conectar à VM:", error);
+    alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
