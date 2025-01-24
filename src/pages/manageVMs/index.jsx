@@ -206,7 +206,7 @@ const connectVM = async (vmid, node, type) => {
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `PVEAPIToken=apiuser@pve!apitoken=${process.env.REACT_APP_API_TOKEN}`, // Ajuste conforme necessário
+        Authorization: `PVEAPIToken=apiuser@pve!apitoken=${process.env.REACT_APP_API_TOKEN}`, // Token formatado corretamente
         "CSRFPreventionToken": CSRFPreventionToken,
       },
       credentials: "include", // Inclui cookies na requisição
@@ -240,6 +240,7 @@ const connectVM = async (vmid, node, type) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
