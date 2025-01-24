@@ -198,10 +198,10 @@ const connectVM = async (vmid, node, type) => {
         ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`
         : `${API_BASE_URL}/api2/json/nodes/${node}/lxc/${vmid}/vncproxy`;
 
-    // Configura o cabeçalho de autenticação
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
+        // Formato correto para o cabeçalho Authorization
         Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN}`,
         "CSRFPreventionToken": CSRFPreventionToken,
         "Content-Type": "application/json",
@@ -225,6 +225,7 @@ const connectVM = async (vmid, node, type) => {
     alert(`[connectVM] Falha ao conectar à VM ${vmid}. Verifique o console para mais detalhes.`);
   }
 };
+
 
 
 
