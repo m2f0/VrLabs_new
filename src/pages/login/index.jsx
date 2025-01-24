@@ -20,30 +20,37 @@ const Login = () => {
     e.preventDefault();
 
     try {
+      console.log("Iniciando login...");
+      console.log("URL de login:", process.env.REACT_APP_API_LOGIN_URL);
+
+      // Adiciona o realm (@pve) ao usuário
+      const userWithRealm = `${username}${process.env.REACT_APP_USER_REALM}`;
+      console.log("Usuário com realm:", userWithRealm);
+
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-          username: `${username}${process.env.REACT_APP_USER_REALM}`,
-          password: encodeURIComponent(password), // Codifica a senha
+          username: userWithRealm, // Inclui o realm no username
+          password: password,
         }).toString(),
-        credentials: "include", // Inclui os cookies no request
+        credentials: "include", // Inclui cookies nas requisições
       });
 
       if (response.ok) {
         const data = await response.json();
 
-        // Validação: Verificar se o ticket e o CSRF token estão presentes
+        // Valida se o ticket e o CSRFPreventionToken foram recebidos
         if (data.data.ticket && data.data.CSRFPreventionToken) {
           console.log("Login bem-sucedido.");
           console.log("Ticket recebido:", data.data.ticket);
           console.log("CSRFPreventionToken recebido:", data.data.CSRFPreventionToken);
 
-          // Armazenar ticket e CSRFPreventionToken no localStorage
+          // Armazenar o ticket e o CSRF token no localStorage
           localStorage.setItem("proxmoxToken", data.data.ticket);
           localStorage.setItem("proxmoxCSRF", data.data.CSRFPreventionToken);
 
-          // Configurar o cookie PVEAuthCookie com o ticket
+          // Configurar o cookie PVEAuthCookie
           const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
           document.cookie = `PVEAuthCookie=${data.data.ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
 
