@@ -206,7 +206,7 @@ const connectVM = async (vmid, node, type) => {
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `PVEAPIToken=apiuser@pve!apitoken=${process.env.REACT_APP_API_TOKEN}`, // Corrigido o formato do token
+        Authorization: `PVEAPIToken=apiuser@pve!apitoken=2eb0d758-597d-4973-b81d-09fa29cb8514`, // Corrigido o formato do token
         "CSRFPreventionToken": CSRFPreventionToken,
       },
       credentials: "include", // Inclui cookies na requisição
