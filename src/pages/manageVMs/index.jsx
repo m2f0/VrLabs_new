@@ -180,38 +180,53 @@ const deleteVM = async (vmid, node) => {
 
 
 // Função para conectar a uma VM (atualizada)
+// Função para conectar a uma VM (corrigida)
 const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
+  if (!type) {
+    console.error("[connectVM] Tipo da VM não fornecido ou inválido.");
+    alert("Erro: Tipo de VM inválido para conexão.");
+    return;
+  }
+
   try {
+    // Renova o ticket e obtém o CSRFPreventionToken
+    const { CSRFPreventionToken } = await renewTicket();
+
+    // Define o endpoint para a conexão noVNC
     const endpoint = `${API_BASE_URL}/api2/json/nodes/${node}/${type}/${vmid}/vncproxy`;
 
+    // Faz a requisição para obter o proxy VNC
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN}`,
-        "CSRFPreventionToken": "<seu-token-CSRF>",
+        Authorization: `PVEAPIToken=${API_TOKEN}`, // Certifique-se de que o token está correto
+        "CSRFPreventionToken": CSRFPreventionToken, // Token retornado da função renewTicket
         "Content-Type": "application/json",
       },
-      credentials: "include",
+      credentials: "include", // Inclui cookies na requisição
     });
 
     if (!vncProxyResponse.ok) {
       throw new Error(`[connectVM] Erro ao obter VNC proxy: ${vncProxyResponse.status}`);
     }
 
+    // Processa a resposta
     const { ticket: vncTicket, port } = (await vncProxyResponse.json()).data;
 
     // Gera a URL para o noVNC
     const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=off&port=${port}&vncticket=${vncTicket}`;
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
 
+    // Define a URL no iframe
     setIframeUrl(noVNCUrl);
   } catch (error) {
     console.error("[connectVM] Erro ao conectar à VM:", error);
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
