@@ -201,31 +201,30 @@ const connectVM = async (vmid, node, type) => {
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `PVEAPIToken=${API_TOKEN}`, // Certifique-se de que o token está correto
-        "CSRFPreventionToken": CSRFPreventionToken, // Token retornado da função renewTicket
+        Authorization: API_TOKEN, // Certifique-se de usar a variável do .env
+        "CSRFPreventionToken": CSRFPreventionToken, // Token renovado
         "Content-Type": "application/json",
       },
-      credentials: "include", // Inclui cookies na requisição
+      credentials: "include",
     });
 
     if (!vncProxyResponse.ok) {
       throw new Error(`[connectVM] Erro ao obter VNC proxy: ${vncProxyResponse.status}`);
     }
 
-    // Processa a resposta
     const { ticket: vncTicket, port } = (await vncProxyResponse.json()).data;
 
     // Gera a URL para o noVNC
     const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=off&port=${port}&vncticket=${vncTicket}`;
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
 
-    // Define a URL no iframe
     setIframeUrl(noVNCUrl);
   } catch (error) {
     console.error("[connectVM] Erro ao conectar à VM:", error);
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
