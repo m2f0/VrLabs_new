@@ -23,6 +23,13 @@ const Login = () => {
       console.log("Iniciando login...");
       console.log("URL de login:", process.env.REACT_APP_API_LOGIN_URL);
 
+      // Verifica se as variáveis de ambiente necessárias estão definidas
+      if (!process.env.REACT_APP_API_LOGIN_URL || !process.env.REACT_APP_USER_REALM) {
+        console.error("Erro: Variáveis de ambiente ausentes.");
+        setError("Erro interno: Configuração inválida.");
+        return;
+      }
+
       // Adiciona o realm (@pve) ao usuário
       const userWithRealm = `${username}${process.env.REACT_APP_USER_REALM}`;
       console.log("Usuário com realm:", userWithRealm);
@@ -31,28 +38,31 @@ const Login = () => {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-          username: userWithRealm, // Inclui o realm no username
+          username: userWithRealm,
           password: password,
         }).toString(),
         credentials: "include", // Inclui cookies nas requisições
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      // Captura a resposta completa para depuração
+      const responseData = await response.json();
+      console.log("Resposta do servidor:", responseData);
 
+      if (response.ok) {
         // Valida se o ticket e o CSRFPreventionToken foram recebidos
-        if (data.data.ticket && data.data.CSRFPreventionToken) {
+        if (responseData.data.ticket && responseData.data.CSRFPreventionToken) {
           console.log("Login bem-sucedido.");
-          console.log("Ticket recebido:", data.data.ticket);
-          console.log("CSRFPreventionToken recebido:", data.data.CSRFPreventionToken);
+          console.log("Ticket recebido:", responseData.data.ticket);
+          console.log("CSRFPreventionToken recebido:", responseData.data.CSRFPreventionToken);
 
           // Armazenar o ticket e o CSRF token no localStorage
-          localStorage.setItem("proxmoxToken", data.data.ticket);
-          localStorage.setItem("proxmoxCSRF", data.data.CSRFPreventionToken);
+          localStorage.setItem("proxmoxToken", responseData.data.ticket);
+          localStorage.setItem("proxmoxCSRF", responseData.data.CSRFPreventionToken);
 
           // Configurar o cookie PVEAuthCookie
           const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
-          document.cookie = `PVEAuthCookie=${data.data.ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+          document.cookie = `PVEAuthCookie=${responseData.data.ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+          console.log("Cookie PVEAuthCookie configurado para o domínio:", domain);
 
           // Redirecionar para o dashboard
           navigate("/");
@@ -62,7 +72,7 @@ const Login = () => {
         }
       } else {
         setError("Usuário ou senha inválidos. Por favor, tente novamente.");
-        console.error("Erro no login:", response.status, response.statusText);
+        console.error("Erro no login:", response.status, response.statusText, responseData);
       }
     } catch (err) {
       setError("Um erro ocorreu. Por favor, tente novamente mais tarde.");
