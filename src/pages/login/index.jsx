@@ -27,23 +27,39 @@ const Login = () => {
           username: `${username}${process.env.REACT_APP_USER_REALM}`,
           password: encodeURIComponent(password), // Codifica a senha
         }).toString(),
-        credentials: "include",
+        credentials: "include", // Inclui os cookies no request
       });
 
       if (response.ok) {
         const data = await response.json();
 
-        // Armazene o ticket e o CSRF token no localStorage
-        localStorage.setItem("proxmoxToken", data.data.ticket);
-        localStorage.setItem("proxmoxCSRF", data.data.CSRFPreventionToken);
-        document.cookie = `PVEAuthCookie=${data.data.ticket}; Path=/; Secure; SameSite=Strict;`;
+        // Validação: Verificar se o ticket e o CSRF token estão presentes
+        if (data.data.ticket && data.data.CSRFPreventionToken) {
+          console.log("Login bem-sucedido.");
+          console.log("Ticket recebido:", data.data.ticket);
+          console.log("CSRFPreventionToken recebido:", data.data.CSRFPreventionToken);
 
-        navigate("/"); // Redirecione para o dashboard
+          // Armazenar ticket e CSRFPreventionToken no localStorage
+          localStorage.setItem("proxmoxToken", data.data.ticket);
+          localStorage.setItem("proxmoxCSRF", data.data.CSRFPreventionToken);
+
+          // Configurar o cookie PVEAuthCookie com o ticket
+          const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
+          document.cookie = `PVEAuthCookie=${data.data.ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+
+          // Redirecionar para o dashboard
+          navigate("/");
+        } else {
+          setError("Erro: Ticket ou CSRF token não foram recebidos.");
+          console.error("Erro: Ticket ou CSRFPreventionToken ausente na resposta.");
+        }
       } else {
         setError("Usuário ou senha inválidos. Por favor, tente novamente.");
+        console.error("Erro no login:", response.status, response.statusText);
       }
     } catch (err) {
       setError("Um erro ocorreu. Por favor, tente novamente mais tarde.");
+      console.error("Erro ao realizar o login:", err);
     }
   };
 
@@ -58,10 +74,19 @@ const Login = () => {
         >
           Login
         </Typography>
-        <Typography variant="body1" align="center" color="textSecondary" gutterBottom>
+        <Typography
+          variant="body1"
+          align="center"
+          color="textSecondary"
+          gutterBottom
+        >
           Entre com seus dados para acessar o sistema.
         </Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         <form onSubmit={handleLogin}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
