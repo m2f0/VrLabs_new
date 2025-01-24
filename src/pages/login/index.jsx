@@ -20,19 +20,19 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      console.log("Iniciando login...");
-      console.log("URL de login:", process.env.REACT_APP_API_LOGIN_URL);
+      console.log("[Login] Iniciando processo de autenticação...");
+      console.log("[Login] URL de login:", process.env.REACT_APP_API_LOGIN_URL);
 
-      // Verifica se as variáveis de ambiente necessárias estão definidas
+      // Verifica se as variáveis de ambiente estão configuradas
       if (!process.env.REACT_APP_API_LOGIN_URL || !process.env.REACT_APP_USER_REALM) {
-        console.error("Erro: Variáveis de ambiente ausentes.");
+        console.error("[Login] Variáveis de ambiente ausentes.");
         setError("Erro interno: Configuração inválida.");
         return;
       }
 
       // Adiciona o realm (@pve) ao usuário
       const userWithRealm = `${username}${process.env.REACT_APP_USER_REALM}`;
-      console.log("Usuário com realm:", userWithRealm);
+      console.log("[Login] Usuário com realm:", userWithRealm);
 
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
         method: "POST",
@@ -41,42 +41,43 @@ const Login = () => {
           username: userWithRealm,
           password: password,
         }).toString(),
-        credentials: "include", // Inclui cookies nas requisições
+        credentials: "include", // Inclui cookies na requisição
       });
 
       // Captura a resposta completa para depuração
       const responseData = await response.json();
-      console.log("Resposta do servidor:", responseData);
+      console.log("[Login] Resposta do servidor:", responseData);
 
-      if (response.ok) {
-        // Valida se o ticket e o CSRFPreventionToken foram recebidos
-        if (responseData.data.ticket && responseData.data.CSRFPreventionToken) {
-          console.log("Login bem-sucedido.");
-          console.log("Ticket recebido:", responseData.data.ticket);
-          console.log("CSRFPreventionToken recebido:", responseData.data.CSRFPreventionToken);
+      if (response.ok && responseData.data) {
+        const { ticket, CSRFPreventionToken } = responseData.data;
+
+        if (ticket && CSRFPreventionToken) {
+          console.log("[Login] Login bem-sucedido.");
+          console.log("[Login] Ticket recebido:", ticket);
+          console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
 
           // Armazenar o ticket e o CSRF token no localStorage
-          localStorage.setItem("proxmoxToken", responseData.data.ticket);
-          localStorage.setItem("proxmoxCSRF", responseData.data.CSRFPreventionToken);
+          localStorage.setItem("proxmoxToken", ticket);
+          localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
 
           // Configurar o cookie PVEAuthCookie
           const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
-          document.cookie = `PVEAuthCookie=${responseData.data.ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
-          console.log("Cookie PVEAuthCookie configurado para o domínio:", domain);
+          document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+          console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
 
           // Redirecionar para o dashboard
           navigate("/");
         } else {
-          setError("Erro: Ticket ou CSRF token não foram recebidos.");
-          console.error("Erro: Ticket ou CSRFPreventionToken ausente na resposta.");
+          setError("[Login] Erro: Ticket ou CSRF token não foram recebidos.");
+          console.error("[Login] Erro: Ticket ou CSRFPreventionToken ausente na resposta.");
         }
       } else {
-        setError("Usuário ou senha inválidos. Por favor, tente novamente.");
-        console.error("Erro no login:", response.status, response.statusText, responseData);
+        setError("[Login] Usuário ou senha inválidos. Por favor, tente novamente.");
+        console.error("[Login] Erro no login:", response.status, response.statusText, responseData);
       }
     } catch (err) {
-      setError("Um erro ocorreu. Por favor, tente novamente mais tarde.");
-      console.error("Erro ao realizar o login:", err);
+      setError("[Login] Um erro ocorreu. Por favor, tente novamente mais tarde.");
+      console.error("[Login] Erro ao realizar o login:", err);
     }
   };
 
