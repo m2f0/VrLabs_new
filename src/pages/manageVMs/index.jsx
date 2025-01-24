@@ -110,7 +110,7 @@ const Team = () => {
   const renewTicket = async () => {
     console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
   
-    const username = process.env.REACT_APP_API_USERNAME;
+    const username = process.env.REACT_APP_API_USERNAME; // Usuário logado
     const password = process.env.REACT_APP_API_PASSWORD;
   
     if (!username || !password) {
@@ -121,9 +121,7 @@ const Team = () => {
     try {
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ username, password }),
         credentials: "include", // Inclui cookies na requisição
       });
@@ -135,18 +133,19 @@ const Team = () => {
       const data = await response.json();
       const { ticket, CSRFPreventionToken } = data.data;
   
-      // Configura o cookie PVEAuthCookie
+      // Armazena o cookie do usuário logado
       const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
-      document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=${domain}`;
-      console.log(`[renewTicket] Cookie configurado para o domínio: .${domain}`);
+      document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=Strict; Domain=${domain}`;
+      console.log("[renewTicket] Ticket armazenado no cookie:", ticket);
   
-      // Retorna o ticket e o CSRFPreventionToken
+      // Retorna o CSRFPreventionToken para uso
       return { ticket, CSRFPreventionToken };
     } catch (error) {
-      console.error("[renewTicket] Erro:", error);
+      console.error("[renewTicket] Erro ao renovar o ticket:", error);
       throw error;
     }
   };
+  
   
   
   
@@ -207,7 +206,7 @@ const connectVM = async (vmid, node, type) => {
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: "PVEAPIToken=apiuser@pve!apitoken=2eb0d758-597d-4973-b81d-09fa29cb8514", // Enviando o token completo do .env
+        Authorization: `PVEAPIToken=apiuser@pve!apitoken=${process.env.REACT_APP_API_TOKEN}`, // Ajuste conforme necessário
         "CSRFPreventionToken": CSRFPreventionToken,
       },
       credentials: "include", // Inclui cookies na requisição
@@ -241,6 +240,7 @@ const connectVM = async (vmid, node, type) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
