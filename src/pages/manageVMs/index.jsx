@@ -125,6 +125,7 @@ const Team = () => {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({ username, password }),
+        credentials: "include", // Inclui cookies na requisição
       });
   
       if (!response.ok) {
@@ -139,6 +140,7 @@ const Team = () => {
       document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=${domain}`;
       console.log(`[renewTicket] Cookie configurado para o domínio: .${domain}`);
   
+      // Retorna o ticket e o CSRFPreventionToken
       return { ticket, CSRFPreventionToken };
     } catch (error) {
       console.error("[renewTicket] Erro:", error);
@@ -177,6 +179,7 @@ const deleteVM = async (vmid, node) => {
 };
 
 
+// Função para conectar a uma VM (atualizada)
 const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
@@ -195,12 +198,15 @@ const connectVM = async (vmid, node, type) => {
         ? `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`
         : `${API_BASE_URL}/api2/json/nodes/${node}/lxc/${vmid}/vncproxy`;
 
+    // Configura o cabeçalho de autenticação
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: API_TOKEN,
+        Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN}`,
         "CSRFPreventionToken": CSRFPreventionToken,
+        "Content-Type": "application/json",
       },
+      credentials: "include", // Inclui cookies na requisição
     });
 
     if (!vncProxyResponse.ok) {
