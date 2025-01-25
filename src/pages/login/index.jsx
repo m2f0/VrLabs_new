@@ -59,12 +59,15 @@ const Login = () => {
           console.log("[Login] Ticket recebido:", ticket);
           console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
 
-          // Configurar o cookie PVEAuthCookie
           const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
+
+          // Formate o cookie corretamente
           document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=.${domain};`;
-          console.log("[Debug] Cookies atuais:", document.cookie);
 
+          // Debug adicional
+          console.log("[Debug] Cookies atuais após set:", document.cookie);
 
+          console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
           console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
 
           // Redirecionar para o dashboard
