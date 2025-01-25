@@ -62,6 +62,8 @@ const Login = () => {
           // Configurar o cookie PVEAuthCookie
           const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
           document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=.${domain};`;
+          console.log("[Debug] Cookies atuais:", document.cookie);
+
 
           console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
 
