@@ -30,10 +30,8 @@ const Login = () => {
         return;
       }
 
-      // Adiciona o realm (@pve) ao usuário, garantindo o valor correto
-      const userWithRealm = username.includes(process.env.REACT_APP_USER_REALM)
-        ? username
-        : `${username}${process.env.REACT_APP_USER_REALM}`;
+      // Adiciona o realm (@pve) ao usuário
+      const userWithRealm = `${username}${process.env.REACT_APP_USER_REALM}`;
       console.log("[Login] Usuário com realm:", userWithRealm);
 
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
@@ -46,39 +44,40 @@ const Login = () => {
         credentials: "include", // Inclui cookies na requisição
       });
 
-      if (!response.ok) {
-        const responseData = await response.json();
-        console.error("[Login] Erro no login:", response.status, responseData);
-        setError("Usuário ou senha inválidos. Por favor, tente novamente.");
-        return;
-      }
-
+      // Captura a resposta completa para depuração
       const responseData = await response.json();
-      const { ticket, CSRFPreventionToken } = responseData.data;
+      console.log("[Login] Resposta do servidor:", responseData);
 
-      if (ticket && CSRFPreventionToken) {
-        console.log("[Login] Login bem-sucedido.");
-        console.log("[Login] Ticket recebido:", ticket);
-        console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
+      if (response.ok && responseData.data) {
+        const { ticket, CSRFPreventionToken } = responseData.data;
 
-        // Configurar o cookie PVEAuthCookie
-        const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
-        document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
-        console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
+        if (ticket && CSRFPreventionToken) {
+          console.log("[Login] Login bem-sucedido.");
+          console.log("[Login] Ticket recebido:", ticket);
+          console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
 
-        // Salvar CSRF e token no localStorage
-        localStorage.setItem(`${domain}_proxmoxToken`, ticket);
-        localStorage.setItem(`${domain}_proxmoxCSRF`, CSRFPreventionToken);
+          // Configurar o cookie PVEAuthCookie
+          const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
+          document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+          console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
 
-        // Redirecionar para o dashboard
-        navigate("/");
+          // Salvar CSRFPreventionToken no localStorage para uso futuro
+          localStorage.setItem(`${domain}_proxmoxCSRF`, CSRFPreventionToken);
+          console.log("[Login] CSRFPreventionToken salvo no localStorage.");
+
+          // Redirecionar para a página principal
+          navigate("/");
+        } else {
+          setError("[Login] Erro: Ticket ou CSRF token não foram recebidos.");
+          console.error("[Login] Erro: Ticket ou CSRFPreventionToken ausente na resposta.");
+        }
       } else {
-        console.error("[Login] Ticket ou CSRFPreventionToken ausente na resposta.");
-        setError("Erro interno: Resposta inválida do servidor.");
+        setError("[Login] Usuário ou senha inválidos. Por favor, tente novamente.");
+        console.error("[Login] Erro no login:", response.status, response.statusText, responseData);
       }
     } catch (err) {
+      setError("[Login] Um erro ocorreu. Por favor, tente novamente mais tarde.");
       console.error("[Login] Erro ao realizar o login:", err);
-      setError("Um erro ocorreu. Por favor, tente novamente mais tarde.");
     }
   };
 
