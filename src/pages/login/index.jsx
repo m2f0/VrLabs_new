@@ -56,10 +56,6 @@ const Login = () => {
           console.log("[Login] Ticket recebido:", ticket);
           console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
 
-          // Armazenar o ticket e o CSRF token no localStorage
-          localStorage.setItem("proxmoxToken", ticket);
-          localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
-
           // Configurar o cookie PVEAuthCookie
           const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
           localStorage.setItem(`${domain}_proxmoxToken`, ticket);
