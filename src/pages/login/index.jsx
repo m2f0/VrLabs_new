@@ -30,8 +30,10 @@ const Login = () => {
         return;
       }
 
-      // Adiciona o realm (@pve) ao usuário
-      const userWithRealm = `${username}${process.env.REACT_APP_USER_REALM}`;
+      // Adiciona o realm (@pve) ao usuário, garantindo que sempre será usado o valor correto
+      const userWithRealm = username.includes(process.env.REACT_APP_USER_REALM)
+        ? username
+        : `${username}${process.env.REACT_APP_USER_REALM}`;
       console.log("[Login] Usuário com realm:", userWithRealm);
 
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
@@ -56,15 +58,12 @@ const Login = () => {
           console.log("[Login] Ticket recebido:", ticket);
           console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
 
-          // Obter o domínio
+          // Configurar o cookie PVEAuthCookie
           const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
-
-          // Salvar no localStorage com base no domínio
           localStorage.setItem(`${domain}_proxmoxToken`, ticket);
           localStorage.setItem(`${domain}_proxmoxCSRF`, CSRFPreventionToken);
-
-          // Configurar o cookie do ticket
           document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+
           console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
 
           // Redirecionar para o dashboard
