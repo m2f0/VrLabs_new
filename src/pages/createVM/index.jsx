@@ -14,7 +14,7 @@ const Form = () => {
       name: values.vmName,
       memory: parseInt(values.memory),
       cores: parseInt(values.cores),
-      sockets: parseInt(values.sockets),
+//      sockets: parseInt(values.sockets),
       ostype: values.ostype,
       disk: {
         size: values.diskSize,
@@ -36,7 +36,7 @@ const Form = () => {
     vmName: "",
     memory: "",
     cores: "",
-    sockets: "",
+//    sockets: "",
     ostype: "linux",
     diskSize: "",
     storage: "local-lvm",
@@ -49,7 +49,7 @@ const Form = () => {
     vmName: yup.string().required("VM Name is required"),
     memory: yup.number().required("Memory is required"),
     cores: yup.number().required("Number of cores is required"),
-    sockets: yup.number().required("Number of sockets is required"),
+//    sockets: yup.number().required("Number of sockets is required"),
     ostype: yup.string().required("OS type is required"),
     diskSize: yup.string().required("Disk size is required"),
     storage: yup.string().required("Storage is required"),
@@ -139,14 +139,14 @@ const Form = () => {
                 fullWidth
                 variant="filled"
                 type="number"
-                label="Sockets"
+//                label="Sockets"
                 onBlur={handleBlur}
                 onChange={handleChange}
-                value={values.sockets}
-                name="sockets"
-                error={!!touched.sockets && !!errors.sockets}
-                helperText={touched.sockets && errors.sockets}
-                sx={{ gridColumn: "span 1" }}
+//                value={values.sockets}
+//                name="sockets"
+//                error={!!touched.sockets && !!errors.sockets}
+//                helperText={touched.sockets && errors.sockets}
+//                sx={{ gridColumn: "span 1" }}
               />
               <TextField
                 fullWidth
