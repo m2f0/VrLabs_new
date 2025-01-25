@@ -56,12 +56,15 @@ const Login = () => {
           console.log("[Login] Ticket recebido:", ticket);
           console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
 
-          // Configurar o cookie PVEAuthCookie
+          // Obter o domínio
           const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
+
+          // Salvar no localStorage com base no domínio
           localStorage.setItem(`${domain}_proxmoxToken`, ticket);
           localStorage.setItem(`${domain}_proxmoxCSRF`, CSRFPreventionToken);
-          document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
 
+          // Configurar o cookie do ticket
+          document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
           console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
 
           // Redirecionar para o dashboard
