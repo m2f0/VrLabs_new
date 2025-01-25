@@ -24,7 +24,10 @@ const Login = () => {
       console.log("[Login] URL de login:", process.env.REACT_APP_API_LOGIN_URL);
 
       // Verifica se as variáveis de ambiente estão configuradas
-      if (!process.env.REACT_APP_API_LOGIN_URL || !process.env.REACT_APP_USER_REALM) {
+      if (
+        !process.env.REACT_APP_API_LOGIN_URL ||
+        !process.env.REACT_APP_USER_REALM
+      ) {
         console.error("[Login] Variáveis de ambiente ausentes.");
         setError("Erro interno: Configuração inválida.");
         return;
@@ -58,22 +61,26 @@ const Login = () => {
 
           // Configurar o cookie PVEAuthCookie
           const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
-          document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+          document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=.${domain};`;
+
           console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
 
-          // Salvar CSRFPreventionToken no localStorage para uso futuro
-          localStorage.setItem(`${domain}_proxmoxCSRF`, CSRFPreventionToken);
-          console.log("[Login] CSRFPreventionToken salvo no localStorage.");
-
-          // Redirecionar para a página principal
+          // Redirecionar para o dashboard
           navigate("/");
         } else {
           setError("[Login] Erro: Ticket ou CSRF token não foram recebidos.");
-          console.error("[Login] Erro: Ticket ou CSRFPreventionToken ausente na resposta.");
+          console.error(
+            "[Login] Erro: Ticket ou CSRFPreventionToken ausente na resposta."
+          );
         }
       } else {
         setError("[Login] Usuário ou senha inválidos. Por favor, tente novamente.");
-        console.error("[Login] Erro no login:", response.status, response.statusText, responseData);
+        console.error(
+          "[Login] Erro no login:",
+          response.status,
+          response.statusText,
+          responseData
+        );
       }
     } catch (err) {
       setError("[Login] Um erro ocorreu. Por favor, tente novamente mais tarde.");
