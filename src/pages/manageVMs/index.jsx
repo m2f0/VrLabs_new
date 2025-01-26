@@ -110,7 +110,7 @@ const Team = () => {
   const renewTicket = async () => {
     console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
   
-    const username = process.env.REACT_APP_API_USERNAME; // Usuário logado
+    const username = process.env.REACT_APP_API_USERNAME;
     const password = process.env.REACT_APP_API_PASSWORD;
   
     if (!username || !password) {
@@ -123,28 +123,30 @@ const Team = () => {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ username, password }),
-        credentials: "include", // Inclui cookies na requisição
+        credentials: "include", // Inclui cookies
       });
   
       if (!response.ok) {
-        throw new Error(`[renewTicket] Erro ao renovar o ticket: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("[renewTicket] Erro ao renovar o ticket:", errorText);
+        throw new Error(`[renewTicket] Erro ao renovar o ticket: ${response.status}`);
       }
   
       const data = await response.json();
       const { ticket, CSRFPreventionToken } = data.data;
   
-      // Armazena o cookie do usuário logado
+      // Salvar cookie manualmente, se necessário
       const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
       document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=Strict; Domain=${domain}`;
       console.log("[renewTicket] Ticket armazenado no cookie:", ticket);
   
-      // Retorna o CSRFPreventionToken para uso
       return { ticket, CSRFPreventionToken };
     } catch (error) {
       console.error("[renewTicket] Erro ao renovar o ticket:", error);
       throw error;
     }
   };
+  
   
   
   
