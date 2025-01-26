@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   TextField,
@@ -16,92 +16,70 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-  
+  const login = async () => {
+    console.log("[Login] Iniciando processo de login...");
+
     try {
-      console.log("[Login] Iniciando processo de autenticação...");
-      console.log("[Login] URL de login:", process.env.REACT_APP_API_LOGIN_URL);
-  
-      if (!process.env.REACT_APP_API_LOGIN_URL || !process.env.REACT_APP_USER_REALM) {
-        console.error("[Login] Variáveis de ambiente ausentes.");
-        setError("Erro interno: Configuração inválida.");
-        return;
-      }
-  
+      // Enviar a requisição para autenticação
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           username: `${username}${process.env.REACT_APP_USER_REALM}`,
-          password: password,
+          password,
         }),
-        credentials: "include",
+        credentials: "include", // Inclui cookies na requisição
       });
-  
+
       if (!response.ok) {
-        const responseText = await response.text();
-        console.error("[Login] Erro na resposta do servidor:", responseText);
-        setError("[Login] Usuário ou senha inválidos. Por favor, tente novamente.");
+        console.error("[Login] Falha na autenticação:", response.status);
+        setError("Usuário ou senha inválidos.");
         return;
       }
-  
-      const responseData = await response.json();
-      console.log("[Login] Resposta do servidor:", responseData);
-  
-      if (responseData.data) {
-        const { ticket, CSRFPreventionToken } = responseData.data;
-  
-        if (ticket && CSRFPreventionToken) {
-          console.log("[Login] Login bem-sucedido.");
-          console.log("[Login] Ticket recebido:", ticket);
-          console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
-  
-          // Configurar o cookie PVEAuthCookie
-          const domain = "prox.nnovup.com.br";
-          document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
-          console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
-  
-          // Verifica se o cookie foi configurado corretamente
-          console.log("[Login] Cookies disponíveis no documento:", document.cookie);
-  
-          // Salvar o CSRF token no localStorage
-          localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
-  
-          // Redirecionar para o dashboard
-          navigate("/");
-        } else {
-          setError("[Login] Erro: Ticket ou CSRF token não foram recebidos.");
-          console.error("[Login] Erro: Ticket ou CSRFPreventionToken ausente na resposta.");
-        }
+
+      // Processar a resposta da API
+      const data = await response.json();
+      console.log("[Login] Resposta recebida:", data);
+
+      const { ticket, CSRFPreventionToken } = data.data;
+
+      if (ticket && CSRFPreventionToken) {
+        console.log("[Login] Autenticação bem-sucedida.");
+        console.log("[Login] Ticket:", ticket);
+        console.log("[Login] CSRFPreventionToken:", CSRFPreventionToken);
+
+        // Configurar o cookie de autenticação
+        const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
+        document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+        console.log("[Login] Cookie configurado para o domínio:", domain);
+
+        // Armazenar CSRFPreventionToken no localStorage
+        localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
+
+        // Redirecionar para o dashboard
+        navigate("/");
       } else {
-        setError("[Login] Erro: Resposta do servidor inválida.");
-        console.error("[Login] Resposta inválida:", responseData);
+        console.error("[Login] Ticket ou CSRFPreventionToken ausente.");
+        setError("Erro interno. Tente novamente mais tarde.");
       }
-    } catch (err) {
-      setError("[Login] Um erro ocorreu. Por favor, tente novamente mais tarde.");
-      console.error("[Login] Erro ao realizar o login:", err);
+    } catch (error) {
+      console.error("[Login] Erro:", error);
+      setError("Erro ao realizar o login. Verifique o console para mais detalhes.");
     }
   };
-  
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    login();
+  };
 
   return (
     <Container maxWidth="sm" sx={{ mt: 5 }}>
       <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
-        <Typography
-          variant="h4"
-          align="center"
-          gutterBottom
-          sx={{ fontWeight: "bold" }}
-        >
+        <Typography variant="h4" align="center" gutterBottom>
           Login
         </Typography>
-        <Typography
-          variant="body1"
-          align="center"
-          color="textSecondary"
-          gutterBottom
-        >
+        <Typography variant="body1" align="center" color="textSecondary" gutterBottom>
           Entre com seus dados para acessar o sistema.
         </Typography>
         {error && (
@@ -109,7 +87,7 @@ const Login = () => {
             {error}
           </Alert>
         )}
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
@@ -138,15 +116,9 @@ const Login = () => {
                 variant="contained"
                 color="primary"
                 fullWidth
-                sx={{ py: 1.5 }}
               >
                 Login
               </Button>
-            </Grid>
-            <Grid item xs={12} textAlign="center">
-              <Typography variant="body2">
-                Não tem uma conta? <Link to="/register">Registre-se aqui</Link>
-              </Typography>
             </Grid>
           </Grid>
         </form>
