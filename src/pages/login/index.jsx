@@ -16,11 +16,13 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const login = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
     console.log("[Login] Iniciando processo de login...");
 
     try {
-      // Enviar a requisição para autenticação
+      // Enviar requisição para autenticação
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -33,7 +35,7 @@ const Login = () => {
 
       if (!response.ok) {
         console.error("[Login] Falha na autenticação:", response.status);
-        setError("Usuário ou senha inválidos.");
+        setError("Usuário ou senha inválidos. Por favor, tente novamente.");
         return;
       }
 
@@ -48,12 +50,12 @@ const Login = () => {
         console.log("[Login] Ticket:", ticket);
         console.log("[Login] CSRFPreventionToken:", CSRFPreventionToken);
 
-        // Configurar o cookie de autenticação
+        // Salvar o cookie de autenticação automaticamente (requer configuração correta no servidor)
         const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
         document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
         console.log("[Login] Cookie configurado para o domínio:", domain);
 
-        // Armazenar CSRFPreventionToken no localStorage
+        // Armazenar o CSRFPreventionToken no localStorage
         localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
 
         // Redirecionar para o dashboard
@@ -63,14 +65,9 @@ const Login = () => {
         setError("Erro interno. Tente novamente mais tarde.");
       }
     } catch (error) {
-      console.error("[Login] Erro:", error);
+      console.error("[Login] Erro no processo de login:", error);
       setError("Erro ao realizar o login. Verifique o console para mais detalhes.");
     }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    login();
   };
 
   return (
@@ -87,7 +84,7 @@ const Login = () => {
             {error}
           </Alert>
         )}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleLogin}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
