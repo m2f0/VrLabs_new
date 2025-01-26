@@ -59,6 +59,11 @@ const Login = () => {
         document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; Path=/; Secure; SameSite=None; Domain=${domain}`;
         console.log("[Login] Cookie proxmoxCSRF configurado para o domínio:", domain);
 
+        // Salvar os tokens no localStorage
+        localStorage.setItem("PVEAuthCookie", ticket);
+        localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
+        console.log("[Login] Tokens salvos no localStorage.");
+
         // Redirecionar para o dashboard
         navigate("/");
       } else {
