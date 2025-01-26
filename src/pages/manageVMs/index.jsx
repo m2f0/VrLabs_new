@@ -18,38 +18,50 @@ const Team = () => {
 
   // Função para buscar a lista de VMs
   const fetchVMs = async () => {
+    console.log("[fetchVMs] Buscando lista de VMs...");
+  
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: API_TOKEN,
-          },
-        }
-      );
+      const csrfToken = localStorage.getItem("proxmoxCSRF");
+      const authCookie = localStorage.getItem("PVEAuthCookie");
+  
+      // Certifique-se de que ambos os tokens estão disponíveis
+      if (!csrfToken || !authCookie) {
+        throw new Error("Tokens de autenticação ausentes.");
+      }
+  
+      const response = await fetch(`${API_BASE_URL}/api2/json/cluster/resources?type=vm`, {
+        method: "GET",
+        headers: {
+          "CSRFPreventionToken": csrfToken,
+          Authorization: `${process.env.REACT_APP_API_TOKEN}`,
+        },
+        credentials: "include", // Inclui cookies automaticamente
+      });
   
       if (!response.ok) {
         throw new Error(
-          `Erro na API do Proxmox: ${response.status} ${response.statusText}`
+          `Erro ao buscar VMs: ${response.status} ${response.statusText}`
         );
       }
   
       const data = await response.json();
+      console.log("[fetchVMs] Lista de VMs recebida:", data);
+  
       setVmList(
         data.data.map((vm) => ({
           id: vm.vmid,
           name: vm.name,
           status: vm.status,
           node: vm.node,
-          type: vm.type || "qemu", // Adicionar o tipo
+          type: vm.type || "qemu",
         }))
       );
     } catch (error) {
-      console.error("Erro ao buscar lista de VMs:", error);
-      alert("Falha ao buscar as VMs. Verifique o console para mais detalhes.");
+      console.error("[fetchVMs] Erro ao buscar lista de VMs:", error);
+      alert("Erro ao buscar a lista de VMs. Verifique o console para mais detalhes.");
     }
   };
+  
   
 
   // Função para iniciar uma VM
@@ -200,8 +212,6 @@ const deleteVM = async (vmid, node) => {
 // Função para conectar a uma VM (corrigida)
 const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
-  console.log("[connectVM] Node:", node);
-  console.log("[connectVM] Tipo:", type);
 
   if (!type) {
     console.error("[connectVM] Tipo da VM não fornecido ou inválido.");
@@ -210,27 +220,25 @@ const connectVM = async (vmid, node, type) => {
   }
 
   try {
-    // Renova o ticket e obtém o CSRFPreventionToken
+    // Renova o ticket e obtém os tokens
     console.log("[connectVM] Renovando o ticket...");
-    const { CSRFPreventionToken } = await renewTicket();
-    console.log("[connectVM] CSRFPreventionToken obtido:", CSRFPreventionToken);
+    const { ticket, CSRFPreventionToken } = await renewTicket();
+
+    // Salvar ticket no localStorage para garantir consistência
+    localStorage.setItem("PVEAuthCookie", ticket);
 
     // Define o endpoint para a conexão noVNC
     const endpoint = `${API_BASE_URL}/api2/json/nodes/${node}/${type}/${vmid}/vncproxy`;
     console.log("[connectVM] Endpoint para conexão:", endpoint);
 
-    // Faz a requisição para obter o proxy VNC
-    console.log("[connectVM] Enviando requisição para obter VNC proxy...");
     const vncProxyResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `${process.env.REACT_APP_API_TOKEN}`, // Corrigido o formato do token
         "CSRFPreventionToken": CSRFPreventionToken,
+        Authorization: `${process.env.REACT_APP_API_TOKEN}`,
       },
       credentials: "include", // Inclui cookies na requisição
     });
-
-    console.log("[connectVM] Status da resposta do VNC proxy:", vncProxyResponse.status);
 
     if (!vncProxyResponse.ok) {
       const errorResponse = await vncProxyResponse.text();
@@ -238,26 +246,21 @@ const connectVM = async (vmid, node, type) => {
       throw new Error(`[connectVM] Erro ao obter VNC proxy: ${vncProxyResponse.status}`);
     }
 
-    // Processa a resposta
     const vncProxyData = await vncProxyResponse.json();
     console.log("[connectVM] Resposta do VNC proxy:", vncProxyData);
 
     const { ticket: vncTicket, port } = vncProxyData.data;
-    console.log("[connectVM] Ticket VNC obtido:", vncTicket);
-    console.log("[connectVM] Porta VNC:", port);
 
-    // Gera a URL para o noVNC
     const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=off&port=${port}&vncticket=${vncTicket}`;
-    console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
-
-    // Define a URL no iframe
     setIframeUrl(noVNCUrl);
-    console.log("[connectVM] URL noVNC configurada no iframe com sucesso.");
+
+    console.log("[connectVM] URL noVNC configurada no iframe com sucesso:", noVNCUrl);
   } catch (error) {
     console.error("[connectVM] Erro ao conectar à VM:", error);
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
