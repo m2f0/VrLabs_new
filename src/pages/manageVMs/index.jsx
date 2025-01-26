@@ -122,7 +122,7 @@ const Team = () => {
   // Função para renovar o ticket e salvar nos domínios e localStorage
   const renewTicket = async () => {
     console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
-    
+  
     const username = process.env.REACT_APP_API_USERNAME;
     const password = process.env.REACT_APP_API_PASSWORD;
   
@@ -148,19 +148,26 @@ const Team = () => {
       const data = await response.json();
       const { ticket, CSRFPreventionToken } = data.data;
   
-      // Configurando cookies para ambos os domínios
-      const domains = ["vrlabs.nnovup.com.br", "prox.nnovup.com.br"];
-      domains.forEach((domain) => {
-        document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
-        document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; Path=/; Secure; SameSite=None; Domain=${domain}`;
-        console.log(`[renewTicket] Ticket armazenado no cookie para o domínio: ${domain}`);
-      });
+      // Domínios para duplicação
+      const sourceDomain = "vrlabs.nnovup.com.br";
+      const targetDomain = "prox.nnovup.com.br";
   
-      // Armazenando os tokens no localStorage
+      // Configurar cookies para ambos os domínios
+      document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${sourceDomain}`;
+      document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${targetDomain}`;
+  
+      document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; Path=/; Secure; SameSite=None; Domain=${sourceDomain}`;
+      document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; Path=/; Secure; SameSite=None; Domain=${targetDomain}`;
+  
+      console.log(`[renewTicket] Cookies configurados para os domínios: ${sourceDomain} e ${targetDomain}`);
+  
+      // Salvar os tokens no localStorage para ambos os domínios
       localStorage.setItem("PVEAuthCookie_vrlabs", ticket);
       localStorage.setItem("PVEAuthCookie_prox", ticket);
-      localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
-      console.log("[renewTicket] Ticket e CSRFPreventionToken salvos no localStorage.");
+      localStorage.setItem("proxmoxCSRF_vrlabs", CSRFPreventionToken);
+      localStorage.setItem("proxmoxCSRF_prox", CSRFPreventionToken);
+  
+      console.log("[renewTicket] Tickets e CSRFPreventionToken salvos no localStorage para ambos os domínios.");
   
       return { ticket, CSRFPreventionToken };
     } catch (error) {
@@ -168,6 +175,7 @@ const Team = () => {
       throw error;
     }
   };
+  
   
   
 
