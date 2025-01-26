@@ -42,10 +42,17 @@ const Login = () => {
       });
 
       // Captura a resposta completa para depuração
+      if (!response.ok) {
+        const responseText = await response.text();
+        console.error("[Login] Erro na resposta do servidor:", responseText);
+        setError("[Login] Usuário ou senha inválidos. Por favor, tente novamente.");
+        return;
+      }
+
       const responseData = await response.json();
       console.log("[Login] Resposta do servidor:", responseData);
 
-      if (response.ok && responseData.data) {
+      if (responseData.data) {
         const { ticket, CSRFPreventionToken } = responseData.data;
 
         if (ticket && CSRFPreventionToken) {
@@ -54,10 +61,13 @@ const Login = () => {
           console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
 
           // Configurar o cookie PVEAuthCookie
-          const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
+          const domain = "prox.nnovup.com.br";
           document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
 
           console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
+
+          // Salvar o CSRF token no localStorage
+          localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
 
           // Redirecionar para o dashboard
           navigate("/");
@@ -66,8 +76,8 @@ const Login = () => {
           console.error("[Login] Erro: Ticket ou CSRFPreventionToken ausente na resposta.");
         }
       } else {
-        setError("[Login] Usuário ou senha inválidos. Por favor, tente novamente.");
-        console.error("[Login] Erro no login:", response.status, response.statusText, responseData);
+        setError("[Login] Erro: Resposta do servidor inválida.");
+        console.error("[Login] Resposta inválida:", responseData);
       }
     } catch (err) {
       setError("[Login] Um erro ocorreu. Por favor, tente novamente mais tarde.");
