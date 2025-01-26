@@ -18,19 +18,17 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     try {
       console.log("[Login] Iniciando processo de autenticação...");
       console.log("[Login] URL de login:", process.env.REACT_APP_API_LOGIN_URL);
-
-      // Verifica se as variáveis de ambiente estão configuradas
+  
       if (!process.env.REACT_APP_API_LOGIN_URL || !process.env.REACT_APP_USER_REALM) {
         console.error("[Login] Variáveis de ambiente ausentes.");
         setError("Erro interno: Configuração inválida.");
         return;
       }
-
-      // Faz a requisição ao Proxmox API
+  
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -38,37 +36,38 @@ const Login = () => {
           username: `${username}${process.env.REACT_APP_USER_REALM}`,
           password: password,
         }),
-        credentials: "include", // Inclui cookies na requisição
+        credentials: "include",
       });
-
-      // Captura a resposta completa para depuração
+  
       if (!response.ok) {
         const responseText = await response.text();
         console.error("[Login] Erro na resposta do servidor:", responseText);
         setError("[Login] Usuário ou senha inválidos. Por favor, tente novamente.");
         return;
       }
-
+  
       const responseData = await response.json();
       console.log("[Login] Resposta do servidor:", responseData);
-
+  
       if (responseData.data) {
         const { ticket, CSRFPreventionToken } = responseData.data;
-
+  
         if (ticket && CSRFPreventionToken) {
           console.log("[Login] Login bem-sucedido.");
           console.log("[Login] Ticket recebido:", ticket);
           console.log("[Login] CSRFPreventionToken recebido:", CSRFPreventionToken);
-
+  
           // Configurar o cookie PVEAuthCookie
           const domain = "prox.nnovup.com.br";
           document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
-
           console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
-
+  
+          // Verifica se o cookie foi configurado corretamente
+          console.log("[Login] Cookies disponíveis no documento:", document.cookie);
+  
           // Salvar o CSRF token no localStorage
           localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
-
+  
           // Redirecionar para o dashboard
           navigate("/");
         } else {
@@ -84,6 +83,7 @@ const Login = () => {
       console.error("[Login] Erro ao realizar o login:", err);
     }
   };
+  
 
   return (
     <Container maxWidth="sm" sx={{ mt: 5 }}>
