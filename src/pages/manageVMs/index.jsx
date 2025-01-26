@@ -122,7 +122,7 @@ const Team = () => {
   // Função para renovar o ticket e salvar nos domínios e localStorage
   const renewTicket = async () => {
     console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
-  
+    
     const username = process.env.REACT_APP_API_USERNAME;
     const password = process.env.REACT_APP_API_PASSWORD;
   
@@ -148,25 +148,27 @@ const Team = () => {
       const data = await response.json();
       const { ticket, CSRFPreventionToken } = data.data;
   
-      // Salvar o cookie manualmente para ambos os domínios
+      // Configurando cookies para ambos os domínios
       const domains = ["vrlabs.nnovup.com.br", "prox.nnovup.com.br"];
       domains.forEach((domain) => {
         document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+        document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; Path=/; Secure; SameSite=None; Domain=${domain}`;
         console.log(`[renewTicket] Ticket armazenado no cookie para o domínio: ${domain}`);
       });
   
-      // Salvar os tokens no localStorage para os dois domínios
+      // Armazenando os tokens no localStorage
       localStorage.setItem("PVEAuthCookie_vrlabs", ticket);
       localStorage.setItem("PVEAuthCookie_prox", ticket);
       localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
-  
       console.log("[renewTicket] Ticket e CSRFPreventionToken salvos no localStorage.");
+  
       return { ticket, CSRFPreventionToken };
     } catch (error) {
       console.error("[renewTicket] Erro ao renovar o ticket:", error);
       throw error;
     }
   };
+  
   
 
   
