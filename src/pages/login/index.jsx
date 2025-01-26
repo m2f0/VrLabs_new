@@ -50,13 +50,14 @@ const Login = () => {
         console.log("[Login] Ticket:", ticket);
         console.log("[Login] CSRFPreventionToken:", CSRFPreventionToken);
 
-        // Salvar o cookie de autenticação automaticamente (requer configuração correta no servidor)
+        // Salvar o cookie de autenticação
         const domain = "vrlabs.nnovup.com.br";
         document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
-        console.log("[Login] Cookie configurado para o domínio:", domain);
+        console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
 
-        // Armazenar o CSRFPreventionToken no localStorage
-        localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
+        // Salvar o CSRFPreventionToken como um cookie
+        document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; Path=/; Secure; SameSite=None; Domain=${domain}`;
+        console.log("[Login] Cookie proxmoxCSRF configurado para o domínio:", domain);
 
         // Redirecionar para o dashboard
         navigate("/");
