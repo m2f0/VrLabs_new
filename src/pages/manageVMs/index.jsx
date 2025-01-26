@@ -107,45 +107,61 @@ const Team = () => {
   };
 
   // Função para renovar o ticket
-  const renewTicket = async () => {
-    console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
-  
-    const username = process.env.REACT_APP_API_USERNAME;
-    const password = process.env.REACT_APP_API_PASSWORD;
-  
-    if (!username || !password) {
-      console.error("[renewTicket] Credenciais de autenticação ausentes.");
-      throw new Error("Credenciais de autenticação não configuradas.");
+  // Função para renovar o ticket e salvar nos domínios e localStorage
+const renewTicket = async () => {
+  console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
+
+  const username = process.env.REACT_APP_API_USERNAME;
+  const password = process.env.REACT_APP_API_PASSWORD;
+
+  if (!username || !password) {
+    console.error("[renewTicket] Credenciais de autenticação ausentes.");
+    throw new Error("Credenciais de autenticação não configuradas.");
+  }
+
+  try {
+    const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ username, password }),
+      credentials: "include", // Inclui cookies
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[renewTicket] Erro ao renovar o ticket:", errorText);
+      throw new Error(`[renewTicket] Erro ao renovar o ticket: ${response.status}`);
     }
-  
-    try {
-      const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ username, password }),
-        credentials: "include", // Inclui cookies
-      });
-  
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("[renewTicket] Erro ao renovar o ticket:", errorText);
-        throw new Error(`[renewTicket] Erro ao renovar o ticket: ${response.status}`);
-      }
-  
-      const data = await response.json();
-      const { ticket, CSRFPreventionToken } = data.data;
-  
-      // Salvar cookie manualmente, se necessário
-      const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
-      document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=Strict; Domain=${domain}`;
-      console.log("[renewTicket] Ticket armazenado no cookie:", ticket);
-  
-      return { ticket, CSRFPreventionToken };
-    } catch (error) {
-      console.error("[renewTicket] Erro ao renovar o ticket:", error);
-      throw error;
+
+    const data = await response.json();
+    const { ticket, CSRFPreventionToken } = data.data;
+
+    if (!ticket || !CSRFPreventionToken) {
+      console.error("[renewTicket] Ticket ou CSRFPreventionToken ausente.");
+      throw new Error("Erro ao obter credenciais de autenticação.");
     }
-  };
+
+    // Salvar nos cookies para ambos os domínios
+    const domainVRLabs = "vrlabs.nnovup.com.br";
+    const domainProx = "prox.nnovup.com.br";
+
+    document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domainVRLabs}`;
+    document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domainProx}`;
+
+    console.log("[renewTicket] Ticket armazenado nos cookies para os domínios:", domainVRLabs, domainProx);
+
+    // Salvar no localStorage
+    localStorage.setItem("PVEAuthCookie", ticket);
+    localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
+
+    console.log("[renewTicket] Ticket e CSRFPreventionToken salvos no localStorage.");
+    return { ticket, CSRFPreventionToken };
+  } catch (error) {
+    console.error("[renewTicket] Erro ao renovar o ticket:", error);
+    throw error;
+  }
+};
+
   
   
   
