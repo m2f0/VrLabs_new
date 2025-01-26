@@ -51,7 +51,7 @@ const Login = () => {
         console.log("[Login] CSRFPreventionToken:", CSRFPreventionToken);
 
         // Salvar o cookie de autenticação automaticamente (requer configuração correta no servidor)
-        const domain = new URL(process.env.REACT_APP_API_BASE_URL).hostname;
+        const domain = "vrlabs.nnovup.com.br";
         document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
         console.log("[Login] Cookie configurado para o domínio:", domain);
 
