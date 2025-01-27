@@ -18,12 +18,15 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     console.log("[Login] Iniciando processo de login...");
-
+  
     try {
+      const loginUrl = process.env.REACT_APP_API_LOGIN_URL;
+      const domain = new URL(loginUrl).hostname;
+  
       // Enviar requisição para autenticação
-      const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
+      const response = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -32,38 +35,34 @@ const Login = () => {
         }),
         credentials: "include", // Inclui cookies na requisição
       });
-
+  
       if (!response.ok) {
         console.error("[Login] Falha na autenticação:", response.status);
         setError("Usuário ou senha inválidos. Por favor, tente novamente.");
         return;
       }
-
+  
       // Processar a resposta da API
       const data = await response.json();
       console.log("[Login] Resposta recebida:", data);
-
+  
       const { ticket, CSRFPreventionToken } = data.data;
-
+  
       if (ticket && CSRFPreventionToken) {
         console.log("[Login] Autenticação bem-sucedida.");
         console.log("[Login] Ticket:", ticket);
         console.log("[Login] CSRFPreventionToken:", CSRFPreventionToken);
-
-        // Salvar o cookie de autenticação
-        const domain = "vrlabs.nnovup.com.br";
+  
+        // Salvar cookies para o domínio correto
         document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${domain}`;
-        console.log("[Login] Cookie PVEAuthCookie configurado para o domínio:", domain);
-
-        // Salvar o CSRFPreventionToken como um cookie
         document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; Path=/; Secure; SameSite=None; Domain=${domain}`;
-        console.log("[Login] Cookie proxmoxCSRF configurado para o domínio:", domain);
-
-        // Salvar os tokens no localStorage
-        localStorage.setItem("PVEAuthCookie", ticket);
-        localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
+        console.log(`[Login] Cookies configurados para o domínio: ${domain}`);
+  
+        // Salvar os tokens no localStorage para debug ou outros usos
+        localStorage.setItem(`PVEAuthCookie_${domain}`, ticket);
+        localStorage.setItem(`proxmoxCSRF_${domain}`, CSRFPreventionToken);
         console.log("[Login] Tokens salvos no localStorage.");
-
+  
         // Redirecionar para o dashboard
         navigate("/");
       } else {
@@ -75,6 +74,7 @@ const Login = () => {
       setError("Erro ao realizar o login. Verifique o console para mais detalhes.");
     }
   };
+  
 
   return (
     <Container maxWidth="sm" sx={{ mt: 5 }}>
