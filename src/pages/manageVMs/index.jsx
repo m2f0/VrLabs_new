@@ -211,8 +211,8 @@ const connectVM = async (vmid, node) => {
 
     console.log("[connectVM] Ticket e CSRF token obtidos:", { ticket, CSRFPreventionToken });
 
-    // Extrai o token ID do `REACT_APP_API_TOKEN`
-    const tokenId = process.env.REACT_APP_API_TOKEN.split("=")[1];
+    // Define explicitamente o token ID para teste
+    const explicitTokenId = "9df761c2-6b64-4313-9811-8ca0df6fa966";
 
     // Solicita o proxy VNC para a VM
     const vncProxyResponse = await fetch(
@@ -221,7 +221,7 @@ const connectVM = async (vmid, node) => {
         method: "POST",
         headers: {
           "CSRFPreventionToken": CSRFPreventionToken,
-          Authorization: `PVEAPIToken=${tokenId}`,
+          Authorization: `PVEAPIToken=apiuser@pve!apitoken=${explicitTokenId}`, // Token explícito
         },
         credentials: "include", // Inclui cookies automaticamente
       }
@@ -250,6 +250,7 @@ const connectVM = async (vmid, node) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
