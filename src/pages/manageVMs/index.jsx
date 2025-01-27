@@ -122,20 +122,14 @@ const Team = () => {
   const renewTicket = async () => {
     console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
   
-    const username = process.env.REACT_APP_API_USERNAME;
-    const password = process.env.REACT_APP_API_PASSWORD;
-  
-    if (!username || !password) {
-      console.error("[renewTicket] Credenciais de autenticação ausentes.");
-      throw new Error("Credenciais de autenticação não configuradas.");
-    }
-  
     try {
       const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ username, password }),
-        credentials: "include", // Inclui cookies na requisição
+        body: new URLSearchParams({
+          username: process.env.REACT_APP_API_USERNAME,
+          password: process.env.REACT_APP_API_PASSWORD,
+        }),
       });
   
       if (!response.ok) {
@@ -147,23 +141,22 @@ const Team = () => {
       const data = await response.json();
       const { ticket, CSRFPreventionToken } = data.data;
   
-      // Definir o cookie PVEAuthCookie para o domínio atual
-      Cookies.set('PVEAuthCookie', ticket, { path: '/', secure: true, sameSite: 'None' });
+      // Configura o cookie PVEAuthCookie no domínio correto
+      document.cookie = `PVEAuthCookie=${ticket}; path=/; secure; sameSite=none; domain=${new URL(process.env.REACT_APP_API_LOGIN_URL).hostname}`;
   
-      console.log("[renewTicket] Cookie PVEAuthCookie configurado para o domínio atual.");
-  
-      // Salvar os tokens no localStorage
+      // Salva o CSRFPreventionToken em um cookie e localStorage para consistência
+      document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; path=/; secure; sameSite=none; domain=${new URL(process.env.REACT_APP_API_LOGIN_URL).hostname}`;
       localStorage.setItem("PVEAuthCookie", ticket);
       localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
   
-      console.log("[renewTicket] Ticket e CSRFPreventionToken salvos no localStorage.");
-  
+      console.log("[renewTicket] Ticket e CSRFPreventionToken renovados com sucesso.");
       return { ticket, CSRFPreventionToken };
     } catch (error) {
       console.error("[renewTicket] Erro ao renovar o ticket:", error);
       throw error;
     }
   };
+  
   
   
   
@@ -209,17 +202,17 @@ const connectVM = async (vmid, node) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
-    // Renova o ticket antes de tentar conectar
-    const ticket = await renewTicket();
+    // Renova o ticket e obtém o CSRF token
+    const { ticket, CSRFPreventionToken } = await renewTicket();
 
-    // Realiza a requisição para obter os dados do VNC Proxy
+    // Solicita o proxy VNC para a VM
     const vncProxyResponse = await fetch(
       `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       {
         method: "POST",
         headers: {
-          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_TOKEN.split('=')[1]}`, // Corrige o formato do token
-          "CSRFPreventionToken": Cookies.get("proxmoxCSRF"), // Adiciona o CSRF token como cabeçalho
+          "CSRFPreventionToken": CSRFPreventionToken,
+          Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN.split("=")[1]}`, // Certifique-se de enviar somente o token puro
         },
         credentials: "include",
       }
@@ -236,7 +229,7 @@ const connectVM = async (vmid, node) => {
 
     const { ticket: vncTicket, port } = vncProxyData.data;
 
-    // Monta a URL noVNC
+    // Gera a URL para conexão noVNC
     const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=1&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
 
     // Atualiza o iframe com a URL gerada
@@ -248,6 +241,7 @@ const connectVM = async (vmid, node) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
