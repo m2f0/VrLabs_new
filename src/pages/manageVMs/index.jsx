@@ -202,7 +202,7 @@ const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
-    // Defina explicitamente o ticket e CSRF token para testes
+    // Usando ticket explícito para depuração
     const explicitTicket = "PVE:apiuser@pve:67976DA1::wZG2/dP0ZdYxTEYtmiIFjc85DmxvoSduF/yCJSJxlf2WFExw3PqWdjfz3H/HGvPW2swZJ9Q==";
     const explicitCSRFToken = "67976DA1:tsrbuMIP7hiuPjUD9xKgR1ZGNCBHS35u7EPLRFmWlyE";
 
@@ -211,17 +211,21 @@ const connectVM = async (vmid, node, type) => {
       CSRFPreventionToken: explicitCSRFToken,
     });
 
+    // Construa o cabeçalho de autenticação
+    const headers = {
+      "CSRFPreventionToken": explicitCSRFToken,
+      Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN}`, // Inclui apenas o token
+    };
+
+    console.log("[connectVM] Headers preparados:", headers);
+
     // Solicitar o proxy VNC para a VM
     const vncProxyResponse = await fetch(
       `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       {
         method: "POST",
-        headers: {
-          "CSRFPreventionToken": explicitCSRFToken,
-          Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN}`, // Corrigido
-          Cookie: `PVEAuthCookie=${explicitTicket}`,
-        },
-        credentials: "include", // Inclui os cookies automaticamente
+        headers,
+        credentials: "include", // Inclui cookies automaticamente
       }
     );
 
@@ -236,7 +240,7 @@ const connectVM = async (vmid, node, type) => {
 
     const { ticket: vncTicket, port } = vncProxyData.data;
 
-    // Gera a URL para conexão noVNC
+    // Gerar a URL para o noVNC
     const noVNCUrl = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=1&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
     setIframeUrl(noVNCUrl);
 
@@ -246,6 +250,7 @@ const connectVM = async (vmid, node, type) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
