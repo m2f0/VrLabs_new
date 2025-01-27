@@ -31,7 +31,7 @@ import Test from "./pages/test";
 
 // Protected Route Component
 const RequireAuth = ({ children }) => {
-  const token = localStorage.getItem("PVEAuthCookie");
+  const token = localStorage.getItem("PVEAuthCookie_prox.nnovup.com.br");
   return token ? children : <Navigate to="/login" replace />;
 };
 
