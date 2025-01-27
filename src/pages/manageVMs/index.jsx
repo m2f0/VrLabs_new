@@ -198,32 +198,30 @@ const deleteVM = async (vmid, node) => {
 
 // Função para conectar a uma VM (atualizada)
 // Função para conectar a uma VM (corrigida)
-const connectVM = async (vmid, node) => {
+const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
-    // Renova o ticket e obtém os tokens
-    const { ticket, CSRFPreventionToken } = await renewTicket();
+    // Defina explicitamente o ticket para teste
+    const explicitTicket = "PVE:apiuser@pve:67976DA1::wZG2/dP0ZdYxTEYtmiIFjc85DmxvoSduF/yCJSJxlf2WFExw3PqWdjfz3H/HGvPW2swZJ9Q==";
+    const explicitCSRFToken = "67976DA1:tsrbuMIP7hiuPjUD9xKgR1ZGNCBHS35u7EPLRFmWlyE";
 
-    if (!ticket || !CSRFPreventionToken) {
-      throw new Error("Erro: Ticket ou CSRFPreventionToken ausente.");
-    }
+    console.log("[connectVM] Ticket e CSRF token para teste:", {
+      ticket: explicitTicket,
+      CSRFPreventionToken: explicitCSRFToken,
+    });
 
-    console.log("[connectVM] Ticket e CSRF token obtidos:", { ticket, CSRFPreventionToken });
-
-    // Define explicitamente o token ID para teste
-    const explicitTokenId = "9df761c2-6b64-4313-9811-8ca0df6fa966";
-
-    // Solicita o proxy VNC para a VM
+    // Solicitar o proxy VNC para a VM
     const vncProxyResponse = await fetch(
       `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       {
         method: "POST",
         headers: {
-          "CSRFPreventionToken": CSRFPreventionToken,
-          Authorization: `PVEAPIToken=apiuser@pve!apitoken=${explicitTokenId}`, // Token explícito
+          "CSRFPreventionToken": explicitCSRFToken,
+          Authorization: `PVEAPIToken=apiuser@pve!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+          Cookie: `PVEAuthCookie=${explicitTicket}`,
         },
-        credentials: "include", // Inclui cookies automaticamente
+        credentials: "include", // Inclui os cookies automaticamente
       }
     );
 
@@ -240,8 +238,6 @@ const connectVM = async (vmid, node) => {
 
     // Gera a URL para conexão noVNC
     const noVNCUrl = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=1&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
-
-    // Atualiza o iframe com a URL gerada
     setIframeUrl(noVNCUrl);
 
     console.log("[connectVM] URL noVNC configurada no iframe com sucesso:", noVNCUrl);
@@ -250,6 +246,7 @@ const connectVM = async (vmid, node) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
