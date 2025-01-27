@@ -202,7 +202,7 @@ const connectVM = async (vmid, node) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
-    // Renova o ticket e obtém o CSRF token
+    // Renova o ticket e obtém os tokens
     const { ticket, CSRFPreventionToken } = await renewTicket();
 
     if (!ticket || !CSRFPreventionToken) {
@@ -211,6 +211,9 @@ const connectVM = async (vmid, node) => {
 
     console.log("[connectVM] Ticket e CSRF token obtidos:", { ticket, CSRFPreventionToken });
 
+    // Configuração do cabeçalho Authorization
+    const tokenId = process.env.REACT_APP_API_TOKEN.split("=")[1];
+
     // Solicita o proxy VNC para a VM
     const vncProxyResponse = await fetch(
       `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
@@ -218,9 +221,9 @@ const connectVM = async (vmid, node) => {
         method: "POST",
         headers: {
           "CSRFPreventionToken": CSRFPreventionToken,
-          Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN.split("=")[1]}`,
+          Authorization: `PVEAPIToken=${tokenId}`,
         },
-        credentials: "include",
+        credentials: "include", // Inclui os cookies automaticamente
       }
     );
 
@@ -247,6 +250,7 @@ const connectVM = async (vmid, node) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
