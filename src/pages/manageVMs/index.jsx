@@ -22,10 +22,9 @@ const Team = () => {
     console.log("[fetchVMs] Buscando lista de VMs...");
   
     try {
-      const csrfToken = localStorage.getItem("proxmoxCSRF");
-      const authCookie = localStorage.getItem("PVEAuthCookie");
+      const csrfToken = Cookies.get("proxmoxCSRF"); // Busca o CSRF token do cookie
+      const authCookie = Cookies.get("PVEAuthCookie"); // Busca o cookie de autenticação
   
-      // Certifique-se de que ambos os tokens estão disponíveis
       if (!csrfToken || !authCookie) {
         throw new Error("Tokens de autenticação ausentes.");
       }
@@ -36,13 +35,11 @@ const Team = () => {
           "CSRFPreventionToken": csrfToken,
           Authorization: `${process.env.REACT_APP_API_TOKEN}`,
         },
-        credentials: "include", // Inclui cookies automaticamente
+        credentials: "include", // Inclui os cookies automaticamente
       });
   
       if (!response.ok) {
-        throw new Error(
-          `Erro ao buscar VMs: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Erro ao buscar VMs: ${response.status} ${response.statusText}`);
       }
   
       const data = await response.json();
@@ -62,6 +59,7 @@ const Team = () => {
       alert("Erro ao buscar a lista de VMs. Verifique o console para mais detalhes.");
     }
   };
+  
   
   
 
