@@ -202,7 +202,7 @@ const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
-    // Defina explicitamente o ticket para teste
+    // Defina explicitamente o ticket e CSRF token para testes
     const explicitTicket = "PVE:apiuser@pve:67976DA1::wZG2/dP0ZdYxTEYtmiIFjc85DmxvoSduF/yCJSJxlf2WFExw3PqWdjfz3H/HGvPW2swZJ9Q==";
     const explicitCSRFToken = "67976DA1:tsrbuMIP7hiuPjUD9xKgR1ZGNCBHS35u7EPLRFmWlyE";
 
@@ -218,7 +218,7 @@ const connectVM = async (vmid, node, type) => {
         method: "POST",
         headers: {
           "CSRFPreventionToken": explicitCSRFToken,
-          Authorization: `PVEAPIToken=apiuser@pve!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+          Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN}`, // Corrigido
           Cookie: `PVEAuthCookie=${explicitTicket}`,
         },
         credentials: "include", // Inclui os cookies automaticamente
@@ -246,6 +246,7 @@ const connectVM = async (vmid, node, type) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
