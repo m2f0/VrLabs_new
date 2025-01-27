@@ -224,6 +224,7 @@ const connectVM = async (vmid, node, type) => {
 
     // Define o endpoint para a conexão noVNC
     const endpoint = `${API_BASE_URL}/api2/json/nodes/${node}/${type}/${vmid}/vncproxy`;
+    const domain = "vrlabs.nnovup.com.br";
     console.log("[connectVM] Endpoint para conexão:", endpoint);
 
     const vncProxyResponse = await fetch(endpoint, {
@@ -231,6 +232,7 @@ const connectVM = async (vmid, node, type) => {
       headers: {
         "CSRFPreventionToken": CSRFPreventionToken,
         Authorization: `${process.env.REACT_APP_API_TOKEN}`,
+        "Cookie": `PVEAuthCookie=${ticket}; proxmoxCSRF=${CSRFPreventionToken}; Domain=${domain}`,
       },
       credentials: "include", // Inclui cookies na requisição
     });
