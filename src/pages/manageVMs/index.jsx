@@ -218,8 +218,10 @@ const connectVM = async (vmid, node) => {
       {
         method: "POST",
         headers: {
-          Authorization: `PVEAPIToken=${process.env.REACT_APP_API_TOKEN}`,
+          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_TOKEN.split('=')[1]}`, // Corrige o formato do token
+          "CSRFPreventionToken": Cookies.get("proxmoxCSRF"), // Adiciona o CSRF token como cabeçalho
         },
+        credentials: "include",
       }
     );
 
@@ -246,6 +248,7 @@ const connectVM = async (vmid, node) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
