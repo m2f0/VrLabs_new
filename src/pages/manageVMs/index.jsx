@@ -4,6 +4,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import { useTheme } from "@mui/material/styles";
+import Cookies from 'js-cookie';
 
 const Team = () => {
   const theme = useTheme();
@@ -148,20 +149,16 @@ const Team = () => {
       const data = await response.json();
       const { ticket, CSRFPreventionToken } = data.data;
   
-      // Obter o domínio base da API
-      const apiBaseDomain = new URL(API_BASE_URL).hostname;
+      // Definir o cookie PVEAuthCookie para o domínio atual
+      Cookies.set('PVEAuthCookie', ticket, { path: '/', secure: true, sameSite: 'None' });
   
-      // Configurar cookies para o domínio da API
-      document.cookie = `PVEAuthCookie=${ticket}; Path=/; Secure; SameSite=None; Domain=${apiBaseDomain}`;
-      document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; Path=/; Secure; SameSite=None; Domain=${apiBaseDomain}`;
+      console.log("[renewTicket] Cookie PVEAuthCookie configurado para o domínio atual.");
   
-      console.log(`[renewTicket] Cookies configurados para o domínio: ${apiBaseDomain}`);
+      // Salvar os tokens no localStorage
+      localStorage.setItem("PVEAuthCookie", ticket);
+      localStorage.setItem("proxmoxCSRF", CSRFPreventionToken);
   
-      // Salvar tokens no localStorage para o domínio
-      localStorage.setItem(`PVEAuthCookie_${apiBaseDomain}`, ticket);
-      localStorage.setItem(`proxmoxCSRF_${apiBaseDomain}`, CSRFPreventionToken);
-  
-      console.log(`[renewTicket] Tickets e CSRFPreventionToken salvos no localStorage para o domínio: ${apiBaseDomain}`);
+      console.log("[renewTicket] Ticket e CSRFPreventionToken salvos no localStorage.");
   
       return { ticket, CSRFPreventionToken };
     } catch (error) {
