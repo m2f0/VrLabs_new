@@ -202,7 +202,7 @@ const connectVM = async (vmid, node, type) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
-    // Renova o ticket e CSRF token
+    // Renova o ticket e obtém o CSRF token
     const { ticket, CSRFPreventionToken } = await renewTicket();
 
     console.log("[connectVM] Ticket e CSRFPreventionToken obtidos:", {
@@ -210,16 +210,21 @@ const connectVM = async (vmid, node, type) => {
       CSRFPreventionToken,
     });
 
+    // Constrói o cabeçalho de autenticação corretamente
+    const headers = {
+      "CSRFPreventionToken": CSRFPreventionToken,
+      Authorization: `${process.env.REACT_APP_API_TOKEN}`, // Token no formato correto
+    };
+
+    console.log("[connectVM] Headers preparados:", headers);
+
     // Solicita o proxy VNC para a VM
     const vncProxyResponse = await fetch(
-      `${API_BASE_URL}/api2/json/nodes/${node}/${type}/${vmid}/vncproxy`,
+      `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/${node}/${type}/${vmid}/vncproxy`,
       {
         method: "POST",
-        headers: {
-          "CSRFPreventionToken": CSRFPreventionToken,
-          Authorization: `PVEAPIToken=${API_TOKEN}`,
-        },
-        credentials: "include",
+        headers,
+        credentials: "include", // Inclui os cookies automaticamente
       }
     );
 
@@ -234,9 +239,10 @@ const connectVM = async (vmid, node, type) => {
 
     const { port, ticket: vncTicket } = vncProxyData.data;
 
-    // Gera a URL para o noVNC com o domínio configurado no Nginx
-    const noVNCUrl = `https://prox.nnovup.com.br/?console=kvm&novnc=1&node=${node}&resize=off&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${vncTicket}`;
+    // Gera a URL para o noVNC
+    const noVNCUrl = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=off&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${vncTicket}`;
 
+    // Atualiza o iframe com a URL do noVNC
     setIframeUrl(noVNCUrl);
 
     console.log("[connectVM] URL noVNC configurada no iframe com sucesso:", noVNCUrl);
@@ -245,6 +251,7 @@ const connectVM = async (vmid, node, type) => {
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
   }
 };
+
 
 
 
