@@ -63,8 +63,9 @@ const connectVM = async (vmid, node) => {
         method: "POST",
         headers: {
           "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
+        body: JSON.stringify({}) // Add empty object as body for POST request
       }
     );
 
@@ -79,8 +80,8 @@ const connectVM = async (vmid, node) => {
 
     const { ticket: vncTicket, port } = vncProxyData.data;
 
-    // Configurar o noVNC URL com o formato correto usando API token
-    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}&token=${encodeURIComponent(process.env.REACT_APP_API_TOKEN)}`;
+    // Updated URL format based on Proxmox VE API documentation
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}`;
     
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
     window.open(noVNCUrl, '_blank');
