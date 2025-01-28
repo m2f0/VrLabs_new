@@ -25,11 +25,10 @@ const renewTicket = async () => {
   try {
     const response = await fetch(process.env.REACT_APP_API_LOGIN_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        username: process.env.REACT_APP_API_USERNAME,
-        password: process.env.REACT_APP_API_PASSWORD,
-      }),
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
+      },
     });
 
     if (!response.ok) {
@@ -41,9 +40,9 @@ const renewTicket = async () => {
     const data = await response.json();
     const { ticket, CSRFPreventionToken } = data.data;
 
-    // Configura os cookies
-    document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=prox.nnovup.com.br; secure; sameSite=None`;
-    document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; path=/; domain=prox.nnovup.com.br; secure; sameSite=None`;
+    // Configura os cookies com domínio específico
+    document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=.nnovup.com.br; secure; sameSite=None`;
+    document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; path=/; domain=.nnovup.com.br; secure; sameSite=None`;
 
     console.log("[renewTicket] Cookies configurados:", {
       PVEAuthCookie: ticket,
@@ -119,17 +118,15 @@ const connectVM = async (vmid, node) => {
       CSRFPreventionToken,
     });
 
-    // Solicitar o proxy VNC
+    // Solicitar o proxy VNC usando API Token em vez de cookie
     const vncProxyResponse = await fetch(
       `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       {
         method: "POST",
         headers: {
-          "CSRFPreventionToken": CSRFPreventionToken,
-          "Cookie": `PVEAuthCookie=${ticket}`,
+          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
           "Content-Type": "application/json",
         },
-        credentials: "include",
       }
     );
 
@@ -145,10 +142,10 @@ const connectVM = async (vmid, node) => {
     const { ticket: vncTicket, port } = vncProxyData.data;
 
     // Configurar o noVNC URL com o formato correto
-    const noVNCUrl = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=1&websockify=${port}/${vncTicket}`;
+    const noVNCUrl = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&node=${node}&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}&PVEAuthCookie=${encodeURIComponent(ticket)}`;
     
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
-    window.open(noVNCUrl, '_blank');  // Abre em uma nova aba
+    window.open(noVNCUrl, '_blank');
 
   } catch (error) {
     console.error("[connectVM] Erro ao conectar à VM:", error);
