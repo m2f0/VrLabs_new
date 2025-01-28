@@ -11,7 +11,7 @@ const Team = () => {
   const colors = tokens(theme.palette.mode);
 
   const [vmList, setVmList] = useState([]);
-  const [iframeUrl, setIframeUrl] = useState(""); // URL para o iframe
+  const [iframeUrl, setIframeUrl] = useState(null); // URL para o iframe
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const API_TOKEN = process.env.REACT_APP_API_TOKEN;
@@ -122,9 +122,9 @@ const connectVM = async (vmid, node) => {
         method: "POST",
         headers: {
           "CSRFPreventionToken": CSRFPreventionToken,
-          Authorization: `${process.env.REACT_APP_API_TOKEN}`,
+          "Cookie": `PVEAuthCookie=${ticket}`,  // Adicionar cookie na requisição
         },
-        credentials: "include", // Inclui cookies automaticamente
+        credentials: "include",
       }
     );
 
@@ -139,11 +139,12 @@ const connectVM = async (vmid, node) => {
 
     const { ticket: vncTicket, port } = vncProxyData.data;
 
-    // Configurar o noVNC URL
-    const noVNCUrl = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=1&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
+    // Configurar o noVNC URL com o formato correto
+    const noVNCUrl = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=1&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}&PVEAuthCookie=${encodeURIComponent(ticket)}`;
+    
+    console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
     setIframeUrl(noVNCUrl);
 
-    console.log("[connectVM] URL noVNC configurada no iframe com sucesso:", noVNCUrl);
   } catch (error) {
     console.error("[connectVM] Erro ao conectar à VM:", error);
     alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
@@ -185,13 +186,17 @@ const connectVM = async (vmid, node) => {
         <DataGrid rows={vmList} columns={columns} />
       </Box>
       {iframeUrl && (
-        <Box mt="20px">
+        <Box mt="20px" sx={{ width: '100%', height: '800px', border: '1px solid #ccc' }}>
           <iframe
             src={iframeUrl}
-            width="100%"
-            height="800px"
-            style={{ border: "none" }}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              backgroundColor: '#000'
+            }}
             title="Console noVNC"
+            allow="clipboard-read; clipboard-write"
           />
         </Box>
       )}
