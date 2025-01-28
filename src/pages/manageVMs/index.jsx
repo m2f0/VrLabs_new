@@ -56,36 +56,13 @@ const connectVM = async (vmid, node) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
-    // 1. Primeiro, obter um ticket de autenticação
-    const authResponse = await fetch(`${API_BASE_URL}/api2/json/access/ticket`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        username: process.env.REACT_APP_API_USERNAME,
-        password: process.env.REACT_APP_API_PASSWORD,
-      }),
-    });
-
-    if (!authResponse.ok) {
-      throw new Error(`Erro na autenticação: ${authResponse.status}`);
-    }
-
-    const authData = await authResponse.json();
-    const { ticket, CSRFPreventionToken } = authData.data;
-
-    // 2. Configurar o cookie de autenticação
-    document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=.nnovup.com.br; Secure; SameSite=None`;
-
-    // 3. Solicitar o proxy VNC
+    // 1. Solicitar o proxy VNC usando o API Token
     const vncProxyResponse = await fetch(
       `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       {
         method: "POST",
         headers: {
-          "CSRFPreventionToken": CSRFPreventionToken,
-          "Cookie": `PVEAuthCookie=${ticket}`,
+          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
         },
       }
     );
@@ -97,20 +74,17 @@ const connectVM = async (vmid, node) => {
     const vncProxyData = await vncProxyResponse.json();
     const { ticket: vncTicket, port } = vncProxyData.data;
 
-    // 4. Construir a URL com todos os parâmetros necessários
-    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}&PVEAuthCookie=${encodeURIComponent(ticket)}`;
+    // 2. Construir a URL com o caminho correto para o websocket
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=scale&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${encodeURIComponent(vncTicket)}`;
 
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
 
-    // 5. Abrir em uma nova aba
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      // Garantir que o cookie seja definido antes de redirecionar
-      newWindow.document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=.nnovup.com.br; Secure; SameSite=None`;
-      newWindow.location.href = noVNCUrl;
-    } else {
-      alert("Por favor, permita popups para este site para acessar o console VNC.");
-    }
+    // 3. Abrir em uma nova aba
+    window.open(noVNCUrl, '_blank');
+
+    const wsUrl = `wss://${new URL(API_BASE_URL).hostname}/api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${encodeURIComponent(vncTicket)}`;
+    console.log("[connectVM] Testando conexão WebSocket:", wsUrl);
+    testWebSocketConnection(wsUrl);
 
   } catch (error) {
     console.error("[connectVM] Erro ao conectar à VM:", error);
@@ -172,3 +146,22 @@ const connectVM = async (vmid, node) => {
 };
 
 export default Team;
+
+// Adicione esta função de utilidade
+const testWebSocketConnection = (url) => {
+  console.log("[testWebSocket] Tentando conectar ao WebSocket:", url);
+  const ws = new WebSocket(url);
+  
+  ws.onopen = () => {
+    console.log("[testWebSocket] Conexão estabelecida com sucesso");
+    ws.close();
+  };
+  
+  ws.onerror = (error) => {
+    console.error("[testWebSocket] Erro na conexão:", error);
+  };
+  
+  ws.onclose = (event) => {
+    console.log("[testWebSocket] Conexão fechada:", event.code, event.reason);
+  };
+};
