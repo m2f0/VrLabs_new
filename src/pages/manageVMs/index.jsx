@@ -61,95 +61,100 @@ const Team = () => {
     }
   };
 
-  const fetchVMs = async () => {
-    console.log("[fetchVMs] Buscando lista de VMs...");
+  // Função para buscar lista de VMs
+const fetchVMs = async () => {
+  console.log("[fetchVMs] Buscando lista de VMs...");
 
-    try {
-      let csrfToken = Cookies.get("proxmoxCSRF");
-      let authCookie = Cookies.get("PVEAuthCookie");
+  try {
+    let csrfToken = Cookies.get("proxmoxCSRF");
+    let authCookie = Cookies.get("PVEAuthCookie");
 
-      // Renova os tokens se não estiverem disponíveis
-      if (!csrfToken || !authCookie) {
-        console.warn("[fetchVMs] Tokens ausentes. Renovando...");
-        const tokens = await renewTicket();
-        csrfToken = tokens.CSRFPreventionToken;
-        authCookie = tokens.ticket;
-      }
+    // Renova os tokens se não estiverem disponíveis
+    if (!csrfToken || !authCookie) {
+      console.warn("[fetchVMs] Tokens ausentes. Renovando...");
+      const tokens = await renewTicket();
+      csrfToken = tokens.CSRFPreventionToken;
+      authCookie = tokens.ticket;
+    }
 
-      const response = await fetch(`${API_BASE_URL}/api2/json/cluster/resources?type=vm`, {
-        method: "GET",
+    const response = await fetch(`${API_BASE_URL}/api2/json/cluster/resources?type=vm`, {
+      method: "GET",
+      headers: {
+        "CSRFPreventionToken": csrfToken,
+        Authorization: `${API_TOKEN}`,
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar VMs: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log("[fetchVMs] Lista de VMs recebida:", data);
+
+    setVmList(
+      data.data.map((vm) => ({
+        id: vm.vmid,
+        name: vm.name,
+        status: vm.status,
+        node: vm.node,
+        type: vm.type || "qemu",
+      }))
+    );
+  } catch (error) {
+    console.error("[fetchVMs] Erro ao buscar lista de VMs:", error);
+    alert("Erro ao buscar a lista de VMs. Verifique o console para mais detalhes.");
+  }
+};
+
+  // Função para conectar a uma VM
+const connectVM = async (vmid, node) => {
+  console.log("[connectVM] Iniciando conexão para VM:", vmid);
+
+  try {
+    // Renova o ticket e obtém os tokens
+    const { ticket, CSRFPreventionToken } = await renewTicket();
+
+    console.log("[connectVM] Ticket e CSRFPreventionToken obtidos:", {
+      ticket,
+      CSRFPreventionToken,
+    });
+
+    // Solicita o proxy VNC
+    const vncProxyResponse = await fetch(
+      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
+      {
+        method: "POST",
         headers: {
-          "CSRFPreventionToken": csrfToken,
+          "CSRFPreventionToken": CSRFPreventionToken,
           Authorization: API_TOKEN,
         },
         credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar VMs: ${response.status} ${response.statusText}`);
       }
+    );
 
-      const data = await response.json();
-      console.log("[fetchVMs] Lista de VMs recebida:", data);
-
-      setVmList(
-        data.data.map((vm) => ({
-          id: vm.vmid,
-          name: vm.name,
-          status: vm.status,
-          node: vm.node,
-          type: vm.type || "qemu",
-        }))
-      );
-    } catch (error) {
-      console.error("[fetchVMs] Erro ao buscar lista de VMs:", error);
-      alert("Erro ao buscar a lista de VMs. Verifique o console para mais detalhes.");
+    if (!vncProxyResponse.ok) {
+      const errorResponse = await vncProxyResponse.text();
+      console.error("[connectVM] Erro na resposta do VNC proxy:", errorResponse);
+      throw new Error(`[connectVM] Erro ao obter VNC proxy: ${vncProxyResponse.status}`);
     }
-  };
 
-  const connectVM = async (vmid, node) => {
-    console.log("[connectVM] Iniciando conexão para VM:", vmid);
+    const vncProxyData = await vncProxyResponse.json();
+    console.log("[connectVM] Resposta do VNC proxy:", vncProxyData);
 
-    try {
-      const { ticket, CSRFPreventionToken } = await renewTicket();
+    const { ticket: vncTicket, port } = vncProxyData.data;
 
-      console.log("[connectVM] Ticket e CSRFPreventionToken obtidos:", {
-        ticket,
-        CSRFPreventionToken,
-      });
+    // Configurar o noVNC URL
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=1&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
+    setIframeUrl(noVNCUrl);
 
-      const vncProxyResponse = await fetch(
-        `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
-        {
-          method: "POST",
-          headers: {
-            "CSRFPreventionToken": CSRFPreventionToken,
-            Authorization: API_TOKEN,
-          },
-          credentials: "include",
-        }
-      );
-
-      if (!vncProxyResponse.ok) {
-        const errorResponse = await vncProxyResponse.text();
-        console.error("[connectVM] Erro na resposta do VNC proxy:", errorResponse);
-        throw new Error(`[connectVM] Erro ao obter VNC proxy: ${vncProxyResponse.status}`);
-      }
-
-      const vncProxyData = await vncProxyResponse.json();
-      console.log("[connectVM] Resposta do VNC proxy:", vncProxyData);
-
-      const { ticket: vncTicket, port } = vncProxyData.data;
-
-      const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=1&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
-      setIframeUrl(noVNCUrl);
-
-      console.log("[connectVM] URL noVNC configurada no iframe com sucesso:", noVNCUrl);
-    } catch (error) {
-      console.error("[connectVM] Erro ao conectar à VM:", error);
-      alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
-    }
-  };
+    console.log("[connectVM] URL noVNC configurada no iframe com sucesso:", noVNCUrl);
+  } catch (error) {
+    console.error("[connectVM] Erro ao conectar à VM:", error);
+    alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
+  }
+};
 
   useEffect(() => {
     fetchVMs();
