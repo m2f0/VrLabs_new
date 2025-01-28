@@ -56,39 +56,65 @@ const connectVM = async (vmid, node) => {
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
-    // Solicitar o proxy VNC usando API Token
+    // 1. Primeiro, obter um ticket de autenticação
+    const authResponse = await fetch(`${API_BASE_URL}/api2/json/access/ticket`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        username: process.env.REACT_APP_API_USERNAME,
+        password: process.env.REACT_APP_API_PASSWORD,
+      }),
+    });
+
+    if (!authResponse.ok) {
+      throw new Error(`Erro na autenticação: ${authResponse.status}`);
+    }
+
+    const authData = await authResponse.json();
+    const { ticket, CSRFPreventionToken } = authData.data;
+
+    // 2. Configurar o cookie de autenticação
+    document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=.nnovup.com.br; Secure; SameSite=None`;
+
+    // 3. Solicitar o proxy VNC
     const vncProxyResponse = await fetch(
       `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       {
         method: "POST",
         headers: {
-          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
-          "Content-Type": "application/json"
+          "CSRFPreventionToken": CSRFPreventionToken,
+          "Cookie": `PVEAuthCookie=${ticket}`,
         },
-        body: JSON.stringify({}) // Add empty object as body for POST request
       }
     );
 
     if (!vncProxyResponse.ok) {
-      const errorResponse = await vncProxyResponse.text();
-      console.error("[connectVM] Erro na resposta do VNC proxy:", errorResponse);
-      throw new Error(`[connectVM] Erro ao obter VNC proxy: ${vncProxyResponse.status}`);
+      throw new Error(`Erro ao obter VNC proxy: ${vncProxyResponse.status}`);
     }
 
     const vncProxyData = await vncProxyResponse.json();
-    console.log("[connectVM] Resposta do VNC proxy:", vncProxyData);
-
     const { ticket: vncTicket, port } = vncProxyData.data;
 
-    // Updated URL format based on Proxmox VE API documentation
-    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}`;
-    
+    // 4. Construir a URL com todos os parâmetros necessários
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}&PVEAuthCookie=${encodeURIComponent(ticket)}`;
+
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
-    window.open(noVNCUrl, '_blank');
+
+    // 5. Abrir em uma nova aba
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      // Garantir que o cookie seja definido antes de redirecionar
+      newWindow.document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=.nnovup.com.br; Secure; SameSite=None`;
+      newWindow.location.href = noVNCUrl;
+    } else {
+      alert("Por favor, permita popups para este site para acessar o console VNC.");
+    }
 
   } catch (error) {
     console.error("[connectVM] Erro ao conectar à VM:", error);
-    alert("Erro ao conectar à VM. Verifique o console para mais detalhes.");
+    alert(`Erro ao conectar à VM: ${error.message}`);
   }
 };
 
