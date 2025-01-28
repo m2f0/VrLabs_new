@@ -18,6 +18,7 @@ const Team = () => {
 
   // Função para renovar o ticket e salvar no domínio correto
 // Função para renovar o ticket e salvar no domínio correto
+// Função para renovar o ticket e salvar no domínio correto
 const renewTicket = async () => {
   console.log("[renewTicket] Iniciando a renovação do ticket de autenticação...");
 
@@ -40,9 +41,9 @@ const renewTicket = async () => {
     const data = await response.json();
     const { ticket, CSRFPreventionToken } = data.data;
 
-    // Garantir que o domínio correto seja usado ao salvar os cookies
-    document.cookie = `PVEAuthCookie=${ticket}; path=/; secure; sameSite=none; domain=prox.nnovup.com.br`;
-    document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; path=/; secure; sameSite=none; domain=prox.nnovup.com.br`;
+    // Configura os cookies explicitamente para o domínio prox.nnovup.com.br
+    document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=prox.nnovup.com.br; secure; sameSite=None`;
+    document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; path=/; domain=prox.nnovup.com.br; secure; sameSite=None`;
 
     console.log("[renewTicket] Tickets salvos no domínio prox.nnovup.com.br com sucesso.");
     return { ticket, CSRFPreventionToken };
@@ -51,6 +52,7 @@ const renewTicket = async () => {
     throw error;
   }
 };
+
 
 
   // Função para buscar lista de VMs
