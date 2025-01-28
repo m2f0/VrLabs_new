@@ -41,11 +41,15 @@ const renewTicket = async () => {
     const data = await response.json();
     const { ticket, CSRFPreventionToken } = data.data;
 
-    // Configura os cookies explicitamente para o domínio prox.nnovup.com.br
+    // Configura os cookies
     document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=prox.nnovup.com.br; secure; sameSite=None`;
     document.cookie = `proxmoxCSRF=${CSRFPreventionToken}; path=/; domain=prox.nnovup.com.br; secure; sameSite=None`;
 
-    console.log("[renewTicket] Tickets salvos no domínio prox.nnovup.com.br com sucesso.");
+    console.log("[renewTicket] Cookies configurados:", {
+      PVEAuthCookie: ticket,
+      proxmoxCSRF: CSRFPreventionToken
+    });
+
     return { ticket, CSRFPreventionToken };
   } catch (error) {
     console.error("[renewTicket] Erro ao renovar o ticket:", error);
@@ -122,7 +126,8 @@ const connectVM = async (vmid, node) => {
         method: "POST",
         headers: {
           "CSRFPreventionToken": CSRFPreventionToken,
-          "Cookie": `PVEAuthCookie=${ticket}`,  // Adicionar cookie na requisição
+          "Cookie": `PVEAuthCookie=${ticket}`,
+          "Content-Type": "application/json",
         },
         credentials: "include",
       }
@@ -140,10 +145,10 @@ const connectVM = async (vmid, node) => {
     const { ticket: vncTicket, port } = vncProxyData.data;
 
     // Configurar o noVNC URL com o formato correto
-    const noVNCUrl = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=1&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}&PVEAuthCookie=${encodeURIComponent(ticket)}`;
+    const noVNCUrl = `${process.env.REACT_APP_API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=1&websockify=${port}/${vncTicket}`;
     
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
-    setIframeUrl(noVNCUrl);
+    window.open(noVNCUrl, '_blank');  // Abre em uma nova aba
 
   } catch (error) {
     console.error("[connectVM] Erro ao conectar à VM:", error);
