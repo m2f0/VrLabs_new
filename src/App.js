@@ -1,5 +1,5 @@
 import { ColorModeContext, useMode } from "./theme";
-import { CssBaseline, ThemeProvider, Box } from "@mui/material"; // Importando Box
+import { CssBaseline, ThemeProvider, Box } from "@mui/material";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { MyProSidebarProvider } from "./pages/global/sidebar/sidebarContext";
 
@@ -28,12 +28,6 @@ import Files from "./pages/files";
 import Login from "./pages/login";
 import Register from "./pages/register";
 import Test from "./pages/test";
-
-// Protected Route Component
-const RequireAuth = ({ children }) => {
-  const token = localStorage.getItem("PVEAuthCookie");
-  return token ? children : <Navigate to="/login" replace />;
-};
 
 const App = () => {
   const [theme, colorMode] = useMode();
@@ -72,169 +66,32 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* Rotas protegidas */}
-                <Route
-                  path="/"
-                  element={
-                    <RequireAuth>
-                      <Dashboard />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/dashboardnnovup"
-                  element={
-                    <RequireAuth>
-                      <DashboardNNovup />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/team"
-                  element={
-                    <RequireAuth>
-                      <Team />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/contacts"
-                  element={
-                    <RequireAuth>
-                      <Contacts />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/invoices"
-                  element={
-                    <RequireAuth>
-                      <Invoices />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/form"
-                  element={
-                    <RequireAuth>
-                      <Form />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/bar"
-                  element={
-                    <RequireAuth>
-                      <Bar />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/pie"
-                  element={
-                    <RequireAuth>
-                      <Pie />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/line"
-                  element={
-                    <RequireAuth>
-                      <Line />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/faq"
-                  element={
-                    <RequireAuth>
-                      <FAQ />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/calendar"
-                  element={
-                    <RequireAuth>
-                      <Calendar />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/geography"
-                  element={
-                    <RequireAuth>
-                      <Geography />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/createVM"
-                  element={
-                    <RequireAuth>
-                      <CreateVM />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/manageVMs"
-                  element={
-                    <RequireAuth>
-                      <ManageVMs />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/ManageVMsCecyber"
-                  element={
-                    <RequireAuth>
-                      <ManageVMsCecyber />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/automation"
-                  element={
-                    <RequireAuth>
-                      <Automation />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/automationVMnnovup"
-                  element={
-                    <RequireAuth>
-                      <AutomationNNovup />
-                    </RequireAuth>
-                  }
-                />
+                {/* Páginas sem autenticação */}
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboardnnovup" element={<DashboardNNovup />} />
+                <Route path="/team" element={<Team />} />
+                <Route path="/contacts" element={<Contacts />} />
+                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/form" element={<Form />} />
+                <Route path="/bar" element={<Bar />} />
+                <Route path="/pie" element={<Pie />} />
+                <Route path="/line" element={<Line />} />
+                <Route path="/faq" element={<FAQ />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/geography" element={<Geography />} />
+                <Route path="/createVM" element={<CreateVM />} />
+                <Route path="/manageVMs" element={<ManageVMs />} />
+                <Route path="/ManageVMsCecyber" element={<ManageVMsCecyber />} />
+                <Route path="/automation" element={<Automation />} />
+                <Route path="/automationVMnnovup" element={<AutomationNNovup />} />
                 <Route
                   path="/automationVMnnovupMultiples"
-                  element={
-                    <RequireAuth>
-                      <AutomationNNovupMultiples />
-                    </RequireAuth>
-                  }
+                  element={<AutomationNNovupMultiples />}
                 />
-                <Route
-                  path="/Files"
-                  element={
-                    <RequireAuth>
-                      <Files />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/test"
-                  element={
-                    <RequireAuth>
-                      <Test />
-                    </RequireAuth>
-                  }
-                />
-                {/* Redireciona rotas desconhecidas para login */}
-                <Route path="*" element={<Navigate to="/login" />} />
+                <Route path="/Files" element={<Files />} />
+                <Route path="/test" element={<Test />} />
+                {/* Redireciona rotas desconhecidas para a página inicial */}
+                <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </Box>
           </Box>
