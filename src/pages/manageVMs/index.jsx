@@ -24,7 +24,8 @@ const fetchVMs = async () => {
     const response = await fetch(`${API_BASE_URL}/api2/json/cluster/resources?type=vm`, {
       method: "GET",
       headers: {
-        "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+        // Correct format: username!tokenid=uuid
+        "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
       },
     });
 
