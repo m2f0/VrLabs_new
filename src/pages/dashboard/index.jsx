@@ -68,6 +68,9 @@ const Dashboard = () => {
         ticket: ticketData.data.ticket,
         csrf: ticketData.data.CSRFPreventionToken,
       };
+
+      // Set the cookie with the correct domain
+      document.cookie = `PVEAuthCookie=${auth.ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
       
       setAuthData(auth);
       return auth;
