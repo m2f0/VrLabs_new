@@ -45,32 +45,59 @@ const VmAutomation = () => {
 
   const fetchVMs = async () => {
     try {
+      // First, get authentication ticket
+      const ticketResponse = await fetch(
+        `${API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: API_USER,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Failed to get authentication ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+
+      // Then fetch VMs with proper authentication
       const response = await fetch(
         `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
           headers: {
-            Authorization: API_TOKEN,
+            "Authorization": `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`,
           },
+          credentials: 'include',
         }
       );
-  
+
       if (!response.ok) {
         throw new Error(
           `Erro na API do Proxmox: ${response.status} ${response.statusText}`
         );
       }
-  
+
       const data = await response.json();
-  
+
       const allVMs = (data.data || []).map((vm) => ({
         id: vm.vmid,
         name: vm.name || "Sem Nome",
         status: vm.status || "Indisponível",
         node: vm.node || "Indefinido",
-        type: vm.type || "qemu", // Adicionando o tipo (qemu ou lxc)
+        type: vm.type || "qemu",
       }));
-  
+
       setVmList(allVMs);
     } catch (error) {
       console.error("Erro ao buscar lista de VMs:", error);
@@ -84,25 +111,51 @@ const VmAutomation = () => {
       console.warn(`Snapshots não suportados para o tipo: ${type}`);
       return;
     }
-  
-    const endpoint = `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`;
-  
+
     try {
+      // First, get authentication ticket
+      const ticketResponse = await fetch(
+        `${API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: API_USER,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Failed to get authentication ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+
+      const endpoint = `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/snapshot`;
+
       const response = await fetch(endpoint, {
         method: "GET",
         headers: {
-          Authorization: API_TOKEN,
+          "Authorization": `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+          "CSRFPreventionToken": csrfToken,
+          "Cookie": `PVEAuthCookie=${authTicket}`,
         },
+        credentials: 'include',
       });
-  
+
       if (!response.ok) {
         throw new Error(
           `Erro ao buscar snapshots: ${response.status} ${response.statusText}`
         );
       }
-  
+
       const data = await response.json();
-  
+
       const snapshots = (data.data || [])
         .filter((snap) => snap.name !== "current")
         .map((snap) => ({
@@ -111,7 +164,7 @@ const VmAutomation = () => {
           name: snap.name || "Sem Nome",
           description: snap.description || "Sem Descrição",
         }));
-  
+
       setSnapshotList(snapshots);
     } catch (error) {
       console.error("Erro ao buscar snapshots:", error);
