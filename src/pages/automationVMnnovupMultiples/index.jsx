@@ -174,6 +174,8 @@ const VmAutomation = () => {
   
 
   const fetchSnapshotsForSelectedVMs = async () => {
+    console.log("Fetching snapshots for VMs:", selectedVMs);
+    
     if (!selectedVMs || selectedVMs.length === 0) {
       console.log("No VMs selected");
       setSnapshotsByVM([]);
@@ -181,7 +183,6 @@ const VmAutomation = () => {
     }
 
     try {
-      // Get authentication ticket first
       const ticketResponse = await fetch(
         `${API_BASE_URL}/api2/json/access/ticket`,
         {
@@ -204,40 +205,35 @@ const VmAutomation = () => {
       const authTicket = ticketData.data.ticket;
       const csrfToken = ticketData.data.CSRFPreventionToken;
 
-      // Create a map of existing snapshots to avoid duplicates
-      const existingSnapshots = new Map(
-        snapshotsByVM.map(vm => [vm.vmId, vm])
-      );
+      const snapshotPromises = selectedVMs.map(async (vm) => {
+        try {
+          if (vm.type !== "qemu" && vm.type !== "lxc") {
+            console.warn(`Tipo de VM não suportado: ${vm.type} para VM ${vm.name}`);
+            return null;
+          }
 
-      // Fetch snapshots only for selected VMs
-      const snapshotResults = await Promise.all(
-        selectedVMs.map(async (vm) => {
-          try {
-            // Skip if VM type is not supported
-            if (vm.type !== "qemu" && vm.type !== "lxc") {
-              console.warn(`Tipo de VM não suportado: ${vm.type} para VM ${vm.name}`);
-              return null;
-            }
+          const endpoint = `${API_BASE_URL}/api2/json/nodes/${vm.node}/${vm.type}/${vm.id}/snapshot`;
+          
+          const response = await fetch(endpoint, {
+            method: "GET",
+            headers: {
+              "Authorization": `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+              "CSRFPreventionToken": csrfToken,
+              "Cookie": `PVEAuthCookie=${authTicket}`,
+            },
+            credentials: 'include',
+          });
 
-            const endpoint = `${API_BASE_URL}/api2/json/nodes/${vm.node}/${vm.type}/${vm.id}/snapshot`;
+          if (!response.ok) {
+            console.warn(`Snapshots não disponíveis para VM ${vm.name}: ${response.statusText}`);
+            return null;
+          }
 
-            const response = await fetch(endpoint, {
-              method: "GET",
-              headers: {
-                "Authorization": `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
-                "CSRFPreventionToken": csrfToken,
-                "Cookie": `PVEAuthCookie=${authTicket}`,
-              },
-              credentials: 'include',
-            });
-
-            if (!response.ok) {
-              console.warn(`Snapshots não disponíveis para VM ${vm.name}: ${response.statusText}`);
-              return null;
-            }
-
-            const data = await response.json();
-            const vmSnapshots = (data.data || [])
+          const data = await response.json();
+          return {
+            vmId: vm.id,
+            vmName: vm.name,
+            snapshots: (data.data || [])
               .filter(snap => snap.name !== "current")
               .map(snap => ({
                 id: `${vm.id}-${snap.name}`,
@@ -245,29 +241,19 @@ const VmAutomation = () => {
                 vmName: vm.name,
                 name: snap.name || "Sem Nome",
                 description: snap.description || "Sem Descrição",
-              }));
+              }))
+          };
+        } catch (error) {
+          console.error(`Erro ao buscar snapshots para VM ${vm.name}:`, error);
+          return null;
+        }
+      });
 
-            return {
-              vmId: vm.id,
-              vmName: vm.name,
-              snapshots: vmSnapshots
-            };
-          } catch (error) {
-            console.error(`Erro ao buscar snapshots para VM ${vm.name}:`, error);
-            return null;
-          }
-        })
-      );
-
-      // Filter out null results and empty snapshot lists
-      const validResults = snapshotResults
-        .filter(result => result !== null && result.snapshots.length > 0);
-
-      // Merge new results with existing ones
-      const mergedResults = [...validResults];
-      console.log("Snapshots fetched for selected VMs:", mergedResults);
+      const results = await Promise.all(snapshotPromises);
+      const validResults = results.filter(result => result !== null && result.snapshots.length > 0);
       
-      setSnapshotsByVM(mergedResults);
+      console.log("Final snapshot results:", validResults);
+      setSnapshotsByVM(validResults);
     } catch (error) {
       console.error("Erro ao buscar snapshots:", error);
       alert("Falha ao buscar snapshots. Verifique o console.");
@@ -621,6 +607,15 @@ const VmAutomation = () => {
     fetchVMs();
   }, []);
 
+  useEffect(() => {
+    if (selectedVMs.length > 0) {
+      console.log("Selected VMs changed:", selectedVMs);
+      fetchSnapshotsForSelectedVMs();
+    } else {
+      setSnapshotsByVM([]);
+    }
+  }, [selectedVMs]);
+
   return (
     <Box m="20px">
       <Header
@@ -684,19 +679,16 @@ const VmAutomation = () => {
     { field: "id", headerName: "VM ID", width: 100 },
     { field: "name", headerName: "Nome", width: 200 },
     { field: "status", headerName: "Status", width: 120 },
+    { field: "node", headerName: "Node", width: 120 },
+    { field: "type", headerName: "Type", width: 120 },
   ]}
   checkboxSelection
   disableSelectionOnClick
-  selectionModel={selectedVMs.map(vm => vm.id)} // Add this to maintain selection state
-  onSelectionModelChange={(ids) => {
-    const selected = vmList.filter((vm) => ids.includes(vm.id));
-    setSelectedVMs(selected);
-    // Only fetch if we have selections
-    if (selected.length > 0) {
-      fetchSnapshotsForSelectedVMs();
-    } else {
-      setSnapshotsByVM([]);
-    }
+  selectionModel={selectedVMs.map(vm => vm.id)}
+  onSelectionModelChange={(newSelectionModel) => {
+    const selectedVMsList = vmList.filter(vm => newSelectionModel.includes(vm.id));
+    console.log("New selection:", selectedVMsList);
+    setSelectedVMs(selectedVMsList);
   }}
 />
 
