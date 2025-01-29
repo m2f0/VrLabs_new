@@ -31,15 +31,20 @@ const Dashboard = () => {
   // Add state for authentication
   const [authData, setAuthData] = useState(null);
 
-  const handleApiError = (error) => {
+  const handleApiError = async (error) => {
     if (error.response?.status === 401) {
-      console.error("Erro de autenticação - verifique o token API");
-      // Optionally show a user-friendly message
-      // alert("Erro de autenticação. Por favor, verifique suas credenciais.");
-    } else {
-      console.error("Erro na API:", error);
-      // alert("Ocorreu um erro ao comunicar com o servidor.");
+      console.log("Token expirado, tentando renovar autenticação...");
+      clearAuthCookies();
+      try {
+        const auth = await authenticate();
+        return auth; // Retorna os novos dados de autenticação
+      } catch (authError) {
+        console.error("Falha ao renovar autenticação:", authError);
+        throw authError;
+      }
     }
+    console.error("Erro na API:", error);
+    throw error;
   };
 
   // Authentication function
@@ -84,31 +89,10 @@ const Dashboard = () => {
   // Função para buscar logs do servidor
   const fetchLogs = async () => {
     try {
-      // 1. Get authentication ticket and CSRF token
-      const ticketResponse = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            username: process.env.REACT_APP_API_USERNAME,
-            password: process.env.REACT_APP_API_PASSWORD,
-          }),
-        }
-      );
-
-      if (!ticketResponse.ok) {
-        throw new Error(`Erro ao obter ticket: ${ticketResponse.status}`);
+      let auth = authData;
+      if (!auth) {
+        auth = await authenticate();
       }
-
-      const ticketData = await ticketResponse.json();
-      const authTicket = ticketData.data.ticket;
-      const csrfToken = ticketData.data.CSRFPreventionToken;
-
-      // Set the cookie for authentication
-      document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None`;
 
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox/tasks`,
@@ -116,14 +100,18 @@ const Dashboard = () => {
           method: "GET",
           headers: {
             "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
-            "CSRFPreventionToken": csrfToken,
-            "Cookie": `PVEAuthCookie=${authTicket}`
+            "CSRFPreventionToken": auth.csrf,
+            "Cookie": `PVEAuthCookie=${auth.ticket}`
           },
           credentials: 'include',
         }
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          auth = await handleApiError({ response });
+          return fetchLogs(); // Tenta novamente com os novos tokens
+        }
         throw new Error(`Erro ao buscar logs: ${response.status} ${response.statusText}`);
       }
 
@@ -139,16 +127,25 @@ const Dashboard = () => {
 
       setLogs(mappedLogs);
     } catch (error) {
-      console.error("[fetchLogs] Erro ao buscar logs do servidor:", error);
+      console.error("[fetchLogs] Erro:", error);
       setLogs([]);
     }
   };
 
   // Atualiza os logs automaticamente a cada 5 segundos
   useEffect(() => {
-    fetchLogs(); // Busca inicial
-    const interval = setInterval(fetchLogs, 5000); // Atualiza a cada 5 segundos
-    return () => clearInterval(interval); // Limpa o intervalo ao desmontar
+    const initializeAuth = async () => {
+      try {
+        await authenticate();
+        fetchLogs();
+        const interval = setInterval(fetchLogs, 5000);
+        return () => clearInterval(interval);
+      } catch (error) {
+        console.error("Erro na inicialização:", error);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   // Função para buscar o número total de VMs e nodes
@@ -156,47 +153,29 @@ const Dashboard = () => {
     console.log("[fetchVMData] Buscando dados...");
 
     try {
-      // 1. Get authentication ticket and CSRF token
-      const ticketResponse = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            username: process.env.REACT_APP_API_USERNAME,
-            password: process.env.REACT_APP_API_PASSWORD,
-          }),
-        }
-      );
-
-      if (!ticketResponse.ok) {
-        throw new Error(`Erro ao obter ticket: ${ticketResponse.status}`);
+      let auth = authData;
+      if (!auth) {
+        auth = await authenticate();
       }
 
-      const ticketData = await ticketResponse.json();
-      const authTicket = ticketData.data.ticket;
-      const csrfToken = ticketData.data.CSRFPreventionToken;
-      
-      // Set the cookie for authentication
-      document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None`;
-
-      // 2. Fetch VM data with both auth ticket and CSRF token
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
           headers: {
             "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
-            "CSRFPreventionToken": csrfToken,
-            "Cookie": `PVEAuthCookie=${authTicket}`
+            "CSRFPreventionToken": auth.csrf,
+            "Cookie": `PVEAuthCookie=${auth.ticket}`
           },
           credentials: 'include',
         }
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          auth = await handleApiError({ response });
+          return fetchVMData(); // Tenta novamente com os novos tokens
+        }
         throw new Error(`Erro na API do Proxmox: ${response.status} ${response.statusText}`);
       }
 
@@ -216,8 +195,8 @@ const Dashboard = () => {
           method: "GET",
           headers: {
             "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
-            "CSRFPreventionToken": csrfToken,
-            "Cookie": `PVEAuthCookie=${authTicket}`
+            "CSRFPreventionToken": auth.csrf,
+            "Cookie": `PVEAuthCookie=${auth.ticket}`
           },
           credentials: 'include',
         }
@@ -230,7 +209,7 @@ const Dashboard = () => {
       const nodeData = await nodeResponse.json();
       setNodeCount(nodeData.data.length);
     } catch (error) {
-      console.error("[fetchVMData] Erro ao buscar dados:", error);
+      console.error("[fetchVMData] Erro:", error);
       setVMCount(0);
       setRunningVMCount(0);
       setStoppedVMCount(0);
@@ -245,6 +224,12 @@ const Dashboard = () => {
       fetchLogs();
     });
   }, []);
+
+  // Adicione esta função para limpar cookies
+  const clearAuthCookies = () => {
+    document.cookie = "PVEAuthCookie=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=None";
+    document.cookie = "proxmoxCSRF=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=None";
+  };
 
   return (
     <Box m="20px">
