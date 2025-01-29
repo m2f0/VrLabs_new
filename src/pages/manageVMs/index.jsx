@@ -16,6 +16,13 @@ const Team = () => {
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const API_TOKEN = process.env.REACT_APP_API_TOKEN;
 
+  // Move debugAuthState inside the component
+  const debugAuthState = () => {
+    console.log("[debugAuth] Current cookies:", document.cookie);
+    console.log("[debugAuth] Current domain:", window.location.hostname);
+    console.log("[debugAuth] API base URL:", API_BASE_URL);
+  };
+
   // Função para buscar lista de VMs
 const fetchVMs = async () => {
   console.log("[fetchVMs] Buscando lista de VMs...");
@@ -169,13 +176,6 @@ const connectVM = async (vmid, node) => {
 };
 
 export default Team;
-
-// Adicione esta função de utilidade
-const debugAuthState = () => {
-  console.log("[debugAuth] Current cookies:", document.cookie);
-  console.log("[debugAuth] Current domain:", window.location.hostname);
-  console.log("[debugAuth] API base URL:", API_BASE_URL);
-};
 
 const testWebSocketConnection = (url) => {
   console.log("[testWebSocket] Tentando conectar ao WebSocket:", url);
