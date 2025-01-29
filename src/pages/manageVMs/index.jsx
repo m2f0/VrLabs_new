@@ -108,13 +108,14 @@ const connectVM = async (vmid, node) => {
     const vncProxyData = await vncProxyResponse.json();
     const { ticket: vncTicket, port } = vncProxyData.data;
 
-    // 3. Build noVNC URL with all necessary parameters
-    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&vmid=${vmid}&resize=scale&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}&PVEAuthCookie=${encodeURIComponent(authTicket)}&CSRFPreventionToken=${encodeURIComponent(csrfToken)}`;
+    // 3. Build noVNC URL with the correct path format
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=off&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${encodeURIComponent(vncTicket)}`;
 
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
 
-    // 4. Open in new tab
-    window.open(noVNCUrl, '_blank');
+    // 4. Open in new tab with specific features
+    const windowFeatures = 'width=800,height=600,menubar=no,toolbar=no,location=no,status=no';
+    window.open(noVNCUrl, `vnc_${vmid}`, windowFeatures);
 
   } catch (error) {
     console.error("[connectVM] Erro ao conectar à VM:", error);
@@ -179,18 +180,26 @@ export default Team;
 
 const testWebSocketConnection = (url) => {
   console.log("[testWebSocket] Tentando conectar ao WebSocket:", url);
-  const ws = new WebSocket(url);
   
-  ws.onopen = () => {
-    console.log("[testWebSocket] Conexão estabelecida com sucesso");
-    ws.close();
-  };
-  
-  ws.onerror = (error) => {
-    console.error("[testWebSocket] Erro na conexão:", error);
-  };
-  
-  ws.onclose = (event) => {
-    console.log("[testWebSocket] Conexão fechada:", event.code, event.reason);
-  };
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(url);
+    
+    const timeout = setTimeout(() => {
+      ws.close();
+      reject(new Error("WebSocket connection timeout"));
+    }, 5000);
+
+    ws.onopen = () => {
+      clearTimeout(timeout);
+      console.log("[testWebSocket] Conexão estabelecida com sucesso");
+      ws.close();
+      resolve();
+    };
+    
+    ws.onerror = (error) => {
+      clearTimeout(timeout);
+      console.error("[testWebSocket] Erro na conexão:", error);
+      reject(error);
+    };
+  });
 };
