@@ -56,6 +56,7 @@ const Dashboard = () => {
             username: process.env.REACT_APP_API_USERNAME,
             password: process.env.REACT_APP_API_PASSWORD,
           }),
+          credentials: 'include',
         }
       );
 
@@ -69,8 +70,8 @@ const Dashboard = () => {
         csrf: ticketData.data.CSRFPreventionToken,
       };
 
-      // Set the cookie with the correct domain
-      document.cookie = `PVEAuthCookie=${auth.ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+      // Set the cookie
+      document.cookie = `PVEAuthCookie=${auth.ticket}; path=/; Secure; SameSite=Strict`;
       
       setAuthData(auth);
       return auth;
@@ -91,7 +92,7 @@ const Dashboard = () => {
           method: "GET",
           headers: {
             // Changed Authorization format to match the API token format
-            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}@pam!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
             "CSRFPreventionToken": auth.csrf,
             "Cookie": `PVEAuthCookie=${auth.ticket}`,
           },
@@ -145,7 +146,7 @@ const Dashboard = () => {
           method: "GET",
           headers: {
             // Changed Authorization format to match the API token format
-            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}@pam!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
             "CSRFPreventionToken": auth.csrf,
             "Cookie": `PVEAuthCookie=${auth.ticket}`,
           },
