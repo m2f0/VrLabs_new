@@ -33,6 +33,21 @@ const VmAutomation = () => {
   const API_USER = process.env.REACT_APP_API_USERNAME;
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
+  // Verify the environment variables are loaded
+  useEffect(() => {
+    if (!API_BASE_URL || !API_TOKEN || !API_USER) {
+      console.error("Environment variables not properly loaded:", {
+        API_BASE_URL,
+        API_TOKEN,
+        API_USER
+      });
+      alert("Configuration error: Environment variables not properly loaded");
+      return;
+    }
+    
+    fetchVMs();
+  }, []);
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   
@@ -45,32 +60,59 @@ const VmAutomation = () => {
 
   const fetchVMs = async () => {
     try {
+      // First, get an authentication ticket
+      const ticketResponse = await fetch(
+        `${API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: API_USER,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Failed to get authentication ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+
+      // Then fetch the VMs with the proper authorization
       const response = await fetch(
         `${API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
           headers: {
-            Authorization: API_TOKEN,
+            "Authorization": `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`,
           },
+          credentials: 'include',
         }
       );
-  
+
       if (!response.ok) {
         throw new Error(
           `Erro na API do Proxmox: ${response.status} ${response.statusText}`
         );
       }
-  
+
       const data = await response.json();
-  
+
       const allVMs = (data.data || []).map((vm) => ({
         id: vm.vmid,
         name: vm.name || "Sem Nome",
         status: vm.status || "Indisponível",
         node: vm.node || "Indefinido",
-        type: vm.type || "qemu", // Adicionar o tipo
+        type: vm.type || "qemu",
       }));
-  
+
       setVmList(allVMs);
     } catch (error) {
       console.error("Erro ao buscar lista de VMs:", error);
