@@ -65,6 +65,10 @@ const Dashboard = () => {
       const authTicket = ticketData.data.ticket;
       const csrfToken = ticketData.data.CSRFPreventionToken;
 
+      // Set cookies with the correct domain
+      document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+      document.cookie = `proxmoxCSRF=${csrfToken}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox1/tasks`,
         {
