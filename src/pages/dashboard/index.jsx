@@ -90,7 +90,8 @@ const Dashboard = () => {
         {
           method: "GET",
           headers: {
-            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            // Changed Authorization format to match the API token format
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}@pam!apitoken=${process.env.REACT_APP_API_TOKEN}`,
             "CSRFPreventionToken": auth.csrf,
             "Cookie": `PVEAuthCookie=${auth.ticket}`,
           },
@@ -143,7 +144,8 @@ const Dashboard = () => {
         {
           method: "GET",
           headers: {
-            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            // Changed Authorization format to match the API token format
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}@pam!apitoken=${process.env.REACT_APP_API_TOKEN}`,
             "CSRFPreventionToken": auth.csrf,
             "Cookie": `PVEAuthCookie=${auth.ticket}`,
           },
