@@ -28,6 +28,9 @@ const Dashboard = () => {
   const [stoppedVMCount, setStoppedVMCount] = useState(0); // VMs desligadas
   const [nodeCount, setNodeCount] = useState(0); // Nodes
 
+  // Add state for authentication
+  const [authData, setAuthData] = useState(null);
+
   const handleApiError = (error) => {
     if (error.response?.status === 401) {
       console.error("Erro de autenticação - verifique o token API");
@@ -39,10 +42,9 @@ const Dashboard = () => {
     }
   };
 
-  // Função para buscar logs do servidor
-  const fetchLogs = async () => {
+  // Authentication function
+  const authenticate = async () => {
     try {
-      // First, get authentication ticket
       const ticketResponse = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
         {
@@ -58,51 +60,61 @@ const Dashboard = () => {
       );
 
       if (!ticketResponse.ok) {
-        throw new Error(`Failed to get authentication ticket: ${ticketResponse.status}`);
+        throw new Error(`Authentication failed: ${ticketResponse.status}`);
       }
 
       const ticketData = await ticketResponse.json();
-      const authTicket = ticketData.data.ticket;
-      const csrfToken = ticketData.data.CSRFPreventionToken;
+      const auth = {
+        ticket: ticketData.data.ticket,
+        csrf: ticketData.data.CSRFPreventionToken,
+      };
+      
+      setAuthData(auth);
+      return auth;
+    } catch (error) {
+      console.error("Authentication error:", error);
+      throw error;
+    }
+  };
 
-      // Set cookies with the correct domain
-      document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
-      document.cookie = `proxmoxCSRF=${csrfToken}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
-
+  // Função para buscar logs do servidor
+  const fetchLogs = async () => {
+    try {
+      const auth = authData || await authenticate();
+      
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox1/tasks`,
         {
           method: "GET",
           headers: {
             "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
-            "CSRFPreventionToken": csrfToken,
-            "Cookie": `PVEAuthCookie=${authTicket}`,
+            "CSRFPreventionToken": auth.csrf,
+            "Cookie": `PVEAuthCookie=${auth.ticket}`,
           },
           credentials: 'include',
         }
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Re-authenticate and try again
+          const newAuth = await authenticate();
+          return fetchLogs(newAuth);
+        }
         throw new Error(`Erro ao buscar logs: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-
-      // Mapeamento dos campos recebidos para os exibidos
       const mappedLogs = data.data.map((log) => ({
-        startTime: log.starttime
-          ? new Date(log.starttime * 1000).toLocaleString()
-          : "N/A",
-        endTime: log.endtime
-          ? new Date(log.endtime * 1000).toLocaleString()
-          : "N/A",
+        startTime: log.starttime ? new Date(log.starttime * 1000).toLocaleString() : "N/A",
+        endTime: log.endtime ? new Date(log.endtime * 1000).toLocaleString() : "N/A",
         node: log.node || "N/A",
         user: log.user || "N/A",
-        description: log.type || "N/A", // Mapeado para `type`
-        status: log.status || "N/A", // Mapeado para `status`
+        description: log.type || "N/A",
+        status: log.status || "N/A",
       }));
 
-      setLogs(mappedLogs); // Atualiza o estado com os logs mapeados
+      setLogs(mappedLogs);
     } catch (error) {
       console.error("Erro ao buscar logs do servidor:", error);
       setLogs([]);
@@ -114,59 +126,40 @@ const Dashboard = () => {
     fetchLogs(); // Busca inicial
     const interval = setInterval(fetchLogs, 5000); // Atualiza a cada 5 segundos
     return () => clearInterval(interval); // Limpa o intervalo ao desmontar
-  }, []);
+  }, [authData]);
 
   // Função para buscar o número total de VMs e nodes
   const fetchVMData = async () => {
     console.log("Iniciando busca de VMs...");
     
     try {
-      // First, get authentication ticket
-      const ticketResponse = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            username: process.env.REACT_APP_API_USERNAME,
-            password: process.env.REACT_APP_API_PASSWORD,
-          }),
-        }
-      );
-
-      if (!ticketResponse.ok) {
-        throw new Error(`Failed to get authentication ticket: ${ticketResponse.status}`);
-      }
-
-      const ticketData = await ticketResponse.json();
-      const authTicket = ticketData.data.ticket;
-      const csrfToken = ticketData.data.CSRFPreventionToken;
-
-      // Then fetch VMs with the proper authorization
+      const auth = authData || await authenticate();
+      
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
           headers: {
             "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
-            "CSRFPreventionToken": csrfToken,
-            "Cookie": `PVEAuthCookie=${authTicket}`,
+            "CSRFPreventionToken": auth.csrf,
+            "Cookie": `PVEAuthCookie=${auth.ticket}`,
           },
           credentials: 'include',
         }
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Re-authenticate and try again
+          const newAuth = await authenticate();
+          return fetchVMData(newAuth);
+        }
         throw new Error(`Erro na API do Proxmox: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
       const totalVMs = data.data.length;
-      const runningVMs = data.data.filter(
-        (vm) => vm.status === "running"
-      ).length;
+      const runningVMs = data.data.filter((vm) => vm.status === "running").length;
       const stoppedVMs = totalVMs - runningVMs;
 
       setVMCount(totalVMs);
@@ -201,13 +194,12 @@ const Dashboard = () => {
     }
   };
 
-  // Carregar os dados ao montar o componente
+  // Initial data fetch
   useEffect(() => {
-    if (!process.env.REACT_APP_API_BASE_URL || !process.env.REACT_APP_API_TOKEN) {
-      console.error("Environment variables not properly configured");
-      return;
-    }
-    fetchVMData();
+    authenticate().then(() => {
+      fetchVMData();
+      fetchLogs();
+    });
   }, []);
 
   return (
