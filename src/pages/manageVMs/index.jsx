@@ -214,19 +214,19 @@ const deleteVM = async (vmid, node) => {
     { 
       field: "id", 
       headerName: "VM ID", 
-      width: 100,
+      width: 70,
       cellClassName: "vm-column--cell",
     },
     { 
       field: "name", 
       headerName: "Nome", 
-      width: 200,
+      width: 180,
       cellClassName: "name-column--cell",
     },
     { 
       field: "status", 
       headerName: "Status", 
-      width: 150,
+      width: 120,
       renderCell: ({ row: { status } }) => {
         return (
           <Box
@@ -252,33 +252,35 @@ const deleteVM = async (vmid, node) => {
     { 
       field: "node", 
       headerName: "Node", 
-      width: 150,
+      width: 120,
       cellClassName: "node-column--cell",
     },
     { 
       field: "type", 
       headerName: "Tipo", 
-      width: 150,
+      width: 120,
       cellClassName: "type-column--cell",
     },
     {
       field: "actions",
       headerName: "Ações",
-      width: 400,
+      width: 320,
       renderCell: ({ row }) => (
         <Box
           display="flex"
           justifyContent="center"
-          gap="10px"
+          gap="5px"
         >
           <Button
             variant="contained"
+            size="small"
             sx={{
               backgroundColor: colors.greenAccent[600],
               color: colors.grey[100],
-              fontSize: "13px",
+              fontSize: "12px",
               fontWeight: "bold",
-              padding: "10px 20px",
+              padding: "5px 10px",
+              minWidth: "auto",
               "&:hover": {
                 backgroundColor: colors.greenAccent[500],
               },
@@ -289,19 +291,21 @@ const deleteVM = async (vmid, node) => {
             }}
             onClick={() => startVM(row.id, row.node)}
             disabled={row.status === "running"}
-            startIcon={<PlayArrowIcon />}
+            startIcon={<PlayArrowIcon sx={{ fontSize: "20px" }} />}
           >
             Iniciar
           </Button>
 
           <Button
             variant="contained"
+            size="small"
             sx={{
               backgroundColor: colors.redAccent[600],
               color: colors.grey[100],
-              fontSize: "13px",
+              fontSize: "12px",
               fontWeight: "bold",
-              padding: "10px 20px",
+              padding: "5px 10px",
+              minWidth: "auto",
               "&:hover": {
                 backgroundColor: colors.redAccent[500],
               },
@@ -312,43 +316,47 @@ const deleteVM = async (vmid, node) => {
             }}
             onClick={() => stopVM(row.id, row.node)}
             disabled={row.status === "stopped"}
-            startIcon={<StopIcon />}
+            startIcon={<StopIcon sx={{ fontSize: "20px" }} />}
           >
             Parar
           </Button>
 
           <Button
             variant="contained"
+            size="small"
             sx={{
               backgroundColor: colors.blueAccent[600],
               color: colors.grey[100],
-              fontSize: "13px",
+              fontSize: "12px",
               fontWeight: "bold",
-              padding: "10px 20px",
+              padding: "5px 10px",
+              minWidth: "auto",
               "&:hover": {
                 backgroundColor: colors.blueAccent[500],
               }
             }}
             onClick={() => connectVM(row.id, row.node)}
-            startIcon={<DesktopWindowsIcon />}
+            startIcon={<DesktopWindowsIcon sx={{ fontSize: "20px" }} />}
           >
             Conectar
           </Button>
 
           <Button
             variant="contained"
+            size="small"
             sx={{
               backgroundColor: colors.grey[600],
               color: colors.grey[100],
-              fontSize: "13px",
+              fontSize: "12px",
               fontWeight: "bold",
-              padding: "10px 20px",
+              padding: "5px 10px",
+              minWidth: "auto",
               "&:hover": {
                 backgroundColor: colors.grey[500],
               }
             }}
             onClick={() => deleteVM(row.id, row.node)}
-            startIcon={<DeleteIcon />}
+            startIcon={<DeleteIcon sx={{ fontSize: "20px" }} />}
           >
             Deletar
           </Button>
