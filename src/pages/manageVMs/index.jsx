@@ -6,6 +6,10 @@ import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import { useTheme } from "@mui/material/styles";
 import Cookies from "js-cookie";
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DesktopWindowsIcon from '@mui/icons-material/DesktopWindows';
 
 const Team = () => {
   const theme = useTheme();
@@ -207,44 +211,144 @@ const deleteVM = async (vmid, node) => {
   }, []);
 
   const columns = [
-    { field: "id", headerName: "VM ID", width: 100 },
-    { field: "name", headerName: "Nome", width: 200 },
-    { field: "status", headerName: "Status", width: 150 },
-    { field: "node", headerName: "Node", width: 150 },
-    { field: "type", headerName: "Tipo", width: 150 },
+    { 
+      field: "id", 
+      headerName: "VM ID", 
+      width: 100,
+      cellClassName: "vm-column--cell",
+    },
+    { 
+      field: "name", 
+      headerName: "Nome", 
+      width: 200,
+      cellClassName: "name-column--cell",
+    },
+    { 
+      field: "status", 
+      headerName: "Status", 
+      width: 150,
+      renderCell: ({ row: { status } }) => {
+        return (
+          <Box
+            width="80%"
+            m="0 auto"
+            p="5px"
+            display="flex"
+            justifyContent="center"
+            backgroundColor={
+              status === "running"
+                ? colors.greenAccent[600]
+                : status === "stopped"
+                ? colors.redAccent[600]
+                : colors.blueAccent[600]
+            }
+            borderRadius="4px"
+          >
+            {status}
+          </Box>
+        );
+      }
+    },
+    { 
+      field: "node", 
+      headerName: "Node", 
+      width: 150,
+      cellClassName: "node-column--cell",
+    },
+    { 
+      field: "type", 
+      headerName: "Tipo", 
+      width: 150,
+      cellClassName: "type-column--cell",
+    },
     {
       field: "actions",
       headerName: "Ações",
-      width: 500,
+      width: 400,
       renderCell: ({ row }) => (
-        <Box display="flex" gap="10px">
+        <Box
+          display="flex"
+          justifyContent="center"
+          gap="10px"
+        >
           <Button
             variant="contained"
-            color="success"
+            sx={{
+              backgroundColor: colors.greenAccent[600],
+              color: colors.grey[100],
+              fontSize: "13px",
+              fontWeight: "bold",
+              padding: "10px 20px",
+              "&:hover": {
+                backgroundColor: colors.greenAccent[500],
+              },
+              "&:disabled": {
+                backgroundColor: colors.greenAccent[800],
+                color: colors.grey[500],
+              }
+            }}
             onClick={() => startVM(row.id, row.node)}
             disabled={row.status === "running"}
+            startIcon={<PlayArrowIcon />}
           >
             Iniciar
           </Button>
+
           <Button
             variant="contained"
-            color="warning"
+            sx={{
+              backgroundColor: colors.redAccent[600],
+              color: colors.grey[100],
+              fontSize: "13px",
+              fontWeight: "bold",
+              padding: "10px 20px",
+              "&:hover": {
+                backgroundColor: colors.redAccent[500],
+              },
+              "&:disabled": {
+                backgroundColor: colors.redAccent[800],
+                color: colors.grey[500],
+              }
+            }}
             onClick={() => stopVM(row.id, row.node)}
             disabled={row.status === "stopped"}
+            startIcon={<StopIcon />}
           >
             Parar
           </Button>
+
           <Button
             variant="contained"
-            color="primary"
+            sx={{
+              backgroundColor: colors.blueAccent[600],
+              color: colors.grey[100],
+              fontSize: "13px",
+              fontWeight: "bold",
+              padding: "10px 20px",
+              "&:hover": {
+                backgroundColor: colors.blueAccent[500],
+              }
+            }}
             onClick={() => connectVM(row.id, row.node)}
+            startIcon={<DesktopWindowsIcon />}
           >
             Conectar
           </Button>
+
           <Button
             variant="contained"
-            color="error"
+            sx={{
+              backgroundColor: colors.grey[600],
+              color: colors.grey[100],
+              fontSize: "13px",
+              fontWeight: "bold",
+              padding: "10px 20px",
+              "&:hover": {
+                backgroundColor: colors.grey[500],
+              }
+            }}
             onClick={() => deleteVM(row.id, row.node)}
+            startIcon={<DeleteIcon />}
           >
             Deletar
           </Button>
@@ -255,25 +359,62 @@ const deleteVM = async (vmid, node) => {
 
   return (
     <Box m="20px">
-      <Header title="Máquinas Virtuais" subtitle="Gerencie e Controle Suas VMs" />
-      <Box height="70vh">
-        <DataGrid rows={vmList} columns={columns} />
+      <Header
+        title="GERENCIAR VMs"
+        subtitle="Gerencie e Controle suas Máquinas Virtuais"
+      />
+      <Box
+        m="40px 0 0 0"
+        height="75vh"
+        sx={{
+          "& .MuiDataGrid-root": {
+            border: "none",
+            borderRadius: "8px",
+            backgroundColor: colors.primary[400],
+          },
+          "& .MuiDataGrid-cell": {
+            borderBottom: "none",
+            color: colors.grey[100],
+          },
+          "& .name-column--cell": {
+            color: colors.greenAccent[300],
+            fontWeight: "bold",
+          },
+          "& .vm-column--cell": {
+            color: colors.grey[100],
+            fontWeight: "bold",
+          },
+          "& .MuiDataGrid-columnHeaders": {
+            backgroundColor: colors.blueAccent[700],
+            borderBottom: "none",
+            color: colors.grey[100],
+            fontSize: "14px",
+            fontWeight: "bold",
+          },
+          "& .MuiDataGrid-virtualScroller": {
+            backgroundColor: colors.primary[400],
+          },
+          "& .MuiDataGrid-footerContainer": {
+            borderTop: "none",
+            backgroundColor: colors.blueAccent[700],
+            color: colors.grey[100],
+          },
+          "& .MuiCheckbox-root": {
+            color: `${colors.greenAccent[200]} !important`,
+          },
+          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+            color: `${colors.grey[100]} !important`,
+          },
+        }}
+      >
+        <DataGrid
+          rows={vmList}
+          columns={columns}
+          pageSize={10}
+          rowsPerPageOptions={[5, 10, 20]}
+          disableSelectionOnClick
+        />
       </Box>
-      {iframeUrl && (
-        <Box mt="20px" sx={{ width: '100%', height: '800px', border: '1px solid #ccc' }}>
-          <iframe
-            src={iframeUrl}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              backgroundColor: '#000'
-            }}
-            title="Console noVNC"
-            allow="clipboard-read; clipboard-write"
-          />
-        </Box>
-      )}
     </Box>
   );
 };
