@@ -84,28 +84,17 @@ const Dashboard = () => {
   // Função para buscar logs do servidor
   const fetchLogs = async () => {
     try {
-      const auth = authData || await authenticate();
-      
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox/tasks`, // Changed from prox1 to prox
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox/tasks`,
         {
           method: "GET",
           headers: {
-            // Changed Authorization format to match the API token format
-            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
-            "CSRFPreventionToken": auth.csrf,
-            "Cookie": `PVEAuthCookie=${auth.ticket}`,
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
           },
-          credentials: 'include',
         }
       );
 
       if (!response.ok) {
-        if (response.status === 401) {
-          // Re-authenticate and try again
-          const newAuth = await authenticate();
-          return fetchLogs(newAuth);
-        }
         throw new Error(`Erro ao buscar logs: ${response.status} ${response.statusText}`);
       }
 
@@ -121,7 +110,7 @@ const Dashboard = () => {
 
       setLogs(mappedLogs);
     } catch (error) {
-      console.error("Erro ao buscar logs do servidor:", error);
+      console.error("[fetchLogs] Erro ao buscar logs do servidor:", error);
       setLogs([]);
     }
   };
@@ -131,35 +120,21 @@ const Dashboard = () => {
     fetchLogs(); // Busca inicial
     const interval = setInterval(fetchLogs, 5000); // Atualiza a cada 5 segundos
     return () => clearInterval(interval); // Limpa o intervalo ao desmontar
-  }, [authData]);
+  }, []);
 
   // Função para buscar o número total de VMs e nodes
   const fetchVMData = async () => {
-    console.log("Iniciando busca de VMs...");
-    
+    console.log("[fetchVMData] Buscando dados...");
+
     try {
-      const auth = authData || await authenticate();
-      
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`,
-        {
-          method: "GET",
-          headers: {
-            // Changed Authorization format to match the API token format
-            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
-            "CSRFPreventionToken": auth.csrf,
-            "Cookie": `PVEAuthCookie=${auth.ticket}`,
-          },
-          credentials: 'include',
-        }
-      );
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`, {
+        method: "GET",
+        headers: {
+          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
+        },
+      });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          // Re-authenticate and try again
-          const newAuth = await authenticate();
-          return fetchVMData(newAuth);
-        }
         throw new Error(`Erro na API do Proxmox: ${response.status} ${response.statusText}`);
       }
 
@@ -172,27 +147,22 @@ const Dashboard = () => {
       setRunningVMCount(runningVMs);
       setStoppedVMCount(stoppedVMs);
 
-      // Buscar informações de nodes
-      const nodeResponse = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes`,
-        {
-          method: "GET",
-          headers: {
-            "Authorization": process.env.REACT_APP_API_TOKEN
-          },
-        }
-      );
+      // Fetch node information
+      const nodeResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes`, {
+        method: "GET",
+        headers: {
+          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
+        },
+      });
 
       if (!nodeResponse.ok) {
-        throw new Error(
-          `Erro na API do Proxmox: ${nodeResponse.status} ${nodeResponse.statusText}`
-        );
+        throw new Error(`Erro na API do Proxmox: ${nodeResponse.status} ${nodeResponse.statusText}`);
       }
 
       const nodeData = await nodeResponse.json();
-      setNodeCount(nodeData.data.length); // Número de nodes
+      setNodeCount(nodeData.data.length);
     } catch (error) {
-      console.error("Erro ao buscar os dados:", error);
+      console.error("[fetchVMData] Erro ao buscar dados:", error);
       setVMCount(0);
       setRunningVMCount(0);
       setStoppedVMCount(0);
