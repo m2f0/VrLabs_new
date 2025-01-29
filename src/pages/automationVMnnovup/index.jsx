@@ -736,15 +736,14 @@ const VmAutomation = () => {
               disableSelectionOnClick
               selectionModel={selectedSnapshot ? [selectedSnapshot.id] : []}
               onSelectionModelChange={(ids) => {
-                const selectedId = ids[0];
-                const vm = vmList.find((vm) => vm.id === selectedId);
-                setSelectedVM(vm);
-                if (vm) {
-                  // Passar o tipo da VM para buscar snapshots
-                  fetchSnapshots(vm.id, vm.node, vm.type);
+                if (ids.length > 0) {
+                  const selectedId = ids[0];
+                  const snapshot = snapshotList.find((snap) => snap.id === selectedId);
+                  setSelectedSnapshot(snapshot);
+                } else {
+                  setSelectedSnapshot(null);
                 }
               }}
-              
             />
           </Box>
           <Box mt="20px" display="flex" justifyContent="center" gap="20px">
