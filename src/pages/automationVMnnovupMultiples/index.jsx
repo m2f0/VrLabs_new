@@ -204,6 +204,11 @@ const VmAutomation = () => {
       const authTicket = ticketData.data.ticket;
       const csrfToken = ticketData.data.CSRFPreventionToken;
 
+      // Create a map of existing snapshots to avoid duplicates
+      const existingSnapshots = new Map(
+        snapshotsByVM.map(vm => [vm.vmId, vm])
+      );
+
       // Fetch snapshots only for selected VMs
       const snapshotResults = await Promise.all(
         selectedVMs.map(async (vm) => {
@@ -258,8 +263,11 @@ const VmAutomation = () => {
       const validResults = snapshotResults
         .filter(result => result !== null && result.snapshots.length > 0);
 
-      setSnapshotsByVM(validResults);
-      console.log("Snapshots fetched for selected VMs:", validResults);
+      // Merge new results with existing ones
+      const mergedResults = [...validResults];
+      console.log("Snapshots fetched for selected VMs:", mergedResults);
+      
+      setSnapshotsByVM(mergedResults);
     } catch (error) {
       console.error("Erro ao buscar snapshots:", error);
       alert("Falha ao buscar snapshots. Verifique o console.");
@@ -679,9 +687,11 @@ const VmAutomation = () => {
   ]}
   checkboxSelection
   disableSelectionOnClick
+  selectionModel={selectedVMs.map(vm => vm.id)} // Add this to maintain selection state
   onSelectionModelChange={(ids) => {
     const selected = vmList.filter((vm) => ids.includes(vm.id));
     setSelectedVMs(selected);
+    // Only fetch if we have selections
     if (selected.length > 0) {
       fetchSnapshotsForSelectedVMs();
     } else {
