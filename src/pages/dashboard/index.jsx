@@ -86,7 +86,7 @@ const Dashboard = () => {
       const auth = authData || await authenticate();
       
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox1/tasks`,
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox/tasks`, // Changed from prox1 to prox
         {
           method: "GET",
           headers: {
