@@ -42,20 +42,44 @@ const Dashboard = () => {
   // Função para buscar logs do servidor
   const fetchLogs = async () => {
     try {
+      // First, get authentication ticket
+      const ticketResponse = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: process.env.REACT_APP_API_USERNAME,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Failed to get authentication ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox1/tasks`,
         {
           method: "GET",
           headers: {
-            "Authorization": process.env.REACT_APP_API_TOKEN
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`,
           },
+          credentials: 'include',
         }
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Erro ao buscar logs: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Erro ao buscar logs: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -76,7 +100,7 @@ const Dashboard = () => {
 
       setLogs(mappedLogs); // Atualiza o estado com os logs mapeados
     } catch (error) {
-      handleApiError(error);
+      console.error("Erro ao buscar logs do servidor:", error);
       setLogs([]);
     }
   };
@@ -90,27 +114,53 @@ const Dashboard = () => {
 
   // Função para buscar o número total de VMs e nodes
   const fetchVMData = async () => {
+    console.log("Iniciando busca de VMs...");
+    
     try {
-      // Buscar informações de VMs
-      const vmResponse = await fetch(
+      // First, get authentication ticket
+      const ticketResponse = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: process.env.REACT_APP_API_USERNAME,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Failed to get authentication ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+
+      // Then fetch VMs with the proper authorization
+      const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
           headers: {
-            "Authorization": process.env.REACT_APP_API_TOKEN
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`,
           },
+          credentials: 'include',
         }
       );
 
-      if (!vmResponse.ok) {
-        throw new Error(
-          `Erro na API do Proxmox: ${vmResponse.status} ${vmResponse.statusText}`
-        );
+      if (!response.ok) {
+        throw new Error(`Erro na API do Proxmox: ${response.status} ${response.statusText}`);
       }
 
-      const vmData = await vmResponse.json();
-      const totalVMs = vmData.data.length;
-      const runningVMs = vmData.data.filter(
+      const data = await response.json();
+      const totalVMs = data.data.length;
+      const runningVMs = data.data.filter(
         (vm) => vm.status === "running"
       ).length;
       const stoppedVMs = totalVMs - runningVMs;
@@ -139,7 +189,7 @@ const Dashboard = () => {
       const nodeData = await nodeResponse.json();
       setNodeCount(nodeData.data.length); // Número de nodes
     } catch (error) {
-      handleApiError(error);
+      console.error("Erro ao buscar os dados:", error);
       setVMCount(0);
       setRunningVMCount(0);
       setStoppedVMCount(0);
