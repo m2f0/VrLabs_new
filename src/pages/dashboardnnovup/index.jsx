@@ -28,43 +28,109 @@ const Dashboard = () => {
   const [stoppedVMCount, setStoppedVMCount] = useState(0); // VMs desligadas
   const [nodeCount, setNodeCount] = useState(0); // Nodes
 
+  // Add state for authentication
+  const [authData, setAuthData] = useState(null);
+
+  const handleApiError = (error) => {
+    if (error.response?.status === 401) {
+      console.error("Erro de autenticação - verifique o token API");
+      // Optionally show a user-friendly message
+      // alert("Erro de autenticação. Por favor, verifique suas credenciais.");
+    } else {
+      console.error("Erro na API:", error);
+      // alert("Ocorreu um erro ao comunicar com o servidor.");
+    }
+  };
+
+  // Authentication function
+  const authenticate = async () => {
+    try {
+      const ticketResponse = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: process.env.REACT_APP_API_USERNAME,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+          credentials: 'include',
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Authentication failed: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const auth = {
+        ticket: ticketData.data.ticket,
+        csrf: ticketData.data.CSRFPreventionToken,
+      };
+
+      // Set the cookie
+      document.cookie = `PVEAuthCookie=${auth.ticket}; path=/; Secure; SameSite=Strict`;
+      
+      setAuthData(auth);
+      return auth;
+    } catch (error) {
+      console.error("Authentication error:", error);
+      throw error;
+    }
+  };
+
   // Função para buscar logs do servidor
   const fetchLogs = async () => {
-    console.log("Token usado:", process.env.REACT_APP_API_TOKEN);
-    console.log("Base URL:", process.env.REACT_APP_API_BASE_URL);
-
-    if (!process.env.REACT_APP_API_BASE_URL || !process.env.REACT_APP_API_TOKEN) {
-      console.error("Variáveis de ambiente não configuradas corretamente.");
-      return;
-    }
-
-    const nodeName = process.env.REACT_APP_NODE_NAME;
-
     try {
+      // 1. Get authentication ticket and CSRF token
+      const ticketResponse = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: process.env.REACT_APP_API_USERNAME,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Erro ao obter ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+
+      // Set the cookie for authentication
+      document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None`;
+
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/${nodeName}/tasks`,
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox/tasks`,
         {
           method: "GET",
           headers: {
-            Authorization: process.env.REACT_APP_API_TOKEN,
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`
           },
+          credentials: 'include',
         }
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Erro ao buscar logs: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Erro ao buscar logs: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
       const mappedLogs = data.data.map((log) => ({
-        startTime: log.starttime
-          ? new Date(log.starttime * 1000).toLocaleString()
-          : "N/A",
-        endTime: log.endtime
-          ? new Date(log.endtime * 1000).toLocaleString()
-          : "N/A",
+        startTime: log.starttime ? new Date(log.starttime * 1000).toLocaleString() : "N/A",
+        endTime: log.endtime ? new Date(log.endtime * 1000).toLocaleString() : "N/A",
         node: log.node || "N/A",
         user: log.user || "N/A",
         description: log.type || "N/A",
@@ -73,7 +139,7 @@ const Dashboard = () => {
 
       setLogs(mappedLogs);
     } catch (error) {
-      console.error("Erro ao buscar logs do servidor:", error);
+      console.error("[fetchLogs] Erro ao buscar logs do servidor:", error);
       setLogs([]);
     }
   };
@@ -87,56 +153,97 @@ const Dashboard = () => {
 
   // Função para buscar o número total de VMs e nodes
   const fetchVMData = async () => {
-    console.log("Iniciando busca de VMs...");
-    if (!process.env.REACT_APP_API_BASE_URL || !process.env.REACT_APP_API_TOKEN) {
-      console.error("Variáveis de ambiente não configuradas corretamente.");
-      return;
-    }
+    console.log("[fetchVMData] Buscando dados...");
 
     try {
+      // 1. Get authentication ticket and CSRF token
+      const ticketResponse = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: process.env.REACT_APP_API_USERNAME,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Erro ao obter ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+      
+      // Set the cookie for authentication
+      document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None`;
+
+      // 2. Fetch VM data with both auth ticket and CSRF token
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
           headers: {
-            Authorization: process.env.REACT_APP_API_TOKEN,
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`
           },
+          credentials: 'include',
         }
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Erro na API do Proxmox: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Erro na API do Proxmox: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log("Dados recebidos:", data); // Verifique os dados retornados
-
       const totalVMs = data.data.length;
-      const runningVMs = data.data.filter(
-        (vm) => vm.status === "running"
-      ).length;
+      const runningVMs = data.data.filter((vm) => vm.status === "running").length;
       const stoppedVMs = totalVMs - runningVMs;
 
       setVMCount(totalVMs);
       setRunningVMCount(runningVMs);
       setStoppedVMCount(stoppedVMs);
 
-      console.log("Total de VMs:", totalVMs);
-      console.log("VMs em execução:", runningVMs);
-      console.log("VMs desligadas:", stoppedVMs);
+      // Fetch node information with the same authentication
+      const nodeResponse = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`
+          },
+          credentials: 'include',
+        }
+      );
+
+      if (!nodeResponse.ok) {
+        throw new Error(`Erro na API do Proxmox: ${nodeResponse.status} ${nodeResponse.statusText}`);
+      }
+
+      const nodeData = await nodeResponse.json();
+      setNodeCount(nodeData.data.length);
     } catch (error) {
-      console.error("Erro ao buscar os dados:", error);
+      console.error("[fetchVMData] Erro ao buscar dados:", error);
       setVMCount(0);
       setRunningVMCount(0);
       setStoppedVMCount(0);
+      setNodeCount(0);
     }
   };
 
-  // Carregar os dados ao montar o componente
+  // Initial data fetch
   useEffect(() => {
-    fetchVMData();
+    authenticate().then(() => {
+      fetchVMData();
+      fetchLogs();
+    });
   }, []);
 
   return (
@@ -178,10 +285,10 @@ const Dashboard = () => {
             justifyContent="center"
           >
             <StatBox
-              title={vmCount.toLocaleString()}
+              title={vmCount.toLocaleString()} // Exibe o número de VMs formatado
               subtitle="VMs"
-              progress={Math.min(vmCount / 100, 1)}
-              increase={`${Math.round((vmCount / 100) * 100)}%`}
+              progress={Math.min(vmCount / 100, 1)} // Proporção em relação a 100, máximo 1.0
+              increase={`${Math.round((vmCount / 100) * 100)}%`} // Porcentagem em relação a 100
               icon={
                 <ComputerIcon
                   sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -201,12 +308,12 @@ const Dashboard = () => {
             justifyContent="center"
           >
             <StatBox
-              title={runningVMCount.toLocaleString()}
+              title={runningVMCount.toLocaleString()} // Exibe o número de VMs em execução formatado
               subtitle="VMs On"
-              progress={runningVMCount / (vmCount || 1)}
+              progress={runningVMCount / (vmCount || 1)} // Calcula a proporção de VMs em execução
               increase={`${((runningVMCount / (vmCount || 1)) * 100).toFixed(
                 2
-              )}%`}
+              )}%`} // Calcula o percentual de VMs ligadas
               icon={
                 <PowerIcon
                   sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -226,12 +333,12 @@ const Dashboard = () => {
             justifyContent="center"
           >
             <StatBox
-              title={stoppedVMCount.toLocaleString()}
+              title={stoppedVMCount.toLocaleString()} // Exibe o número de VMs desligadas formatado
               subtitle="VMs Off"
-              progress={stoppedVMCount / (vmCount || 1)}
+              progress={stoppedVMCount / (vmCount || 1)} // Calcula a proporção de VMs desligadas
               increase={`${((stoppedVMCount / (vmCount || 1)) * 100).toFixed(
                 2
-              )}%`}
+              )}%`} // Calcula o percentual de VMs desligadas
               icon={
                 <PowerOffIcon
                   sx={{ color: colors.redAccent[600], fontSize: "26px" }}
@@ -254,9 +361,9 @@ const Dashboard = () => {
             justifyContent="center"
           >
             <StatBox
-              title={nodeCount.toLocaleString()}
+              title={nodeCount.toLocaleString()} // Exibe o número de nodes
               subtitle="Nodes"
-              progress="0.80"
+              progress="0.80" // Exemplo de progresso
               increase="+5%"
               icon={
                 <PointOfSaleIcon
@@ -267,7 +374,6 @@ const Dashboard = () => {
           </Box>
         </Grid>
       </Grid>
-
       <Box
         mt="30px"
         p="20px"
