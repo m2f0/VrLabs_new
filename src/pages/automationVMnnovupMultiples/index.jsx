@@ -175,6 +175,29 @@ const VmAutomation = () => {
 
   const fetchSnapshotsForSelectedVMs = async () => {
     try {
+      // Get authentication ticket first
+      const ticketResponse = await fetch(
+        `${API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: API_USER,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Failed to get authentication ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+
       // Buscar snapshots para cada VM selecionada
       const snapshotResults = await Promise.all(
         selectedVMs.map(async (vm) => {
@@ -184,43 +207,52 @@ const VmAutomation = () => {
               vm.type === "qemu"
                 ? `${API_BASE_URL}/api2/json/nodes/${vm.node}/qemu/${vm.id}/snapshot`
                 : `${API_BASE_URL}/api2/json/nodes/${vm.node}/lxc/${vm.id}/snapshot`;
-  
+
             const response = await fetch(endpoint, {
               method: "GET",
               headers: {
-                Authorization: API_TOKEN,
+                "Authorization": `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+                "CSRFPreventionToken": csrfToken,
+                "Cookie": `PVEAuthCookie=${authTicket}`,
               },
+              credentials: 'include',
             });
-  
+
             if (!response.ok) {
               console.warn(`Snapshots não disponíveis para VM ${vm.name}: ${response.statusText}`);
-              return { vmId: vm.id, snapshots: [] };
+              return { vmId: vm.id, vmName: vm.name, snapshots: [] };
             }
-  
+
             const data = await response.json();
-            const snapshots = (data.data || [])
-              .filter((snap) => snap.name !== "current")
-              .map((snap) => ({
-                id: `${vm.id}-${snap.name}`,
-                vmId: vm.id,
-                vmName: vm.name,
-                name: snap.name,
-                description: snap.description || "Sem Descrição",
-              }));
-  
-            return { vmId: vm.id, snapshots };
+            return {
+              vmId: vm.id,
+              vmName: vm.name,
+              snapshots: (data.data || [])
+                .filter((snap) => snap.name !== "current")
+                .map((snap) => ({
+                  id: `${vm.id}-${snap.name}`,
+                  vmId: vm.id,
+                  vmName: vm.name,
+                  name: snap.name || "Sem Nome",
+                  description: snap.description || "Sem Descrição",
+                })),
+            };
           } catch (error) {
             console.error(`Erro ao buscar snapshots para VM ${vm.name}:`, error);
-            return { vmId: vm.id, snapshots: [] };
+            return { vmId: vm.id, vmName: vm.name, snapshots: [] };
           }
         })
       );
-  
-      // Atualizar o estado agrupando os snapshots por VM
-      setSnapshotsByVM(snapshotResults);
+
+      // Filter out any failed results and set the snapshots
+      const validResults = snapshotResults.filter(result => result !== null);
+      setSnapshotsByVM(validResults);
+      
+      // Log the results for debugging
+      console.log("Snapshots fetched:", validResults);
     } catch (error) {
-      console.error("Erro ao buscar snapshots para VMs selecionadas:", error);
-      alert("Erro ao buscar snapshots. Verifique os logs para mais detalhes.");
+      console.error("Erro ao buscar snapshots:", error);
+      alert("Falha ao buscar snapshots. Verifique o console.");
     }
   };
   
