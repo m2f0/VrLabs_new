@@ -53,10 +53,11 @@ const fetchVMs = async () => {
 
 // Atualização da função connectVM para garantir a obtenção de tickets antes da conexão
 const connectVM = async (vmid, node) => {
+  debugAuthState();
   console.log("[connectVM] Iniciando conexão para VM:", vmid);
 
   try {
-    // 1. Get authentication ticket first
+    // 1. Get authentication ticket and CSRF token
     const ticketResponse = await fetch(`${API_BASE_URL}/api2/json/access/ticket`, {
       method: "POST",
       headers: {
@@ -74,19 +75,22 @@ const connectVM = async (vmid, node) => {
 
     const ticketData = await ticketResponse.json();
     const authTicket = ticketData.data.ticket;
+    const csrfToken = ticketData.data.CSRFPreventionToken;
     
     // Set the cookie for authentication
     document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
 
-    // 2. Request VNC proxy with API token
+    // 2. Request VNC proxy with both auth ticket and CSRF token
     const vncProxyResponse = await fetch(
       `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       {
         method: "POST",
         headers: {
-          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
+          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+          "CSRFPreventionToken": csrfToken,
+          "Cookie": `PVEAuthCookie=${authTicket}`
         },
-        credentials: 'include', // Include cookies in the request
+        credentials: 'include',
       }
     );
 
@@ -97,8 +101,8 @@ const connectVM = async (vmid, node) => {
     const vncProxyData = await vncProxyResponse.json();
     const { ticket: vncTicket, port } = vncProxyData.data;
 
-    // 3. Build noVNC URL with auth ticket
-    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&vmid=${vmid}&resize=scale&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}&PVEAuthCookie=${encodeURIComponent(authTicket)}`;
+    // 3. Build noVNC URL with all necessary parameters
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&vmid=${vmid}&resize=scale&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket&port=${port}&vncticket=${encodeURIComponent(vncTicket)}&PVEAuthCookie=${encodeURIComponent(authTicket)}&CSRFPreventionToken=${encodeURIComponent(csrfToken)}`;
 
     console.log("[connectVM] URL noVNC gerada:", noVNCUrl);
 
@@ -167,6 +171,12 @@ const connectVM = async (vmid, node) => {
 export default Team;
 
 // Adicione esta função de utilidade
+const debugAuthState = () => {
+  console.log("[debugAuth] Current cookies:", document.cookie);
+  console.log("[debugAuth] Current domain:", window.location.hostname);
+  console.log("[debugAuth] API base URL:", API_BASE_URL);
+};
+
 const testWebSocketConnection = (url) => {
   console.log("[testWebSocket] Tentando conectar ao WebSocket:", url);
   const ws = new WebSocket(url);
