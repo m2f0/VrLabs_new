@@ -124,6 +124,84 @@ const connectVM = async (vmid, node) => {
   }
 };
 
+const startVM = async (vmid, node) => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/start`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Erro ao iniciar VM: ${response.status} ${response.statusText}`);
+    }
+
+    alert(`VM ${vmid} iniciada com sucesso!`);
+    fetchVMs(); // Refresh the VM list
+  } catch (error) {
+    console.error(`Erro ao iniciar a VM ${vmid}:`, error);
+    alert(`Falha ao iniciar a VM ${vmid}.`);
+  }
+};
+
+const stopVM = async (vmid, node) => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/status/stop`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Erro ao parar VM: ${response.status} ${response.statusText}`);
+    }
+
+    alert(`VM ${vmid} parada com sucesso!`);
+    fetchVMs(); // Refresh the VM list
+  } catch (error) {
+    console.error(`Erro ao parar a VM ${vmid}:`, error);
+    alert(`Falha ao parar a VM ${vmid}.`);
+  }
+};
+
+const deleteVM = async (vmid, node) => {
+  const confirmDelete = window.confirm(
+    `Tem certeza de que deseja deletar a VM ${vmid}?`
+  );
+  
+  if (!confirmDelete) return;
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Erro ao deletar VM: ${response.status} ${response.statusText}`);
+    }
+
+    alert(`VM ${vmid} deletada com sucesso!`);
+    fetchVMs(); // Refresh the VM list
+  } catch (error) {
+    console.error(`Erro ao deletar a VM ${vmid}:`, error);
+    alert(`Falha ao deletar a VM ${vmid}.`);
+  }
+};
+
   useEffect(() => {
     fetchVMs();
   }, []);
@@ -142,10 +220,33 @@ const connectVM = async (vmid, node) => {
         <Box display="flex" gap="10px">
           <Button
             variant="contained"
+            color="success"
+            onClick={() => startVM(row.id, row.node)}
+            disabled={row.status === "running"}
+          >
+            Iniciar
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => stopVM(row.id, row.node)}
+            disabled={row.status === "stopped"}
+          >
+            Parar
+          </Button>
+          <Button
+            variant="contained"
             color="primary"
             onClick={() => connectVM(row.id, row.node)}
           >
             Conectar
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => deleteVM(row.id, row.node)}
+          >
+            Deletar
           </Button>
         </Box>
       ),
