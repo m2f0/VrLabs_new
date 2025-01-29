@@ -28,15 +28,26 @@ const Dashboard = () => {
   const [stoppedVMCount, setStoppedVMCount] = useState(0); // VMs desligadas
   const [nodeCount, setNodeCount] = useState(0); // Nodes
 
+  const handleApiError = (error) => {
+    if (error.response?.status === 401) {
+      console.error("Erro de autenticação - verifique o token API");
+      // Optionally show a user-friendly message
+      // alert("Erro de autenticação. Por favor, verifique suas credenciais.");
+    } else {
+      console.error("Erro na API:", error);
+      // alert("Ocorreu um erro ao comunicar com o servidor.");
+    }
+  };
+
   // Função para buscar logs do servidor
   const fetchLogs = async () => {
     try {
       const response = await fetch(
-        "https://prox.nnovup.com.br/api2/json/nodes/prox1/tasks",
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox1/tasks`,
         {
           method: "GET",
           headers: {
-            Authorization: `PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca`,
+            "Authorization": process.env.REACT_APP_API_TOKEN
           },
         }
       );
@@ -65,8 +76,8 @@ const Dashboard = () => {
 
       setLogs(mappedLogs); // Atualiza o estado com os logs mapeados
     } catch (error) {
-      console.error("Erro ao buscar logs do servidor:", error);
-      setLogs([]); // Limpa os logs em caso de erro
+      handleApiError(error);
+      setLogs([]);
     }
   };
 
@@ -82,11 +93,11 @@ const Dashboard = () => {
     try {
       // Buscar informações de VMs
       const vmResponse = await fetch(
-        "https://prox.nnovup.com.br/api2/json/cluster/resources?type=vm",
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`,
         {
           method: "GET",
           headers: {
-            Authorization: `PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca`,
+            "Authorization": process.env.REACT_APP_API_TOKEN
           },
         }
       );
@@ -110,11 +121,11 @@ const Dashboard = () => {
 
       // Buscar informações de nodes
       const nodeResponse = await fetch(
-        "https://prox.nnovup.com.br/api2/json/nodes",
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes`,
         {
           method: "GET",
           headers: {
-            Authorization: `PVEAPIToken=apiuser@pve!apitoken=58fc95f1-afc7-47e6-8b7a-31e6971062ca`,
+            "Authorization": process.env.REACT_APP_API_TOKEN
           },
         }
       );
@@ -128,7 +139,7 @@ const Dashboard = () => {
       const nodeData = await nodeResponse.json();
       setNodeCount(nodeData.data.length); // Número de nodes
     } catch (error) {
-      console.error("Erro ao buscar os dados:", error);
+      handleApiError(error);
       setVMCount(0);
       setRunningVMCount(0);
       setStoppedVMCount(0);
@@ -138,6 +149,10 @@ const Dashboard = () => {
 
   // Carregar os dados ao montar o componente
   useEffect(() => {
+    if (!process.env.REACT_APP_API_BASE_URL || !process.env.REACT_APP_API_TOKEN) {
+      console.error("Environment variables not properly configured");
+      return;
+    }
     fetchVMData();
   }, []);
 
