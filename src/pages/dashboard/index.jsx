@@ -84,13 +84,42 @@ const Dashboard = () => {
   // Função para buscar logs do servidor
   const fetchLogs = async () => {
     try {
+      // 1. Get authentication ticket and CSRF token
+      const ticketResponse = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: process.env.REACT_APP_API_USERNAME,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Erro ao obter ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+
+      // Set the cookie for authentication
+      document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None`;
+
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes/prox/tasks`,
         {
           method: "GET",
           headers: {
-            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`
           },
+          credentials: 'include',
         }
       );
 
@@ -127,12 +156,45 @@ const Dashboard = () => {
     console.log("[fetchVMData] Buscando dados...");
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`, {
-        method: "GET",
-        headers: {
-          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
-        },
-      });
+      // 1. Get authentication ticket and CSRF token
+      const ticketResponse = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/access/ticket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            username: process.env.REACT_APP_API_USERNAME,
+            password: process.env.REACT_APP_API_PASSWORD,
+          }),
+        }
+      );
+
+      if (!ticketResponse.ok) {
+        throw new Error(`Erro ao obter ticket: ${ticketResponse.status}`);
+      }
+
+      const ticketData = await ticketResponse.json();
+      const authTicket = ticketData.data.ticket;
+      const csrfToken = ticketData.data.CSRFPreventionToken;
+      
+      // Set the cookie for authentication
+      document.cookie = `PVEAuthCookie=${authTicket}; path=/; Secure; SameSite=None`;
+
+      // 2. Fetch VM data with both auth ticket and CSRF token
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/cluster/resources?type=vm`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`
+          },
+          credentials: 'include',
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Erro na API do Proxmox: ${response.status} ${response.statusText}`);
@@ -147,13 +209,19 @@ const Dashboard = () => {
       setRunningVMCount(runningVMs);
       setStoppedVMCount(stoppedVMs);
 
-      // Fetch node information
-      const nodeResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes`, {
-        method: "GET",
-        headers: {
-          "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`
-        },
-      });
+      // Fetch node information with the same authentication
+      const nodeResponse = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api2/json/nodes`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `PVEAPIToken=${process.env.REACT_APP_API_USERNAME}!apitoken=${process.env.REACT_APP_API_TOKEN}`,
+            "CSRFPreventionToken": csrfToken,
+            "Cookie": `PVEAuthCookie=${authTicket}`
+          },
+          credentials: 'include',
+        }
+      );
 
       if (!nodeResponse.ok) {
         throw new Error(`Erro na API do Proxmox: ${nodeResponse.status} ${nodeResponse.statusText}`);
