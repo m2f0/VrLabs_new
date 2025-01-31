@@ -72,6 +72,7 @@ const VmAutomation = () => {
             username: API_USER,
             password: process.env.REACT_APP_API_PASSWORD,
           }),
+          credentials: 'include',
         }
       );
 
@@ -89,7 +90,7 @@ const VmAutomation = () => {
         {
           method: "GET",
           headers: {
-            "Authorization": `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+            "Authorization": `PVEAuthCookie=${authTicket}`,
             "CSRFPreventionToken": csrfToken,
             "Cookie": `PVEAuthCookie=${authTicket}`,
           },
