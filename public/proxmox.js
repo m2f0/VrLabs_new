@@ -14,6 +14,7 @@ async function renewTicket() {
         username: API_USERNAME,
         password: API_PASSWORD,
       }),
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -22,7 +23,12 @@ async function renewTicket() {
 
     const data = await response.json();
     const ticket = data.data.ticket;
-    document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None; Domain=.nnovup.com.br`;
+    const csrfToken = data.data.CSRFPreventionToken;
+
+    // Salva os cookies corretamente no domínio prox.nnovup.com.br
+    document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=prox.nnovup.com.br; Secure; HttpOnly; SameSite=None`;
+    document.cookie = `proxmoxCSRF=${csrfToken}; path=/; domain=prox.nnovup.com.br; Secure; HttpOnly; SameSite=None`;
+
     return ticket;
   } catch (error) {
     console.error("Erro ao renovar o ticket:", error);
@@ -30,6 +36,7 @@ async function renewTicket() {
     throw error;
   }
 }
+
 
 async function createLinkedClone(snapshotName, node, vmId, studentName) {
   try {

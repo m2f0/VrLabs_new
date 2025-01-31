@@ -333,8 +333,8 @@ const VmAutomation = () => {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Automação de Linked Clone</title>
-            <script src="https://vrlabs.cecyber.com/moodle-utils.js"></script>
-            <script src="https://vrlabs.cecyber.com/proxmox.js"></script>
+            <script src="https://vrlabs.nnovup.com.br/moodle-utils.js"></script>
+            <script src="https://vrlabs.nnovup.com.br/proxmox.js"></script>
             <style>
                 body {
                     font-family: Arial, sans-serif;
