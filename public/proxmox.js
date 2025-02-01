@@ -1,5 +1,5 @@
 const API_BASE_URL = "https://prox.nnovup.com.br";
-const API_TOKEN = "PVEAPIToken=apiuser@pve!api=2941a8af-6ae6-4a6e-810c-1c29910d22fc";
+const API_TOKEN = "PVEAPIToken=apiuser@pve!apitoken=9df761c2-6b64-4313-9811-8ca0df6fa966";
 const API_USERNAME = "apiuser@pve";
 const API_PASSWORD = "t?v1K!sfk/#/xSuK";
 
@@ -70,8 +70,10 @@ async function createLinkedClone(snapshotName, node, vmId, studentName) {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: API_TOKEN,
+          "Authorization": API_TOKEN,
+          "Cookie": `PVEAuthCookie=${ticket}`,
         },
+        credentials: 'include',
         body: params,
       }
     );
