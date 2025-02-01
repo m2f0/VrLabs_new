@@ -25,14 +25,13 @@ async function renewTicket() {
     const ticket = data.data.ticket;
     const csrfToken = data.data.CSRFPreventionToken;
 
-    // Salva os cookies corretamente no domínio prox.nnovup.com.br
-    document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=prox.nnovup.com.br; Secure; HttpOnly; SameSite=None`;
-    document.cookie = `proxmoxCSRF=${csrfToken}; path=/; domain=prox.nnovup.com.br; Secure; HttpOnly; SameSite=None`;
+    // Set cookies with correct attributes
+    document.cookie = `PVEAuthCookie=${ticket}; path=/; domain=.nnovup.com.br; Secure; SameSite=None`;
+    document.cookie = `CSRFPreventionToken=${csrfToken}; path=/; domain=.nnovup.com.br; Secure; SameSite=None`;
 
-    return ticket;
+    return { ticket, csrfToken };
   } catch (error) {
     console.error("Erro ao renovar o ticket:", error);
-    alert("Falha ao renovar o ticket. Verifique o console.");
     throw error;
   }
 }
@@ -40,21 +39,19 @@ async function renewTicket() {
 
 async function createLinkedClone(snapshotName, node, vmId, studentName) {
   try {
-    const ticket = await renewTicket();
+    // Get fresh ticket and CSRF token
+    const { ticket, csrfToken } = await renewTicket();
 
-    // Validar e sanitizar o nome do aluno
     const sanitizedStudentName = studentName
       ? studentName.replace(/[^a-zA-Z0-9-]/g, "").substring(0, 20)
       : "SemNome";
 
-    // Solicitar o ID da nova VM
     const newVmId = prompt("Digite o ID da nova VM (Linked Clone):");
     if (!newVmId) {
       alert("O ID da nova VM é obrigatório.");
       return;
     }
 
-    // Compor o nome do linked clone
     const linkedCloneName = `${sanitizedStudentName}-lab-${newVmId}`;
 
     const params = new URLSearchParams({
@@ -71,9 +68,10 @@ async function createLinkedClone(snapshotName, node, vmId, studentName) {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           "Authorization": API_TOKEN,
+          "CSRFPreventionToken": csrfToken,
           "Cookie": `PVEAuthCookie=${ticket}`,
         },
-        credentials: 'include',
+        credentials: "include",
         body: params,
       }
     );
@@ -81,13 +79,15 @@ async function createLinkedClone(snapshotName, node, vmId, studentName) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Erro ao criar Linked Clone:", errorText);
-      throw new Error("Erro ao criar Linked Clone.");
+      throw new Error(`Erro ao criar Linked Clone: ${errorText}`);
     }
 
     alert(`Linked Clone "${linkedCloneName}" criado com sucesso!`);
+    return true;
   } catch (error) {
     console.error(`Erro ao criar Linked Clone: ${error}`);
-    alert("Erro ao criar Linked Clone. Verifique o console.");
+    alert(`Erro ao criar Linked Clone: ${error.message}`);
+    return false;
   }
 }
 
@@ -99,13 +99,17 @@ async function createLinkedClone(snapshotName, node, vmId, studentName) {
 
 async function connectVM(vmid, node) {
   try {
-    const ticket = await renewTicket();
+    // Get fresh ticket and CSRF token
+    const { ticket, csrfToken } = await renewTicket();
 
     const response = await fetch(`${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`, {
       method: "POST",
       headers: {
-        Authorization: API_TOKEN,
+        "Authorization": API_TOKEN,
+        "CSRFPreventionToken": csrfToken,
+        "Cookie": `PVEAuthCookie=${ticket}`,
       },
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -115,8 +119,18 @@ async function connectVM(vmid, node) {
     const vncProxyData = await response.json();
     const { ticket: vncTicket, port } = vncProxyData.data;
 
-    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=1&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}`;
-    document.getElementById("vm-iframe").src = noVNCUrl;
+    // Include the auth ticket in the noVNC URL
+    const noVNCUrl = `${API_BASE_URL}/?console=kvm&novnc=1&node=${node}&resize=1&vmid=${vmid}&path=api2/json/nodes/${node}/qemu/${vmid}/vncwebsocket/port/${port}/vncticket/${vncTicket}&PVEAuthCookie=${ticket}`;
+    
+    // If using iframe
+    const iframe = document.getElementById("vm-iframe");
+    if (iframe) {
+      iframe.src = noVNCUrl;
+    } else {
+      // If opening in new window
+      window.open(noVNCUrl, `vnc_${vmid}`, 'width=800,height=600');
+    }
+    
     console.log("[connectVM] URL gerada:", noVNCUrl);
   } catch (error) {
     console.error(`Erro ao conectar à VM ${vmid}:`, error);
