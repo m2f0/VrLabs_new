@@ -1,5 +1,5 @@
 //Checkpoint v1.0
-const API_BASE_URL = "https://prox.nnovup.com.br";
+const API_BASE_URL = "https://pxpa2.cecyber.com";
 const API_TOKEN = "PVEAPIToken=apiuser@pve!apitoken=9df761c2-6b64-4313-9811-8ca0df6fa966";
 const API_USERNAME = "apiuser@pve";
 const API_PASSWORD = "t?v1K!sfk/#/xSuK";
