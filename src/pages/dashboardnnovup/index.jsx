@@ -75,8 +75,8 @@ const Dashboard = () => {
         csrf: ticketData.data.CSRFPreventionToken,
       };
 
-      // Set the cookie
-      document.cookie = `PVEAuthCookie=${auth.ticket}; path=/; Secure; SameSite=Strict`;
+      // Set cookies with proper attributes
+      document.cookie = `PVEAuthCookie=${auth.ticket}; path=/; domain=.nnovup.com.br; Secure; SameSite=None`;
       
       setAuthData(auth);
       return auth;
@@ -173,10 +173,14 @@ const Dashboard = () => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          auth = await handleApiError({ response });
-          return fetchVMData(); // Tenta novamente com os novos tokens
+          // Clear existing auth data
+          setAuthData(null);
+          clearAuthCookies();
+          // Get new auth data and retry
+          auth = await authenticate();
+          return fetchVMData(); // Retry with new auth
         }
-        throw new Error(`Erro na API do Proxmox: ${response.status} ${response.statusText}`);
+        throw new Error(`Erro ao buscar dados: ${response.status}`);
       }
 
       const data = await response.json();
